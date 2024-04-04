@@ -2,7 +2,7 @@ contourpy==1.0.7
 cycler==0.12.1
 fonttools==4.39.0
 kiwisolver==1.4.5
-matplotlib==3.7.1
+matplotlib==3.8.4
 numpy==1.26.4
 packaging==23.0
 pandas==1.5.3
