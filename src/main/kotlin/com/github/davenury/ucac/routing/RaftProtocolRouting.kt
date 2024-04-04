@@ -7,12 +7,15 @@ import com.github.davenury.ucac.consensus.ConsensusProposeChange
 import com.github.davenury.ucac.consensus.raft.ConsensusElectMe
 import com.github.davenury.ucac.consensus.raft.ConsensusHeartbeat
 import com.github.davenury.ucac.consensus.raft.RaftConsensusProtocol
-import io.ktor.application.*
-import io.ktor.request.*
-import io.ktor.response.*
-import io.ktor.routing.*
+import io.ktor.application.Application
+import io.ktor.application.ApplicationCall
+import io.ktor.application.call
+import io.ktor.request.receive
+import io.ktor.response.respond
+import io.ktor.routing.get
+import io.ktor.routing.post
+import io.ktor.routing.routing
 import kotlinx.coroutines.future.await
-import org.slf4j.Logger
 
 fun Application.raftProtocolRouting(multiplePeersetProtocols: MultiplePeersetProtocols) {
     fun ApplicationCall.consensus(): RaftConsensusProtocol {

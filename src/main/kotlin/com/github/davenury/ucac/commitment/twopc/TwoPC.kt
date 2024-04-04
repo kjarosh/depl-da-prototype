@@ -1,17 +1,34 @@
 package com.github.davenury.ucac.commitment.twopc
 
-import com.github.davenury.common.*
+import com.github.davenury.common.Change
+import com.github.davenury.common.ChangeDoesntExist
+import com.github.davenury.common.ChangeResult
+import com.github.davenury.common.HistoryCannotBeBuildException
+import com.github.davenury.common.ImNotLeaderException
+import com.github.davenury.common.Metrics
+import com.github.davenury.common.PeerAddress
+import com.github.davenury.common.PeerId
+import com.github.davenury.common.PeersetId
+import com.github.davenury.common.ProtocolName
+import com.github.davenury.common.TwoPCChange
+import com.github.davenury.common.TwoPCConflictException
+import com.github.davenury.common.TwoPCHandleException
+import com.github.davenury.common.TwoPCStatus
 import com.github.davenury.common.history.History
-import com.github.davenury.ucac.*
+import com.github.davenury.ucac.Signal
+import com.github.davenury.ucac.SignalPublisher
+import com.github.davenury.ucac.SignalSubject
+import com.github.davenury.ucac.TwoPCConfig
 import com.github.davenury.ucac.commitment.AbstractAtomicCommitmentProtocol
-import com.github.davenury.ucac.common.*
+import com.github.davenury.ucac.common.ChangeNotifier
+import com.github.davenury.ucac.common.PeerResolver
+import com.github.davenury.ucac.common.ProtocolTimer
+import com.github.davenury.ucac.common.ProtocolTimerImpl
 import com.github.davenury.ucac.consensus.ConsensusProtocol
 import com.zopa.ktor.opentracing.span
-import io.micrometer.core.instrument.Tag
 import kotlinx.coroutines.ExecutorCoroutineDispatcher
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
-import okhttp3.internal.notifyAll
 import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
@@ -34,60 +51,66 @@ class TwoPC(
     private var changeTimer: ProtocolTimer = ProtocolTimerImpl(twoPCConfig.changeDelay, Duration.ZERO, ctx)
     val currentConsensusLeaders = ConcurrentHashMap<PeersetId, PeerAddress>()
 
-    override suspend fun performProtocol(change: Change): Unit = span("TwoPC.performProtocol") {
-        this.setTag("changeId", change.id)
-        val updatedChange =
-            updateParentIdFor2PCCompatibility(change, history, peersetId)
+    override suspend fun performProtocol(change: Change): Unit =
+        span("TwoPC.performProtocol") {
+            this.setTag("changeId", change.id)
+            val updatedChange =
+                updateParentIdFor2PCCompatibility(change, history, peersetId)
 
-        val mainChangeId = updatedChange.id
-        try {
-            val acceptChange = TwoPCChange(
-                peersets = updatedChange.peersets,
-                twoPCStatus = TwoPCStatus.ACCEPTED,
-                change = change,
-                leaderPeerset = peersetId,
-            )
+            val mainChangeId = updatedChange.id
+            try {
+                val acceptChange =
+                    TwoPCChange(
+                        peersets = updatedChange.peersets,
+                        twoPCStatus = TwoPCStatus.ACCEPTED,
+                        change = change,
+                        leaderPeerset = peersetId,
+                    )
 
-            val otherPeersets = updatedChange.peersets
-                .map { it.peersetId }
-                .filter { it != peersetId }
-            val otherPeers: Map<PeersetId, PeerAddress> =
-                otherPeersets.associateWith { currentConsensusLeaders[it] ?: peerResolver.getPeersFromPeerset(it)[0] }
+                val otherPeersets =
+                    updatedChange.peersets
+                        .map { it.peersetId }
+                        .filter { it != peersetId }
+                val otherPeers: Map<PeersetId, PeerAddress> =
+                    otherPeersets.associateWith { currentConsensusLeaders[it] ?: peerResolver.getPeersFromPeerset(it)[0] }
 
-            signal(Signal.TwoPCBeforeProposePhase, change)
-            val decision = proposePhase(acceptChange, mainChangeId, otherPeers)
+                signal(Signal.TwoPCBeforeProposePhase, change)
+                val decision = proposePhase(acceptChange, mainChangeId, otherPeers)
 
-            if (isMetricTest) {
-                Metrics.bumpChangeMetric(
-                    changeId = mainChangeId,
-                    peerId = peerId,
-                    peersetId = peersetId,
-                    protocolName = ProtocolName.TWO_PC,
-                    state = "proposed_decision_$decision"
-                )
+                if (isMetricTest) {
+                    Metrics.bumpChangeMetric(
+                        changeId = mainChangeId,
+                        peerId = peerId,
+                        peersetId = peersetId,
+                        protocolName = ProtocolName.TWO_PC,
+                        state = "proposed_decision_$decision",
+                    )
+                }
+
+                signal(Signal.TwoPCOnChangeAccepted, change)
+                val decisionPhaseOtherPeers =
+                    otherPeersets.associateWith {
+                        currentConsensusLeaders[it] ?: peerResolver.getPeersFromPeerset(it)[0]
+                    }
+                decisionPhase(acceptChange, decision, decisionPhaseOtherPeers)
+
+                val result = if (decision) ChangeResult.Status.SUCCESS else ChangeResult.Status.ABORTED
+
+                this.setTag("result", result.name.lowercase())
+                this.finish()
+
+                postDecisionOperations(mainChangeId, change, result)
+            } catch (e: Exception) {
+                changeIdToCompletableFuture[mainChangeId]!!.complete(ChangeResult(ChangeResult.Status.CONFLICT))
+                this.setTag("result", "conflict")
+                this.finish()
             }
-
-            signal(Signal.TwoPCOnChangeAccepted, change)
-            val decisionPhaseOtherPeers = otherPeersets.associateWith { currentConsensusLeaders[it] ?: peerResolver.getPeersFromPeerset(it)[0] }
-            decisionPhase(acceptChange, decision, decisionPhaseOtherPeers)
-
-            val result = if (decision) ChangeResult.Status.SUCCESS else ChangeResult.Status.ABORTED
-
-            this.setTag("result", result.name.lowercase())
-            this.finish()
-
-            postDecisionOperations(mainChangeId, change, result)
-        } catch (e: Exception) {
-            changeIdToCompletableFuture[mainChangeId]!!.complete(ChangeResult(ChangeResult.Status.CONFLICT))
-            this.setTag("result", "conflict")
-            this.finish()
         }
-    }
 
     private fun postDecisionOperations(
         mainChangeId: String,
         change: Change,
-        result: ChangeResult.Status
+        result: ChangeResult.Status,
     ) {
         if (isMetricTest) {
             Metrics.bumpChangeMetric(
@@ -95,7 +118,7 @@ class TwoPC(
                 peerId = peerId,
                 peersetId = peersetId,
                 protocolName = ProtocolName.TWO_PC,
-                state = result.name.lowercase()
+                state = result.name.lowercase(),
             )
         }
 
@@ -104,116 +127,132 @@ class TwoPC(
         signal(Signal.TwoPCOnChangeApplied, change)
     }
 
-    suspend fun handleAccept(change: Change) = span("TwoPc.handleAccept") {
-        if (change !is TwoPCChange) {
-            logger.info("Received not 2PC change $change")
-            throw TwoPCHandleException("Received change of not TwoPCChange in handleAccept: $change")
-        }
-
-        logger.info("Change id for change: $change, id: ${change.change.id}")
-        changeIdToCompletableFuture.putIfAbsent(change.change.id, CompletableFuture<ChangeResult>())
-
-        val changeWithProperParentId = change.copyWithNewParentId(
-            peersetId,
-            history.getCurrentEntryId(),
-        )
-        val result = if (consensusProtocol.amILeader()) {
-            consensusProtocol.proposeChangeAsync(changeWithProperParentId).await()
-        } else {
-            consensusProtocol.getLeaderId()?.let {
-                throw ImNotLeaderException(it, peersetId)
-            } ?: throw TwoPCHandleException("TwoPCChange didn't apply change")
-        }
-
-        if (result.status != ChangeResult.Status.SUCCESS) {
-            throw TwoPCHandleException("TwoPCChange didn't apply change")
-        }
-
-        changeTimer.startCounting {
-            askForDecisionChange(change)
-        }
-    }
-
-    private suspend fun askForDecisionChange(change: Change): Unit = span("TwoPc.askForDecisionChange") {
-        val otherPeerset = change.peersets.map { it.peersetId }
-            .first { it != peersetId }
-
-        signal(Signal.TwoPCOnAskForDecision, change)
-        val resultChange = protocolClient.askForChangeStatus(
-            otherPeerset.let { peerResolver.getPeersFromPeerset(it)[0] },
-            change,
-            otherPeerset,
-        )
-
-        logger.info("Asking about change: $change - result - $resultChange")
-        if (resultChange != null) {
-            handleDecision(resultChange)
-        } else changeTimer.startCounting {
-            askForDecisionChange(change)
-        }
-    }
-
-    suspend fun handleDecision(change: Change): Unit = span("TwoPc.handleDecision") {
-        signal(Signal.TwoPCOnHandleDecision, change)
-        val mainChangeId =
-            updateParentIdFor2PCCompatibility(change, history, peersetId).id
-        logger.info("Change id for change: $change, id: $mainChangeId")
-
-        val currentProcessedChange = Change.fromHistoryEntry(history.getCurrentEntry())
-
-        try {
-            val cf: CompletableFuture<ChangeResult> = when {
-                currentProcessedChange !is TwoPCChange || currentProcessedChange.twoPCStatus != TwoPCStatus.ACCEPTED -> {
-                    throw TwoPCHandleException("Received change in handleDecision even though we didn't received 2PC-Accept earlier")
-                }
-
-                change is TwoPCChange && change.twoPCStatus == TwoPCStatus.ABORTED && change.change == currentProcessedChange.change -> {
-                    changeTimer.cancelCounting()
-                    val updatedChange = change.copyWithNewParentId(
-                        peersetId,
-                        history.getCurrentEntryId(),
-                    )
-                    checkChangeAndProposeToConsensus(updatedChange, currentProcessedChange.change.id)
-                }
-
-                change == currentProcessedChange.change -> {
-                    changeTimer.cancelCounting()
-                    val updatedChange = change.copyWithNewParentId(
-                        peersetId,
-                        history.getCurrentEntryId(),
-                    )
-                    checkChangeAndProposeToConsensus(updatedChange, currentProcessedChange.change.id)
-                }
-
-                else -> throw TwoPCHandleException(
-                    "In 2PC handleDecision received change in different type than TwoPCChange: $change \n" +
-                            "currentProcessedChange: $currentProcessedChange"
-                )
+    suspend fun handleAccept(change: Change) =
+        span("TwoPc.handleAccept") {
+            if (change !is TwoPCChange) {
+                logger.info("Received not 2PC change $change")
+                throw TwoPCHandleException("Received change of not TwoPCChange in handleAccept: $change")
             }
-            cf.await()
-            signal(Signal.TwoPCOnHandleDecisionEnd, change)
-        } catch (e: Exception) {
-            changeConflict(mainChangeId, "Change conflicted in decision phase, ${e.message}")
-            throw e
+
+            logger.info("Change id for change: $change, id: ${change.change.id}")
+            changeIdToCompletableFuture.putIfAbsent(change.change.id, CompletableFuture<ChangeResult>())
+
+            val changeWithProperParentId =
+                change.copyWithNewParentId(
+                    peersetId,
+                    history.getCurrentEntryId(),
+                )
+            val result =
+                if (consensusProtocol.amILeader()) {
+                    consensusProtocol.proposeChangeAsync(changeWithProperParentId).await()
+                } else {
+                    consensusProtocol.getLeaderId()?.let {
+                        throw ImNotLeaderException(it, peersetId)
+                    } ?: throw TwoPCHandleException("TwoPCChange didn't apply change")
+                }
+
+            if (result.status != ChangeResult.Status.SUCCESS) {
+                throw TwoPCHandleException("TwoPCChange didn't apply change")
+            }
+
+            changeTimer.startCounting {
+                askForDecisionChange(change)
+            }
         }
 
-        changeNotifier.notify(change, ChangeResult(ChangeResult.Status.SUCCESS))
-        changeIdToCompletableFuture.putIfAbsent(change.id, CompletableFuture())
-        changeIdToCompletableFuture[change.id]!!
-            .complete(ChangeResult(ChangeResult.Status.SUCCESS))
-    }
+    private suspend fun askForDecisionChange(change: Change): Unit =
+        span("TwoPc.askForDecisionChange") {
+            val otherPeerset =
+                change.peersets.map { it.peersetId }
+                    .first { it != peersetId }
+
+            signal(Signal.TwoPCOnAskForDecision, change)
+            val resultChange =
+                protocolClient.askForChangeStatus(
+                    otherPeerset.let { peerResolver.getPeersFromPeerset(it)[0] },
+                    change,
+                    otherPeerset,
+                )
+
+            logger.info("Asking about change: $change - result - $resultChange")
+            if (resultChange != null) {
+                handleDecision(resultChange)
+            } else {
+                changeTimer.startCounting {
+                    askForDecisionChange(change)
+                }
+            }
+        }
+
+    suspend fun handleDecision(change: Change): Unit =
+        span("TwoPc.handleDecision") {
+            signal(Signal.TwoPCOnHandleDecision, change)
+            val mainChangeId =
+                updateParentIdFor2PCCompatibility(change, history, peersetId).id
+            logger.info("Change id for change: $change, id: $mainChangeId")
+
+            val currentProcessedChange = Change.fromHistoryEntry(history.getCurrentEntry())
+
+            try {
+                val cf: CompletableFuture<ChangeResult> =
+                    when {
+                        currentProcessedChange !is TwoPCChange || currentProcessedChange.twoPCStatus != TwoPCStatus.ACCEPTED -> {
+                            throw TwoPCHandleException(
+                                "Received change in handleDecision even though we didn't received 2PC-Accept earlier",
+                            )
+                        }
+
+                        change is TwoPCChange && change.twoPCStatus == TwoPCStatus.ABORTED && change.change == currentProcessedChange.change -> {
+                            changeTimer.cancelCounting()
+                            val updatedChange =
+                                change.copyWithNewParentId(
+                                    peersetId,
+                                    history.getCurrentEntryId(),
+                                )
+                            checkChangeAndProposeToConsensus(updatedChange, currentProcessedChange.change.id)
+                        }
+
+                        change == currentProcessedChange.change -> {
+                            changeTimer.cancelCounting()
+                            val updatedChange =
+                                change.copyWithNewParentId(
+                                    peersetId,
+                                    history.getCurrentEntryId(),
+                                )
+                            checkChangeAndProposeToConsensus(updatedChange, currentProcessedChange.change.id)
+                        }
+
+                        else -> throw TwoPCHandleException(
+                            "In 2PC handleDecision received change in different type than TwoPCChange: $change \n" +
+                                "currentProcessedChange: $currentProcessedChange",
+                        )
+                    }
+                cf.await()
+                signal(Signal.TwoPCOnHandleDecisionEnd, change)
+            } catch (e: Exception) {
+                changeConflict(mainChangeId, "Change conflicted in decision phase, ${e.message}")
+                throw e
+            }
+
+            changeNotifier.notify(change, ChangeResult(ChangeResult.Status.SUCCESS))
+            changeIdToCompletableFuture.putIfAbsent(change.id, CompletableFuture())
+            changeIdToCompletableFuture[change.id]!!
+                .complete(ChangeResult(ChangeResult.Status.SUCCESS))
+        }
 
     fun getChange(changeId: String): Change {
         val entryList = consensusProtocol.getState().toEntryList()
 
-        val parentEntry = entryList
-            .find { Change.fromHistoryEntry(it)?.id == changeId }
-            ?: throw ChangeDoesntExist(changeId)
+        val parentEntry =
+            entryList
+                .find { Change.fromHistoryEntry(it)?.id == changeId }
+                ?: throw ChangeDoesntExist(changeId)
 
-        val change = entryList
-            .find { it.getParentId() == parentEntry.getId() }
-            ?.let { Change.fromHistoryEntry(it) }
-            ?: throw ChangeDoesntExist(changeId)
+        val change =
+            entryList
+                .find { it.getParentId() == parentEntry.getId() }
+                ?.let { Change.fromHistoryEntry(it) }
+                ?: throw ChangeDoesntExist(changeId)
 
         // TODO hax, remove it
         return if (change is TwoPCChange) {
@@ -231,7 +270,10 @@ class TwoPC(
     }
 
     // I have been selected as a new leader, let me check if there are any 2PC changes
-    fun newConsensusLeaderElected(peerId: PeerId, peersetId: PeersetId) {
+    fun newConsensusLeaderElected(
+        peerId: PeerId,
+        peersetId: PeersetId,
+    ) {
         logger.info("I have been selected as a new consensus leader")
         val currentChange = Change.fromHistoryEntry(history.getCurrentEntry())
         logger.info("Current change in history is - $currentChange")
@@ -250,7 +292,8 @@ class TwoPC(
                     currentChange,
                     false,
                     currentChange.peersets.filterNot { it.peersetId == peersetId }
-                        .associate { it.peersetId to peerResolver.getPeersFromPeerset(it.peersetId)[0] })
+                        .associate { it.peersetId to peerResolver.getPeersFromPeerset(it.peersetId)[0] },
+                )
 
                 postDecisionOperations(
                     updateParentIdFor2PCCompatibility(currentChange.change, history, peersetId).id,
@@ -267,47 +310,48 @@ class TwoPC(
         }
     }
 
-    override fun getChangeResult(changeId: String): CompletableFuture<ChangeResult>? =
-        changeIdToCompletableFuture[changeId]
+    override fun getChangeResult(changeId: String): CompletableFuture<ChangeResult>? = changeIdToCompletableFuture[changeId]
 
     private suspend fun proposePhase(
         acceptChange: TwoPCChange,
         mainChangeId: String,
         otherPeers: Map<PeersetId, PeerAddress>,
-    ): Boolean = span("TwoPc.proposePhase") {
-        val acceptResult = checkChangeAndProposeToConsensus(acceptChange, mainChangeId).await()
+    ): Boolean =
+        span("TwoPc.proposePhase") {
+            val acceptResult = checkChangeAndProposeToConsensus(acceptChange, mainChangeId).await()
 
-        if (acceptResult.status != ChangeResult.Status.SUCCESS) {
-            changeConflict(mainChangeId, "failed during processing acceptChange in 2PC")
-        } else {
-            logger.info("Change accepted locally ${acceptChange.change}")
+            if (acceptResult.status != ChangeResult.Status.SUCCESS) {
+                changeConflict(mainChangeId, "failed during processing acceptChange in 2PC")
+            } else {
+                logger.info("Change accepted locally ${acceptChange.change}")
+            }
+
+            val decision = getProposePhaseResponses(otherPeers, acceptChange, mapOf())
+
+            logger.info("Decision $decision from other peerset for ${acceptChange.change}")
+
+            return decision
         }
-
-        val decision = getProposePhaseResponses(otherPeers, acceptChange, mapOf())
-
-        logger.info("Decision $decision from other peerset for ${acceptChange.change}")
-
-        return decision
-    }
 
     suspend fun getProposePhaseResponses(
         peers: Map<PeersetId, PeerAddress>,
         change: Change,
-        recentResponses: Map<PeerAddress, TwoPCRequestResponse>
+        recentResponses: Map<PeerAddress, TwoPCRequestResponse>,
     ): Boolean {
         val responses = protocolClient.sendAccept(peers, change)
 
-        val addressesToAskAgain = responses.filter { (_, response) -> response.redirect }
-            .map { (_, response) ->
-                val address = peerResolver.resolve(response.newConsensusLeaderId!!)
-                logger.debug(
-                    "Updating {} peerset to new consensus leader: {}",
-                    response.newConsensusLeaderPeersetId,
-                    response.newConsensusLeaderId
-                )
-                currentConsensusLeaders[response.newConsensusLeaderPeersetId!!] = address
-                response.peersetId to address
-            }.toMap()
+        val addressesToAskAgain =
+            responses.filter { (_, response) -> response.redirect }
+                .map { (_, response) ->
+                    val address = peerResolver.resolve(response.newConsensusLeaderId!!)
+                    logger.debug(
+                        "Updating {} peerset to new consensus leader: {}",
+                        response.newConsensusLeaderPeersetId,
+                        response.newConsensusLeaderId,
+                    )
+                    currentConsensusLeaders[response.newConsensusLeaderPeersetId!!] = address
+                    response.peersetId to address
+                }.toMap()
 
         if (addressesToAskAgain.isEmpty()) {
             return (recentResponses + responses).values.map { it.success }.all { it }
@@ -316,7 +360,7 @@ class TwoPC(
         return getProposePhaseResponses(
             addressesToAskAgain,
             change,
-            (recentResponses + responses.filterNot { it.value.redirect })
+            (recentResponses + responses.filterNot { it.value.redirect }),
         )
     }
 
@@ -324,52 +368,67 @@ class TwoPC(
         acceptChange: TwoPCChange,
         decision: Boolean,
         otherPeers: Map<PeersetId, PeerAddress>,
-    ): Unit = span("TwoPc.decisionPhase") {
-        val change = acceptChange.change
-        val acceptChangeId = acceptChange.toHistoryEntry(peersetId).getId()
+    ): Unit =
+        span("TwoPc.decisionPhase") {
+            val change = acceptChange.change
+            val acceptChangeId = acceptChange.toHistoryEntry(peersetId).getId()
 
-        val commitChange = if (decision) {
-            change
-        } else {
-            TwoPCChange(
-                peersets = change.peersets,
-                twoPCStatus = TwoPCStatus.ABORTED,
-                change = change,
-                leaderPeerset = peersetId,
-            )
+            val commitChange =
+                if (decision) {
+                    change
+                } else {
+                    TwoPCChange(
+                        peersets = change.peersets,
+                        twoPCStatus = TwoPCStatus.ABORTED,
+                        change = change,
+                        leaderPeerset = peersetId,
+                    )
+                }
+            logger.info("Change to commit: $commitChange")
+
+            protocolClient.sendDecision(otherPeers, commitChange)
+            val changeResult =
+                checkChangeAndProposeToConsensus(
+                    commitChange.copyWithNewParentId(
+                        peersetId,
+                        acceptChangeId,
+                    ),
+                    acceptChange.change.id,
+                ).await()
+
+            if (changeResult.status != ChangeResult.Status.SUCCESS) {
+                throw TwoPCConflictException("Change failed during committing locally")
+            }
+
+            logger.info("Decision $decision committed in all peersets $commitChange")
         }
-        logger.info("Change to commit: $commitChange")
 
-        protocolClient.sendDecision(otherPeers, commitChange)
-        val changeResult = checkChangeAndProposeToConsensus(
-            commitChange.copyWithNewParentId(
-                peersetId,
-                acceptChangeId,
-            ),
-            acceptChange.change.id
-        ).await()
-
-        if (changeResult.status != ChangeResult.Status.SUCCESS) {
-            throw TwoPCConflictException("Change failed during committing locally")
-        }
-
-        logger.info("Decision $decision committed in all peersets $commitChange")
-    }
-
-    private fun signal(signal: Signal, change: Change) {
+    private fun signal(
+        signal: Signal,
+        change: Change,
+    ) {
         signalPublisher.signal(
-            signal, this, getPeersFromChange(change), null, change
+            signal,
+            this,
+            getPeersFromChange(change),
+            null,
+            change,
         )
     }
 
-    private fun checkChangeCompatibility(change: Change, originalChangeId: String) {
+    private fun checkChangeCompatibility(
+        change: Change,
+        originalChangeId: String,
+    ) {
         if (!history.isEntryCompatible(change.toHistoryEntry(peersetId))) {
             logger.info(
                 "Change $originalChangeId is not compatible with history expected: ${
                     change.toHistoryEntry(peersetId).getParentId()
-                } is ${history.getCurrentEntryId()}"
+                } is ${history.getCurrentEntryId()}",
             )
-            changeIdToCompletableFuture[originalChangeId]!!.complete(ChangeResult(ChangeResult.Status.REJECTED, currentEntryId = history.getCurrentEntryId()))
+            changeIdToCompletableFuture[originalChangeId]!!.complete(
+                ChangeResult(ChangeResult.Status.REJECTED, currentEntryId = history.getCurrentEntryId()),
+            )
             throw HistoryCannotBeBuildException()
         }
     }
@@ -377,21 +436,27 @@ class TwoPC(
     private suspend fun checkChangeAndProposeToConsensus(
         change: Change,
         originalChangeId: String,
-    ): CompletableFuture<ChangeResult> = change
-        .also { checkChangeCompatibility(it, originalChangeId) }
-        .let { consensusProtocol.proposeChangeAsync(change) }
+    ): CompletableFuture<ChangeResult> =
+        change
+            .also { checkChangeCompatibility(it, originalChangeId) }
+            .let { consensusProtocol.proposeChangeAsync(change) }
 
-
-    private fun changeConflict(changeId: String, exceptionText: String) =
-        changeIdToCompletableFuture
-            .also { it.putIfAbsent(changeId, CompletableFuture()) }
-            .get(changeId)!!.complete(ChangeResult(ChangeResult.Status.CONFLICT))
-            .also { throw TwoPCConflictException(exceptionText) }
+    private fun changeConflict(
+        changeId: String,
+        exceptionText: String,
+    ) = changeIdToCompletableFuture
+        .also { it.putIfAbsent(changeId, CompletableFuture()) }
+        .get(changeId)!!.complete(ChangeResult(ChangeResult.Status.CONFLICT))
+        .also { throw TwoPCConflictException(exceptionText) }
 
     companion object {
         private val logger = LoggerFactory.getLogger("2pc")
 
-        fun updateParentIdFor2PCCompatibility(change: Change, history: History, peersetId: PeersetId): Change {
+        fun updateParentIdFor2PCCompatibility(
+            change: Change,
+            history: History,
+            peersetId: PeersetId,
+        ): Change {
             val currentEntry = history.getCurrentEntry()
 
             val grandParentChange: Change =
@@ -401,17 +466,20 @@ class TwoPC(
 
             if (grandParentChange !is TwoPCChange) return change
 
-            val proposedChangeParentId = change.toHistoryEntry(peersetId)
-                .getParentId()
+            val proposedChangeParentId =
+                change.toHistoryEntry(peersetId)
+                    .getParentId()
 
             val grandParentChange2PCChangeId = grandParentChange.change.toHistoryEntry(peersetId).getId()
 
-            return if (grandParentChange2PCChangeId == proposedChangeParentId) change.copyWithNewParentId(
-                peersetId,
-                history.getCurrentEntryId()
-            )
-            else change
+            return if (grandParentChange2PCChangeId == proposedChangeParentId) {
+                change.copyWithNewParentId(
+                    peersetId,
+                    history.getCurrentEntryId(),
+                )
+            } else {
+                change
+            }
         }
-
     }
 }

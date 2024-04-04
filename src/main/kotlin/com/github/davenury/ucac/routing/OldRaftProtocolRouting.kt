@@ -7,10 +7,14 @@ import com.github.davenury.ucac.consensus.oldRaft.ConsensusElectMe
 import com.github.davenury.ucac.consensus.oldRaft.ConsensusHeartbeat
 import com.github.davenury.ucac.consensus.oldRaft.ConsensusProposeChange
 import com.github.davenury.ucac.consensus.oldRaft.OldRaftConsensusProtocol
-import io.ktor.application.*
-import io.ktor.request.*
-import io.ktor.response.*
-import io.ktor.routing.*
+import io.ktor.application.Application
+import io.ktor.application.ApplicationCall
+import io.ktor.application.call
+import io.ktor.request.receive
+import io.ktor.response.respond
+import io.ktor.routing.get
+import io.ktor.routing.post
+import io.ktor.routing.routing
 import kotlinx.coroutines.future.await
 
 fun Application.oldRaftProtocolRouting(multiplePeersetProtocols: MultiplePeersetProtocols) {

@@ -44,6 +44,7 @@ interface History {
     fun containsEntry(entryId: String): Boolean {
         return getEntryFromHistory(entryId) != null
     }
+
     fun isEntryCompatible(entry: HistoryEntry): Boolean {
         return containsEntry(entry.getId()) || getCurrentEntryId() == entry.getParentId()
     }

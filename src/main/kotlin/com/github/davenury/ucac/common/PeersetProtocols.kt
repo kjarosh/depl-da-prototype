@@ -39,15 +39,16 @@ class PeersetProtocols(
     val gpacFactory: GPACFactory
 
     init {
-        gpacFactory = GPACFactory(
-            peersetId,
-            transactionBlocker,
-            history,
-            config,
-            ctx,
-            signalPublisher,
-            peerResolver,
-        )
+        gpacFactory =
+            GPACFactory(
+                peersetId,
+                transactionBlocker,
+                history,
+                config,
+                ctx,
+                signalPublisher,
+                peerResolver,
+            )
 
         consensusProtocol =
             ConsensusProtocol.createConsensusProtocol(
@@ -61,22 +62,25 @@ class PeersetProtocols(
                 subscribers,
             )
 
-        twoPC = TwoPC(
-            peersetId,
-            history,
-            config.twoPC,
-            ctx,
-            TwoPCProtocolClientImpl(),
-            consensusProtocol,
-            peerResolver,
-            signalPublisher,
-            config.metricTest,
-            changeNotifier = changeNotifier
-        )
+        twoPC =
+            TwoPC(
+                peersetId,
+                history,
+                config.twoPC,
+                ctx,
+                TwoPCProtocolClientImpl(),
+                consensusProtocol,
+                peerResolver,
+                signalPublisher,
+                config.metricTest,
+                changeNotifier = changeNotifier,
+            )
 
-        subscribers?.registerSubscriber(CodeSubscriber { peerId, peersetId ->
-            twoPC.newConsensusLeaderElected(peerId, peersetId)
-        })
+        subscribers?.registerSubscriber(
+            CodeSubscriber { peerId, peersetId ->
+                twoPC.newConsensusLeaderElected(peerId, peersetId)
+            },
+        )
     }
 
     override fun close() {

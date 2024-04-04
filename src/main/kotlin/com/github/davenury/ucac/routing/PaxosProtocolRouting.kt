@@ -4,11 +4,19 @@ import com.github.davenury.common.Changes
 import com.github.davenury.common.peersetId
 import com.github.davenury.ucac.common.MultiplePeersetProtocols
 import com.github.davenury.ucac.consensus.ConsensusProposeChange
-import com.github.davenury.ucac.consensus.paxos.*
-import io.ktor.application.*
-import io.ktor.request.*
-import io.ktor.response.*
-import io.ktor.routing.*
+import com.github.davenury.ucac.consensus.paxos.PaxosAccept
+import com.github.davenury.ucac.consensus.paxos.PaxosBatchCommit
+import com.github.davenury.ucac.consensus.paxos.PaxosCommit
+import com.github.davenury.ucac.consensus.paxos.PaxosPropose
+import com.github.davenury.ucac.consensus.paxos.PaxosProtocol
+import io.ktor.application.Application
+import io.ktor.application.ApplicationCall
+import io.ktor.application.call
+import io.ktor.request.receive
+import io.ktor.response.respond
+import io.ktor.routing.get
+import io.ktor.routing.post
+import io.ktor.routing.routing
 import kotlinx.coroutines.future.await
 
 fun Application.pigPaxosProtocolRouting(multiplePeersetProtocols: MultiplePeersetProtocols) {
@@ -45,7 +53,6 @@ fun Application.pigPaxosProtocolRouting(multiplePeersetProtocols: MultiplePeerse
             val result = call.consensus().handleProposeChange(message).await()
             call.respond(result)
         }
-
 
         get("/paxos/proposed_changes") {
             call.respond(Changes(call.consensus().getProposedChanges()))

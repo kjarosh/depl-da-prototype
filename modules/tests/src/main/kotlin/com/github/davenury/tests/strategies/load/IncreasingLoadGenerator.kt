@@ -2,9 +2,13 @@ package com.github.davenury.tests.strategies.load
 
 import com.github.davenury.common.meterRegistry
 import io.micrometer.core.instrument.Counter
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.ticker
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.util.concurrent.Executors
@@ -14,7 +18,6 @@ class IncreasingLoadGenerator(
     private val increaseDelay: Duration,
     private val increaseStep: Double = 1.0,
 ) : LoadGenerator {
-
     private var channel: ReceiveChannel<Unit> = ticker(1000, 0)
     private var currentTick: Double = 1.0
 

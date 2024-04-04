@@ -6,11 +6,14 @@ import com.github.davenury.ucac.commitment.gpac.Apply
 import com.github.davenury.ucac.commitment.gpac.ElectMe
 import com.github.davenury.ucac.commitment.gpac.GPACFactory
 import com.github.davenury.ucac.common.MultiplePeersetProtocols
-import io.ktor.application.*
-import io.ktor.http.*
-import io.ktor.request.*
-import io.ktor.response.*
-import io.ktor.routing.*
+import io.ktor.application.Application
+import io.ktor.application.ApplicationCall
+import io.ktor.application.call
+import io.ktor.http.HttpStatusCode
+import io.ktor.request.receive
+import io.ktor.response.respond
+import io.ktor.routing.post
+import io.ktor.routing.routing
 
 fun Application.gpacProtocolRouting(multiplePeersetProtocols: MultiplePeersetProtocols) {
     fun ApplicationCall.gpac(): GPACFactory {

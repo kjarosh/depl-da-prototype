@@ -1,20 +1,25 @@
 package com.github.davenury.tests
 
-import com.github.davenury.common.*
+import com.github.davenury.common.PeerAddress
+import com.github.davenury.common.PeersetId
 import com.github.davenury.common.parsePeers
+import com.github.davenury.common.parsePeersets
 import com.github.davenury.tests.strategies.changes.CreateChangeStrategy
 import com.github.davenury.tests.strategies.changes.DefaultChangeStrategy
 import com.github.davenury.tests.strategies.changes.OnlyProcessableConflictsChangeStrategy
 import com.github.davenury.tests.strategies.peersets.GetPeersStrategy
 import com.github.davenury.tests.strategies.peersets.RandomPeersStrategy
 import com.github.davenury.tests.strategies.peersets.RandomPeersWithDelayOnConflictStrategy
-import com.sksamuel.hoplite.*
+import com.sksamuel.hoplite.ConfigFailure
+import com.sksamuel.hoplite.ConfigResult
+import com.sksamuel.hoplite.DecoderContext
+import com.sksamuel.hoplite.Node
+import com.sksamuel.hoplite.StringNode
 import com.sksamuel.hoplite.decoder.Decoder
 import com.sksamuel.hoplite.fp.invalid
 import com.sksamuel.hoplite.fp.valid
-import java.lang.IllegalArgumentException
 import java.time.Duration
-import java.util.*
+import java.util.Locale
 import kotlin.reflect.KType
 
 data class Config(
@@ -57,56 +62,61 @@ data class LoadGeneratorConfig(
     val timeOfSimulation: Duration? = null,
     val increasingLoadBound: Double? = null,
     val increasingLoadIncreaseDelay: Duration? = null,
-    val increasingLoadIncreaseStep: Double? = null
+    val increasingLoadIncreaseStep: Double? = null,
 )
 
 enum class SendingStrategy {
     RANDOM {
-        override fun getStrategy(peersets: List<PeersetId>): GetPeersStrategy =
-            RandomPeersStrategy(peersets)
+        override fun getStrategy(peersets: List<PeersetId>): GetPeersStrategy = RandomPeersStrategy(peersets)
     },
     DELAY_ON_CONFLICTS {
-        override fun getStrategy(peersets: List<PeersetId>): GetPeersStrategy =
-            RandomPeersWithDelayOnConflictStrategy(peersets)
-    };
+        override fun getStrategy(peersets: List<PeersetId>): GetPeersStrategy = RandomPeersWithDelayOnConflictStrategy(peersets)
+    }, ;
 
     abstract fun getStrategy(peersets: List<PeersetId>): GetPeersStrategy
 }
 
 class StrategyDecoder : Decoder<SendingStrategy> {
-    override fun decode(node: Node, type: KType, context: DecoderContext): ConfigResult<SendingStrategy> = when (node) {
-        is StringNode ->
-            try {
-                SendingStrategy.valueOf(node.value.uppercase(Locale.getDefault())).valid()
-            } catch (e: IllegalArgumentException) {
-                ConfigFailure.Generic(
-                    "Invalid enum value: ${node.value}. Expected one of ${
-                        SendingStrategy.values().map { it.toString() }
-                    }"
-                ).invalid()
-            }
+    override fun decode(
+        node: Node,
+        type: KType,
+        context: DecoderContext,
+    ): ConfigResult<SendingStrategy> =
+        when (node) {
+            is StringNode ->
+                try {
+                    SendingStrategy.valueOf(node.value.uppercase(Locale.getDefault())).valid()
+                } catch (e: IllegalArgumentException) {
+                    ConfigFailure.Generic(
+                        "Invalid enum value: ${node.value}. Expected one of ${
+                            SendingStrategy.values().map { it.toString() }
+                        }",
+                    ).invalid()
+                }
 
-        else -> ConfigFailure.DecodeError(node, type).invalid()
-    }
+            else -> ConfigFailure.DecodeError(node, type).invalid()
+        }
 
     override fun supports(type: KType): Boolean = type.classifier == SendingStrategy::class
 }
 
 enum class CreatingChangeStrategy {
     DEFAULT {
-        override fun getStrategy(ownAddress: String): CreateChangeStrategy =
-            DefaultChangeStrategy(ownAddress)
+        override fun getStrategy(ownAddress: String): CreateChangeStrategy = DefaultChangeStrategy(ownAddress)
     },
     PROCESSABLE_CONFLICTS {
-        override fun getStrategy(ownAddress: String): CreateChangeStrategy =
-            OnlyProcessableConflictsChangeStrategy(ownAddress)
-    };
+        override fun getStrategy(ownAddress: String): CreateChangeStrategy = OnlyProcessableConflictsChangeStrategy(ownAddress)
+    }, ;
 
     abstract fun getStrategy(ownAddress: String): CreateChangeStrategy
 }
 
 class CreatingChangeStrategyDecoder : Decoder<CreatingChangeStrategy> {
-    override fun decode(node: Node, type: KType, context: DecoderContext): ConfigResult<CreatingChangeStrategy> =
+    override fun decode(
+        node: Node,
+        type: KType,
+        context: DecoderContext,
+    ): ConfigResult<CreatingChangeStrategy> =
         when (node) {
             is StringNode ->
                 try {
@@ -115,7 +125,7 @@ class CreatingChangeStrategyDecoder : Decoder<CreatingChangeStrategy> {
                     ConfigFailure.Generic(
                         "Invalid enum value: ${node.value}. Expected one of ${
                             CreatingChangeStrategy.values().map { it.toString() }
-                        }"
+                        }",
                     ).invalid()
                 }
 
@@ -131,7 +141,7 @@ enum class ACProtocol {
     },
     GPAC {
         override fun getParam(enforceUsage: Boolean): String = "enforce_gpac=$enforceUsage"
-    };
+    }, ;
 
     abstract fun getParam(enforceUsage: Boolean): String
 }
@@ -142,7 +152,11 @@ data class ACProtocolConfig(
 )
 
 class ACProtocolDecoder : Decoder<ACProtocol> {
-    override fun decode(node: Node, type: KType, context: DecoderContext): ConfigResult<ACProtocol> =
+    override fun decode(
+        node: Node,
+        type: KType,
+        context: DecoderContext,
+    ): ConfigResult<ACProtocol> =
         when (node) {
             is StringNode ->
                 try {
@@ -151,7 +165,7 @@ class ACProtocolDecoder : Decoder<ACProtocol> {
                     ConfigFailure.Generic(
                         "Invalid enum value: ${node.value}. Expected one of ${
                             ACProtocol.values().map { it.toString() }
-                        }"
+                        }",
                     ).invalid()
                 }
 

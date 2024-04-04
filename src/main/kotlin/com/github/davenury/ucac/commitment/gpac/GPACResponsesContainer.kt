@@ -2,8 +2,12 @@ package com.github.davenury.ucac.commitment.gpac
 
 import com.github.davenury.common.PeersetId
 import com.zopa.ktor.opentracing.span
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.asCompletableFuture
+import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.util.concurrent.Executors
@@ -15,7 +19,6 @@ class GPACResponsesContainer<T>(
     private val responses: Map<PeersetId, List<Deferred<T?>>>,
     private val timeout: Duration,
 ) {
-
     private val currentState: MutableMap<PeersetId, MutableList<T>> = mutableMapOf()
     private val lock = ReentrantLock()
     private val condition = lock.newCondition()
@@ -34,14 +37,16 @@ class GPACResponsesContainer<T>(
         }
     }
 
-    private fun Map<*, List<*>>.flattenedSize() =
-        this.values.flatten().size
+    private fun Map<*, List<*>>.flattenedSize() = this.values.flatten().size
 
-    fun awaitForMessages(condition: (Map<PeersetId, List<T>>) -> Boolean): Pair<Map<PeersetId, List<T>>, Boolean> = span("GPAC.awaitForMessages") {
+    fun awaitForMessages(condition: (Map<PeersetId, List<T>>) -> Boolean): Pair<Map<PeersetId, List<T>>, Boolean> =
+        span("GPAC.awaitForMessages") {
             return lock.withLock {
                 ctx.dispatch(Dispatchers.IO) { timeout() }
                 while (true) {
-                    logger.trace("Responses size: ${responses.flattenedSize()}, $responses, current resolved: $overallResponses")
+                    logger.trace(
+                        "Responses size: ${responses.flattenedSize()}, $responses, current resolved: $overallResponses",
+                    )
                     when {
                         !condition(currentState) && shouldWait.get() && overallResponses < responses.flattenedSize() -> {
                             logger.debug("Waiting for responses, current state: $currentState")
@@ -84,7 +89,10 @@ class GPACResponsesContainer<T>(
         }
     }
 
-    private fun handleJob(peersetId: PeersetId, value: T?) {
+    private fun handleJob(
+        peersetId: PeersetId,
+        value: T?,
+    ) {
         lock.withLock {
             if (waitingForResponses.get()) {
                 if (value != null) {

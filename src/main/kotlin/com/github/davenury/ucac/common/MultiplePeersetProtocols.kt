@@ -16,21 +16,22 @@ class MultiplePeersetProtocols(
     peerResolver: PeerResolver,
     signalPublisher: SignalPublisher,
     changeNotifier: ChangeNotifier,
-    private val subscribers: Map<PeersetId, Subscribers>
+    private val subscribers: Map<PeersetId, Subscribers>,
 ) {
     val protocols: Map<PeersetId, PeersetProtocols>
 
     init {
-        protocols = config.peersetIds().map { peersetId ->
-            PeersetProtocols(
-                peersetId,
-                config,
-                peerResolver,
-                signalPublisher,
-                changeNotifier,
-                subscribers[peersetId]
-            )
-        }.associateBy { it.peersetId }
+        protocols =
+            config.peersetIds().map { peersetId ->
+                PeersetProtocols(
+                    peersetId,
+                    config,
+                    peerResolver,
+                    signalPublisher,
+                    changeNotifier,
+                    subscribers[peersetId],
+                )
+            }.associateBy { it.peersetId }
     }
 
     fun forPeerset(peersetId: PeersetId): PeersetProtocols {
@@ -41,7 +42,10 @@ class MultiplePeersetProtocols(
         return protocols.mapValues { it.value.history }
     }
 
-    fun registerSubscriber(peersetId: PeersetId, subscriber: Subscriber) {
+    fun registerSubscriber(
+        peersetId: PeersetId,
+        subscriber: Subscriber,
+    ) {
         subscribers[peersetId]?.registerSubscriber(subscriber)
     }
 

@@ -1,6 +1,10 @@
 package com.github.davenury.ucac.api
 
-import com.github.davenury.common.*
+import com.github.davenury.common.ChangeDoesntExist
+import com.github.davenury.common.ChangeResult
+import com.github.davenury.common.Metrics
+import com.github.davenury.common.PeersetId
+import com.github.davenury.common.ProtocolName
 import com.github.davenury.ucac.common.ChangeNotifier
 import com.github.davenury.ucac.common.PeersetProtocols
 import com.zopa.ktor.opentracing.span
@@ -12,7 +16,6 @@ import kotlinx.coroutines.slf4j.MDCContext
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 import java.util.concurrent.CompletableFuture
-
 
 class Worker(
     private val coroutineScope: CoroutineScope,
@@ -60,27 +63,29 @@ class Worker(
         }
     }
 
-    private suspend fun processQueueElement() = span("Worker.processQueueElement") {
-        val job = queue.receive()
-        logger.info("Received a job: $job")
-        Metrics.startTimer(job.change.id)
-        this.setTag("changeId", job.change.id)
-        val result =
-            when (job.protocolName) {
-                ProtocolName.CONSENSUS -> peersetProtocols.consensusProtocol.proposeChangeAsync(job.change)
-                ProtocolName.TWO_PC -> peersetProtocols.twoPC.proposeChangeAsync(job.change)
-                ProtocolName.GPAC -> peersetProtocols.gpacFactory.getOrCreateGPAC(job.change.id)
-                    .proposeChangeAsync(job.change)
-            }
-        result.thenAccept {
-            job.completableFuture.complete(it)
-            Metrics.stopTimer(job.change.id, job.protocolName.name.lowercase(), it)
-            Metrics.bumpChangeProcessed(it, job.protocolName.name.lowercase(), peersetProtocols.peersetId)
-            this.setTag("result", it.status.name.lowercase())
-            this.finish()
-            changeNotifier.notify(job.change, it)
-        }.await()
-    }
+    private suspend fun processQueueElement() =
+        span("Worker.processQueueElement") {
+            val job = queue.receive()
+            logger.info("Received a job: $job")
+            Metrics.startTimer(job.change.id)
+            this.setTag("changeId", job.change.id)
+            val result =
+                when (job.protocolName) {
+                    ProtocolName.CONSENSUS -> peersetProtocols.consensusProtocol.proposeChangeAsync(job.change)
+                    ProtocolName.TWO_PC -> peersetProtocols.twoPC.proposeChangeAsync(job.change)
+                    ProtocolName.GPAC ->
+                        peersetProtocols.gpacFactory.getOrCreateGPAC(job.change.id)
+                            .proposeChangeAsync(job.change)
+                }
+            result.thenAccept {
+                job.completableFuture.complete(it)
+                Metrics.stopTimer(job.change.id, job.protocolName.name.lowercase(), it)
+                Metrics.bumpChangeProcessed(it, job.protocolName.name.lowercase(), peersetProtocols.peersetId)
+                this.setTag("result", it.status.name.lowercase())
+                this.finish()
+                changeNotifier.notify(job.change, it)
+            }.await()
+        }
 
     suspend fun send(job: ProcessorJob) {
         val peersetIds = job.change.peersets.map { it.peersetId }

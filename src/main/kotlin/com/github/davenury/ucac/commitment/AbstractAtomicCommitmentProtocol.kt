@@ -2,8 +2,8 @@ package com.github.davenury.ucac.commitment
 
 import com.github.davenury.common.Change
 import com.github.davenury.common.ChangeResult
-import com.github.davenury.common.PeersetId
 import com.github.davenury.common.PeerAddress
+import com.github.davenury.common.PeersetId
 import com.github.davenury.ucac.common.PeerResolver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExecutorCoroutineDispatcher
@@ -21,8 +21,8 @@ abstract class AbstractAtomicCommitmentProtocol(
     val logger: Logger,
     val peerResolver: PeerResolver,
 ) : AtomicCommitmentProtocol {
-
     val changeIdToCompletableFuture: MutableMap<String, CompletableFuture<ChangeResult>> = mutableMapOf()
+
     abstract suspend fun performProtocol(change: Change)
 
     abstract fun getChangeResult(changeId: String): CompletableFuture<ChangeResult>?
@@ -53,7 +53,7 @@ abstract class AbstractAtomicCommitmentProtocol(
             },
             { peersetInfo ->
                 peerResolver.getPeersFromPeerset(peersetInfo.peersetId)
-            }
+            },
         ).mapValues { (_, peerset) -> peerset.filter { it.peerId != peerResolver.currentPeerAddress().peerId } }
     }
 

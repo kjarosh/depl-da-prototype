@@ -1,6 +1,11 @@
 package com.github.davenury.test
 
-import com.github.davenury.common.*
+import com.github.davenury.common.Change
+import com.github.davenury.common.ChangeResult
+import com.github.davenury.common.Notification
+import com.github.davenury.common.PeerAddress
+import com.github.davenury.common.PeerId
+import com.github.davenury.common.PeersetId
 import com.github.davenury.tests.ChangeState
 import com.github.davenury.tests.Changes
 import com.github.davenury.tests.Sender
@@ -11,15 +16,18 @@ import java.util.concurrent.Phaser
 class DummySender(
     private val shouldNotify: Boolean,
     private val peersets: Map<PeersetId, List<PeerAddress>>,
-    private val phaser: Phaser? = null
+    private val phaser: Phaser? = null,
 ) : Sender {
-
     private lateinit var changes: Changes
 
     val appearedChanges = mutableListOf<Pair<PeerAddress, Change>>()
     val mutex = Mutex()
 
-    override suspend fun executeChange(address: PeerAddress, change: Change, peersetId: PeersetId): ChangeState {
+    override suspend fun executeChange(
+        address: PeerAddress,
+        change: Change,
+        peersetId: PeersetId,
+    ): ChangeState {
         mutex.withLock {
             appearedChanges.add(Pair(address, change))
         }
@@ -35,12 +43,15 @@ class DummySender(
             Notification(
                 change = change,
                 result = ChangeResult(ChangeResult.Status.SUCCESS),
-                sender = PeerAddress(PeerId("peer0"), "peer0-peerset0-service")
-            )
+                sender = PeerAddress(PeerId("peer0"), "peer0-peerset0-service"),
+            ),
         )
     }
 
-    override suspend fun getConsensusLeaderId(address: PeerAddress, peersetId: PeersetId): PeerId? {
+    override suspend fun getConsensusLeaderId(
+        address: PeerAddress,
+        peersetId: PeersetId,
+    ): PeerId? {
         return peersets.values.find { address in it }?.first()?.peerId
     }
 

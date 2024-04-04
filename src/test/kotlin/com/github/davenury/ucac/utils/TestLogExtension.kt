@@ -21,7 +21,10 @@ class TestLogExtension : BeforeEachCallback, AfterEachCallback, CloseableResourc
         val logger: Logger = LoggerFactory.getLogger("test logging")
     }
 
-    private fun hash(className: String?, methodName: String?): String {
+    private fun hash(
+        className: String?,
+        methodName: String?,
+    ): String {
         val digest = MessageDigest.getInstance("SHA-256").digest("$className:$methodName".toByteArray())
         return BigInteger(1, digest).toString(16).substring(0, 8)
     }
@@ -44,7 +47,6 @@ class TestLogExtension : BeforeEachCallback, AfterEachCallback, CloseableResourc
     }
 
     override fun close() {
-
     }
 
     private fun disableAnsiConsoleInstallation() {

@@ -12,17 +12,22 @@ class VoteContainer {
 
     suspend fun initializeChange(id: String) = mutex.withLock { map.put(id, listOf()) }
 
-    suspend fun voteForChange(id: String, address: PeerAddress) = mutex.withLock {
+    suspend fun voteForChange(
+        id: String,
+        address: PeerAddress,
+    ) = mutex.withLock {
         map.compute(id) { _, v -> if (v == null) listOf(address) else (v + listOf(address)).distinct() }
     }
 
-    suspend fun getAcceptedChanges(filterFunction: (Int) -> Boolean) = mutex.withLock {
-        map
-            .filter { (_, value) -> filterFunction(value.size) }
-            .map { it.key }
-    }
+    suspend fun getAcceptedChanges(filterFunction: (Int) -> Boolean) =
+        mutex.withLock {
+            map
+                .filter { (_, value) -> filterFunction(value.size) }
+                .map { it.key }
+        }
 
-    suspend fun removeChanges(indexes: List<String>) = mutex.withLock {
-        indexes.forEach { map.remove(it) }
-    }
+    suspend fun removeChanges(indexes: List<String>) =
+        mutex.withLock {
+            indexes.forEach { map.remove(it) }
+        }
 }
