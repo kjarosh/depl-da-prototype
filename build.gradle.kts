@@ -1,14 +1,15 @@
-val kotlin_version: String by project
-val logback_version: String by project
-val ktor_version = "1.6.8"
-val ratis_version = "2.2.0"
-val slf4j_version = "2.0.3"
+val kotlinVersion: String by project
+val logbackVersion: String by project
+val ktorVersion = "1.6.8"
+val ratisVersion = "2.2.0"
+val slf4jVersion = "2.0.3"
 
 plugins {
     application
     kotlin("jvm") version "1.6.21"
     kotlin("plugin.serialization") version "1.6.10"
     id("com.adarshr.test-logger") version "3.2.0"
+    id("org.jlleitschuh.gradle.ktlint") version "12.1.0"
 }
 
 group = "com.example"
@@ -29,16 +30,16 @@ dependencies {
 
     implementation(project(":modules:common"))
 
-    implementation("org.slf4j:slf4j-api:$slf4j_version")
-    implementation("ch.qos.logback:logback-classic:$logback_version")
+    implementation("org.slf4j:slf4j-api:$slf4jVersion")
+    implementation("ch.qos.logback:logback-classic:$logbackVersion")
 
-    //ktor
-    implementation("io.ktor:ktor-server:$ktor_version")
-    implementation("io.ktor:ktor-server-netty:$ktor_version")
-    implementation("io.ktor:ktor-jackson:$ktor_version")
-    implementation("io.ktor:ktor-client-core:$ktor_version")
-    implementation("io.ktor:ktor-client-okhttp:$ktor_version")
-    implementation("io.ktor:ktor-client-jackson:$ktor_version")
+    // ktor
+    implementation("io.ktor:ktor-server:$ktorVersion")
+    implementation("io.ktor:ktor-server-netty:$ktorVersion")
+    implementation("io.ktor:ktor-jackson:$ktorVersion")
+    implementation("io.ktor:ktor-client-core:$ktorVersion")
+    implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
+    implementation("io.ktor:ktor-client-jackson:$ktorVersion")
 
     // object mapper
     implementation("com.fasterxml.jackson.core:jackson-databind:2.14.0")
@@ -53,19 +54,19 @@ dependencies {
 
     // metrics
     implementation("io.micrometer:micrometer-registry-prometheus:1.10.0")
-    implementation("io.ktor:ktor-metrics-micrometer:$ktor_version")
+    implementation("io.ktor:ktor-metrics-micrometer:$ktorVersion")
 
     // traces
     implementation("io.jaegertracing:jaeger-client:1.8.1")
     implementation("com.zopa:ktor-opentracing:0.3.6")
 
-    implementation("org.apache.ratis:ratis:$ratis_version")
-    implementation("org.apache.ratis:ratis-proto:$ratis_version")
-    implementation("org.apache.ratis:ratis-grpc:$ratis_version")
-    implementation("org.apache.ratis:ratis-common:$ratis_version")
-    implementation("org.apache.ratis:ratis-server-api:$ratis_version")
-    implementation("org.apache.ratis:ratis-tools:$ratis_version")
-    implementation("org.apache.ratis:ratis-client:$ratis_version")
+    implementation("org.apache.ratis:ratis:$ratisVersion")
+    implementation("org.apache.ratis:ratis-proto:$ratisVersion")
+    implementation("org.apache.ratis:ratis-grpc:$ratisVersion")
+    implementation("org.apache.ratis:ratis-common:$ratisVersion")
+    implementation("org.apache.ratis:ratis-server-api:$ratisVersion")
+    implementation("org.apache.ratis:ratis-tools:$ratisVersion")
+    implementation("org.apache.ratis:ratis-client:$ratisVersion")
     implementation("org.apache.ratis:ratis-thirdparty-misc:0.7.0")
 
     implementation("com.github.loki4j:loki-logback-appender:1.4.0")
@@ -92,5 +93,13 @@ tasks.test {
 tasks.withType<Jar> {
     manifest {
         attributes["Main-Class"] = "com.github.davenury.ucac.ApplicationKt"
+    }
+}
+
+subprojects {
+    apply(plugin = "org.jlleitschuh.gradle.ktlint")
+
+    repositories {
+        mavenCentral()
     }
 }
