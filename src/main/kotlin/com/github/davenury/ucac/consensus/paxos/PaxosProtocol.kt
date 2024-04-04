@@ -2,7 +2,6 @@ package com.github.davenury.ucac.consensus.paxos
 
 import com.github.davenury.common.Change
 import com.github.davenury.common.ChangeResult
-import com.github.davenury.common.PeerAddress
 import com.github.davenury.ucac.consensus.ConsensusProtocol
 import java.util.concurrent.CompletableFuture
 
