@@ -1,6 +1,6 @@
 ### if we change project name we should also change any place where PoC appears
 
-FROM gradle:7.4.2-jdk11-alpine AS builder
+FROM gradle:7.6.4-jdk11-alpine AS builder
 COPY --chown=gradle:gradle . /home/gradle/src
 WORKDIR /home/gradle/src
 RUN gradle build --info --no-daemon -x test
