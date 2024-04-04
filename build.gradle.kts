@@ -78,7 +78,7 @@ dependencies {
     testImplementation("org.testcontainers:junit-jupiter:1.17.5")
 
     // for disabling AnsiConsole in tests
-    testImplementation("org.fusesource.jansi:jansi:2.4.0")
+    testImplementation("org.fusesource.jansi:jansi:2.4.1")
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
