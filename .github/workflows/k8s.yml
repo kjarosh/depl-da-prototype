@@ -44,7 +44,7 @@ jobs:
 
       - name: start minikube
         id: minikube
-        uses: medyagh/setup-minikube@v0.0.8
+        uses: medyagh/setup-minikube@v0.0.15
       - name: setup go
         uses: actions/setup-go@v5
         with:
