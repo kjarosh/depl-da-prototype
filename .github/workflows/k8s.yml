@@ -46,7 +46,7 @@ jobs:
         id: minikube
         uses: medyagh/setup-minikube@v0.0.8
       - name: setup go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v5
         with:
           go-version: 1.18
       - name: build command
