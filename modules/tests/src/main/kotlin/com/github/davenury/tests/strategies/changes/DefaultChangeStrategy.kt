@@ -8,12 +8,15 @@ import com.github.davenury.tests.OnePeersetChanges
 import java.util.concurrent.atomic.AtomicInteger
 
 class DefaultChangeStrategy(
-    private val ownAddress: String
-): CreateChangeStrategy {
-
+    private val ownAddress: String,
+) : CreateChangeStrategy {
     private var counter = AtomicInteger(0)
 
-    override fun createChange(ids: List<PeersetId>, changes: Map<PeersetId, OnePeersetChanges>, changeId: String): Change =
+    override fun createChange(
+        ids: List<PeersetId>,
+        changes: Map<PeersetId, OnePeersetChanges>,
+        changeId: String,
+    ): Change =
         AddUserChange(
             id = changeId,
             userName = "user${counter.incrementAndGet()}",

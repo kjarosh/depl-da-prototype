@@ -12,7 +12,6 @@ class BoundLoadGenerator(
     private val overallNumberOfRequests: Int,
     timeOfSimulation: Duration,
 ) : LoadGenerator {
-
     private val sendRequestBreak = timeOfSimulation.dividedBy(overallNumberOfRequests.toLong())
     private val channel: ReceiveChannel<Unit> = ticker(sendRequestBreak.toMillis(), 0)
 

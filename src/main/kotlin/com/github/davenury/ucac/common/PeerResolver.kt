@@ -3,6 +3,7 @@ package com.github.davenury.ucac.common
 import com.github.davenury.common.PeerAddress
 import com.github.davenury.common.PeerId
 import com.github.davenury.common.PeersetId
+
 /**
  * @author Kamil Jarosz
  */
@@ -37,11 +38,17 @@ class PeerResolver(
             .map { resolve(it) }
     }
 
-    fun setPeerAddress(peerId: PeerId, address: PeerAddress) {
+    fun setPeerAddress(
+        peerId: PeerId,
+        address: PeerAddress,
+    ) {
         peers[peerId] = address
     }
 
-    fun addPeerToPeerset(peersetId: PeersetId, peerId: PeerId) {
+    fun addPeerToPeerset(
+        peersetId: PeersetId,
+        peerId: PeerId,
+    ) {
         peersets[peersetId]!!.add(peerId)
     }
 

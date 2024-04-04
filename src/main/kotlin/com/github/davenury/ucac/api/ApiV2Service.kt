@@ -1,6 +1,11 @@
 package com.github.davenury.ucac.api
 
-import com.github.davenury.common.*
+import com.github.davenury.common.Change
+import com.github.davenury.common.ChangeResult
+import com.github.davenury.common.Changes
+import com.github.davenury.common.PeersetId
+import com.github.davenury.common.PeersetInformation
+import com.github.davenury.common.SubscriberAddress
 import com.github.davenury.common.history.History
 import com.github.davenury.ucac.Config
 import com.github.davenury.ucac.common.ChangeNotifier
@@ -24,8 +29,9 @@ class ApiV2Service(
     changeNotifier: ChangeNotifier,
     private val peerResolver: PeerResolver,
 ) {
-    private val workerPool = Executors.newFixedThreadPool(config.workerPoolSize)
-        .asCoroutineDispatcher()
+    private val workerPool =
+        Executors.newFixedThreadPool(config.workerPoolSize)
+            .asCoroutineDispatcher()
     private val workerCoroutineScope = CoroutineScope(workerPool)
 
     private val workers: Map<PeersetId, Worker> =
@@ -45,20 +51,29 @@ class ApiV2Service(
         return Changes.fromHistory(history(peersetId))
     }
 
-    fun registerSubscriber(peersetId: PeersetId, address: SubscriberAddress) {
+    fun registerSubscriber(
+        peersetId: PeersetId,
+        address: SubscriberAddress,
+    ) {
         multiplePeersetProtocols.registerSubscriber(peersetId, HttpSubscriber(address.address))
     }
 
-    fun getLastChange(peersetId: PeersetId): Change? =
-        Change.fromHistoryEntry(history(peersetId).getCurrentEntry())
+    fun getLastChange(peersetId: PeersetId): Change? = Change.fromHistoryEntry(history(peersetId).getCurrentEntry())
 
-    fun getChangeById(peersetId: PeersetId, id: String): Change? =
-        history(peersetId).getEntryFromHistory(id)?.let { Change.fromHistoryEntry(it) }
+    fun getChangeById(
+        peersetId: PeersetId,
+        id: String,
+    ): Change? = history(peersetId).getEntryFromHistory(id)?.let { Change.fromHistoryEntry(it) }
 
-    fun getChangeStatus(peersetId: PeersetId, changeId: String): CompletableFuture<ChangeResult> =
-        workers[peersetId]!!.getChangeStatus(changeId)
+    fun getChangeStatus(
+        peersetId: PeersetId,
+        changeId: String,
+    ): CompletableFuture<ChangeResult> = workers[peersetId]!!.getChangeStatus(changeId)
 
-    suspend fun addChange(peersetId: PeersetId, job: ProcessorJob): CompletableFuture<ChangeResult> =
+    suspend fun addChange(
+        peersetId: PeersetId,
+        job: ProcessorJob,
+    ): CompletableFuture<ChangeResult> =
         job.also {
 //            logger.info("Service send job $job to queue")
             workers[peersetId]!!.send(it)
@@ -68,27 +83,31 @@ class ApiV2Service(
         peersetId: PeersetId,
         job: ProcessorJob,
         timeout: Duration?,
-    ): ChangeResult? = try {
-        withTimeout(timeout ?: config.rest.defaultSyncTimeout) {
-            addChange(peersetId, job).await()
+    ): ChangeResult? =
+        try {
+            withTimeout(timeout ?: config.rest.defaultSyncTimeout) {
+                addChange(peersetId, job).await()
+            }
+        } catch (e: TimeoutCancellationException) {
+            null
         }
-    } catch (e: TimeoutCancellationException) {
-        null
-    }
 
     fun getPeersetInformation(peersetId: PeersetId): PeersetInformation {
         return PeersetInformation(
             currentConsensusLeader = multiplePeersetProtocols.protocols[peersetId]?.consensusProtocol?.getLeaderId(),
-            peersInPeerset = peerResolver.getPeersFromPeerset(peersetId).map { it.peerId }
+            peersInPeerset = peerResolver.getPeersFromPeerset(peersetId).map { it.peerId },
         )
     }
 
-    fun getLatestEntryIdResponse(entryId: String, peersetId: PeersetId): LatestEntryIdResponse{
+    fun getLatestEntryIdResponse(
+        entryId: String,
+        peersetId: PeersetId,
+    ): LatestEntryIdResponse {
         val consensusProtocol = multiplePeersetProtocols.protocols[peersetId]?.consensusProtocol!!
         val entries = consensusProtocol.getState().getAllEntriesUntilHistoryEntryId(entryId)
         return LatestEntryIdResponse(
             consensusProtocol.getState().getCurrentEntryId(),
-            entries.size
+            entries.size,
         )
     }
 

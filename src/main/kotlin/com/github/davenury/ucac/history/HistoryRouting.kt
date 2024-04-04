@@ -1,13 +1,21 @@
 package com.github.davenury.ucac.history
 
-import com.github.davenury.common.*
+import com.github.davenury.common.Change
+import com.github.davenury.common.Changes
+import com.github.davenury.common.ErrorMessage
 import com.github.davenury.common.history.History
 import com.github.davenury.common.history.InitialHistoryEntry
+import com.github.davenury.common.peersetId
 import com.github.davenury.ucac.common.MultiplePeersetProtocols
-import io.ktor.application.*
-import io.ktor.http.*
-import io.ktor.response.*
-import io.ktor.routing.*
+import io.ktor.application.Application
+import io.ktor.application.ApplicationCall
+import io.ktor.application.call
+import io.ktor.application.log
+import io.ktor.http.HttpStatusCode
+import io.ktor.response.respond
+import io.ktor.routing.get
+import io.ktor.routing.route
+import io.ktor.routing.routing
 
 fun Application.historyRouting(multiplePeersetProtocols: MultiplePeersetProtocols) {
     fun ApplicationCall.history(): History {
@@ -23,7 +31,7 @@ fun Application.historyRouting(multiplePeersetProtocols: MultiplePeersetProtocol
                     ?.let { call.respond(it) }
                     ?: call.respond(
                         HttpStatusCode.NotFound,
-                        ErrorMessage("No change exists")
+                        ErrorMessage("No change exists"),
                     )
             }
         }

@@ -32,6 +32,6 @@ data class ChangeResult(
         /**
          * Change was applied with ABORT result
          */
-        ABORTED;
+        ABORTED,
     }
 }

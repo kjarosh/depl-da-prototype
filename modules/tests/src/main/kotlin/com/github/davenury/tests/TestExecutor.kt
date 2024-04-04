@@ -8,7 +8,6 @@ class TestExecutor(
     private val changes: Changes,
     private val config: Config,
 ) {
-
     private var sentSinglePeersetChanges = 0
     private var sentMulitplePeersetChanges = 0
 
@@ -22,7 +21,6 @@ class TestExecutor(
     }
 
     private fun determineNumberOfPeersets(): Int {
-
         if (config.fixedPeersetsInChange != null) {
             return config.fixedPeersetsInChange.toInt().also {
                 if (it == 1) {

@@ -7,8 +7,11 @@ import java.util.concurrent.CompletableFuture
 
 interface PaxosProtocol : ConsensusProtocol {
     suspend fun handlePropose(message: PaxosPropose): PaxosPromise
+
     suspend fun handleAccept(message: PaxosAccept): PaxosAccepted
+
     suspend fun handleCommit(message: PaxosCommit): PaxosCommitResponse
+
     suspend fun handleBatchCommit(message: PaxosBatchCommit)
 
     suspend fun handleProposeChange(change: Change): CompletableFuture<ChangeResult>

@@ -1,21 +1,33 @@
 package com.github.davenury.ucac.api
 
-import com.github.davenury.common.*
-import io.ktor.application.*
-import io.ktor.http.*
-import io.ktor.request.*
-import io.ktor.response.*
-import io.ktor.routing.*
+import com.github.davenury.common.Change
+import com.github.davenury.common.ChangeCreationResponse
+import com.github.davenury.common.ChangeCreationStatus
+import com.github.davenury.common.ChangeResult
+import com.github.davenury.common.PeersetId
+import com.github.davenury.common.ProtocolName
+import com.github.davenury.common.SubscriberAddress
+import com.github.davenury.common.peersetId
+import io.ktor.application.Application
+import io.ktor.application.ApplicationCall
+import io.ktor.application.call
+import io.ktor.http.HttpStatusCode
+import io.ktor.request.receive
+import io.ktor.response.respond
+import io.ktor.routing.get
+import io.ktor.routing.post
+import io.ktor.routing.routing
 import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
 
-fun Application.apiV2Routing(
-    service: ApiV2Service,
-) {
+fun Application.apiV2Routing(service: ApiV2Service) {
     val logger = LoggerFactory.getLogger("V2Routing")
 
-    suspend fun respondChangeResult(result: ChangeResult?, call: ApplicationCall) {
+    suspend fun respondChangeResult(
+        result: ChangeResult?,
+        call: ApplicationCall,
+    ) {
         when (result?.status) {
             ChangeResult.Status.SUCCESS -> {
                 call.respond(
@@ -63,28 +75,35 @@ fun Application.apiV2Routing(
         }
     }
 
-    suspend fun createProcessorJob(peersetId: PeersetId, call: ApplicationCall): ProcessorJob {
+    suspend fun createProcessorJob(
+        peersetId: PeersetId,
+        call: ApplicationCall,
+    ): ProcessorJob {
         val enforceGpac: Boolean = call.request.queryParameters["enforce_gpac"]?.toBoolean() ?: false
         val useTwoPC: Boolean = call.request.queryParameters["use_2pc"]?.toBoolean() ?: false
         val change = call.receive<Change>()
 
-        val isOnePeersetChange = when (change.peersets.size) {
-            0 -> throw IllegalArgumentException("Change needs at least one peerset")
-            1 -> true
-            else -> false
-        }
+        val isOnePeersetChange =
+            when (change.peersets.size) {
+                0 -> throw IllegalArgumentException("Change needs at least one peerset")
+                1 -> true
+                else -> false
+            }
 
         if (change.peersets.find { it.peersetId == peersetId } == null) {
             throw IllegalArgumentException("My peerset ID is not in the change")
         }
 
-        val protocolName = when {
-            isOnePeersetChange && !enforceGpac -> ProtocolName.CONSENSUS
-            useTwoPC -> ProtocolName.TWO_PC
-            else -> ProtocolName.GPAC
-        }
+        val protocolName =
+            when {
+                isOnePeersetChange && !enforceGpac -> ProtocolName.CONSENSUS
+                useTwoPC -> ProtocolName.TWO_PC
+                else -> ProtocolName.GPAC
+            }
 
-        logger.info("Create ProcessorJob from parameters: (isOnePeersetChange=$isOnePeersetChange, enforceGPAC: $enforceGpac, 2PC: $useTwoPC), resultType: $protocolName")
+        logger.info(
+            "Create ProcessorJob from parameters: (isOnePeersetChange=$isOnePeersetChange, enforceGPAC: $enforceGpac, 2PC: $useTwoPC), resultType: $protocolName",
+        )
 
         return ProcessorJob(change, CompletableFuture(), protocolName)
     }
@@ -144,7 +163,6 @@ fun Application.apiV2Routing(
         }
 
         post("/consensus/latest-entry") {
-
             val entryId = call.receive<String>()
             val peersetId = call.peersetId()
             logger.info("Received question about latest entry in peerset: $peersetId")

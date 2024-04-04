@@ -54,7 +54,11 @@ internal class InMemoryHistoryTest {
 
     @Test
     internal fun containsEntryNonexistent() {
-        expectThat(history.containsEntry("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")).isFalse()
+        expectThat(
+            history.containsEntry(
+                "f".repeat(128),
+            ),
+        ).isFalse()
     }
 
     @Test

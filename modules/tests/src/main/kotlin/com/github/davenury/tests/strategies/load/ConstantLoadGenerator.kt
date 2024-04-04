@@ -10,8 +10,8 @@ import java.util.concurrent.Executors
 class ConstantLoadGenerator(
     private val constantLoad: String,
 ) : LoadGenerator {
-
     private val channel: ReceiveChannel<Unit> = ticker(calculateTickerFromLoad(constantLoad), 0)
+
     override fun generate() {}
 
     override suspend fun subscribe(fn: suspend () -> Unit) {

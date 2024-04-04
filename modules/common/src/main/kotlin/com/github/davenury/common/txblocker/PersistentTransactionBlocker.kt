@@ -21,11 +21,12 @@ class PersistentTransactionBlocker(private val persistence: Persistence) : Trans
         expected: TransactionAcquisition?,
         new: TransactionAcquisition?,
     ): TransactionAcquisition? {
-        val witness = persistence.compareAndExchange(
-            TX_BLOCKER_KEY,
-            expected?.serialize() ?: "",
-            new?.serialize() ?: "",
-        )
+        val witness =
+            persistence.compareAndExchange(
+                TX_BLOCKER_KEY,
+                expected?.serialize() ?: "",
+                new?.serialize() ?: "",
+            )
         return witness?.let { TransactionAcquisition.deserialize(it) }
     }
 

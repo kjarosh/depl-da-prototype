@@ -37,7 +37,10 @@ class PersistentHistory(private val persistence: Persistence) : CachedHistory() 
         return currentEntryId
     }
 
-    private fun compareAndSetCurrentEntryId(expected: String, new: String): Boolean {
+    private fun compareAndSetCurrentEntryId(
+        expected: String,
+        new: String,
+    ): Boolean {
         return persistence.compareAndExchange(CURRENT_ENTRY_ID, expected, new) == expected
     }
 
@@ -46,10 +49,10 @@ class PersistentHistory(private val persistence: Persistence) : CachedHistory() 
     }
 
     override fun getEntry(id: String): HistoryEntry {
-        val serialized = persistence.get("$ENTRY_ID_PREFIX${id}")
+        val serialized = persistence.get("$ENTRY_ID_PREFIX$id")
         return serialized?.let { HistoryEntry.deserialize(it) }
             ?: throw EntryNotFoundException(
-                "Entry $id not present in entries"
+                "Entry $id not present in entries",
             )
     }
 
@@ -59,8 +62,8 @@ class PersistentHistory(private val persistence: Persistence) : CachedHistory() 
 
         if (entry.getParentId() != expectedParentId) {
             throw HistoryException(
-                "Wrong parent ID, expected ${expectedParentId}, " +
-                        "got ${entry.getParentId()}, entryId=${newId}"
+                "Wrong parent ID, expected $expectedParentId, " +
+                    "got ${entry.getParentId()}, entryId=$newId",
             )
         }
 
@@ -70,7 +73,7 @@ class PersistentHistory(private val persistence: Persistence) : CachedHistory() 
         if (!successful) {
             throw HistoryException(
                 "Optimistic locking exception: parent changed concurrently, " +
-                        "entryId=${newId}"
+                    "entryId=$newId",
             )
         } else {
             logger.info("History entry added ($newId): $entry")

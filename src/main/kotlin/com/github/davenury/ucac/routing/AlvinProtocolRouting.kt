@@ -3,14 +3,21 @@ package com.github.davenury.ucac.routing
 import com.github.davenury.common.Changes
 import com.github.davenury.common.peersetId
 import com.github.davenury.ucac.common.MultiplePeersetProtocols
-import com.github.davenury.ucac.consensus.alvin.*
-import com.github.davenury.ucac.consensus.raft.RaftConsensusProtocol
-import io.ktor.application.*
-import io.ktor.http.*
-import io.ktor.request.*
-import io.ktor.response.*
-import io.ktor.routing.*
-import kotlinx.coroutines.future.await
+import com.github.davenury.ucac.consensus.alvin.AlvinAccept
+import com.github.davenury.ucac.consensus.alvin.AlvinCommit
+import com.github.davenury.ucac.consensus.alvin.AlvinFastRecovery
+import com.github.davenury.ucac.consensus.alvin.AlvinPropose
+import com.github.davenury.ucac.consensus.alvin.AlvinProtocol
+import com.github.davenury.ucac.consensus.alvin.AlvinStable
+import io.ktor.application.Application
+import io.ktor.application.ApplicationCall
+import io.ktor.application.call
+import io.ktor.http.HttpStatusCode
+import io.ktor.request.receive
+import io.ktor.response.respond
+import io.ktor.routing.get
+import io.ktor.routing.post
+import io.ktor.routing.routing
 
 fun Application.alvinProtocolRouting(multiplePeersetProtocols: MultiplePeersetProtocols) {
     fun ApplicationCall.consensus(): AlvinProtocol {
@@ -44,7 +51,7 @@ fun Application.alvinProtocolRouting(multiplePeersetProtocols: MultiplePeersetPr
         post("/alvin/commit") {
             val message: AlvinCommit = call.receive()
             val result = call.consensus().handleCommit(message)
-            call.respond(HttpStatusCode.OK,result)
+            call.respond(HttpStatusCode.OK, result)
         }
 
         post("/alvin/fast-recovery") {

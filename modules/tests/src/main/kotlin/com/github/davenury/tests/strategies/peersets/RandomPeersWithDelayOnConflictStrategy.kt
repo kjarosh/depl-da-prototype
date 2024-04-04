@@ -12,12 +12,14 @@ import kotlin.concurrent.withLock
 class RandomPeersWithDelayOnConflictStrategy(
     private val peersets: List<PeersetId>,
     private val lock: Lock = ReentrantLock(),
-    private val condition: Condition = lock.newCondition()
+    private val condition: Condition = lock.newCondition(),
 ) : GetPeersStrategy {
-
     private val changeToLockedPeersets: ConcurrentHashMap<String, List<PeersetId>> = ConcurrentHashMap()
 
-    override suspend fun getPeersets(numberOfPeersets: Int, changeId: String): List<PeersetId> =
+    override suspend fun getPeersets(
+        numberOfPeersets: Int,
+        changeId: String,
+    ): List<PeersetId> =
         lock.withLock {
             lateinit var ids: List<PeersetId>
             var metricBumped = false
@@ -38,7 +40,10 @@ class RandomPeersWithDelayOnConflictStrategy(
             return@withLock ids
         }
 
-    override suspend fun freePeersets(peersetsId: List<PeersetId>, changeId: String) {
+    override suspend fun freePeersets(
+        peersetsId: List<PeersetId>,
+        changeId: String,
+    ) {
         lock.withLock {
             changeToLockedPeersets[changeId] = listOf()
             condition.signalAll()

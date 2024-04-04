@@ -12,7 +12,14 @@ import org.apache.ratis.statemachine.impl.BaseStateMachine
 import org.apache.ratis.statemachine.impl.SimpleStateMachineStorage
 import org.apache.ratis.statemachine.impl.SingleFileSnapshotInfo
 import org.apache.ratis.util.JavaUtils
-import java.io.*
+import java.io.BufferedInputStream
+import java.io.BufferedOutputStream
+import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.io.IOException
+import java.io.ObjectInputStream
+import java.io.ObjectOutputStream
 import java.nio.charset.Charset
 import java.util.concurrent.CompletableFuture
 
@@ -29,7 +36,11 @@ abstract class StateMachine<A>(open var state: A) : BaseStateMachine() {
      * @throws IOException if any error happens during load state
      */
     @Throws(IOException::class)
-    override fun initialize(server: RaftServer?, groupId: RaftGroupId?, raftStorage: RaftStorage?) {
+    override fun initialize(
+        server: RaftServer?,
+        groupId: RaftGroupId?,
+        raftStorage: RaftStorage?,
+    ) {
         super.initialize(server, groupId, raftStorage)
         storage.init(raftStorage)
         load(storage.latestSnapshot)
@@ -66,9 +77,9 @@ abstract class StateMachine<A>(open var state: A) : BaseStateMachine() {
         } catch (ioe: IOException) {
             LOG.warn(
                 "Failed to write snapshot file \"" +
-                        snapshotFile +
-                        "\", last applied index=" +
-                        last
+                    snapshotFile +
+                    "\", last applied index=" +
+                    last,
             )
         }
 

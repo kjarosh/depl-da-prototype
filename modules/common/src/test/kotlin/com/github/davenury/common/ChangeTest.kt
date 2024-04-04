@@ -11,14 +11,16 @@ import strikt.assertions.isNotEqualTo
 internal class ChangeTest {
     @Test
     internal fun idUniqueness() {
-        val change1 = AddUserChange(
-            "test1",
-            peersets = listOf(),
-        )
-        val change2 = AddUserChange(
-            "test2",
-            peersets = listOf(),
-        )
+        val change1 =
+            AddUserChange(
+                "test1",
+                peersets = listOf(),
+            )
+        val change2 =
+            AddUserChange(
+                "test2",
+                peersets = listOf(),
+            )
         val change3 = change1.copyWithNewParentId(PeersetId("ps"), "")
 
         expectThat(change1.id).isNotEqualTo(change2.id)

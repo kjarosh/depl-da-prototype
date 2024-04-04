@@ -15,17 +15,20 @@ private const val CAE_SCRIPT = """
 /**
  * @author Kamil Jarosz
  */
-class RedisPersistence(host: String, port: Int): Persistence {
+class RedisPersistence(host: String, port: Int) : Persistence {
     private val jedis: JedisPooled = JedisPooled(host, port)
     private val caeSha: String
 
-    init{
+    init {
         logger.info("Using Redis for persistence at $host:$port")
         caeSha = jedis.scriptLoad(CAE_SCRIPT, null)
         logger.debug("Loaded CAE $caeSha")
     }
 
-    override fun set(key: String, value: String) {
+    override fun set(
+        key: String,
+        value: String,
+    ) {
         jedis.set(key, value)
     }
 
@@ -33,12 +36,17 @@ class RedisPersistence(host: String, port: Int): Persistence {
         return jedis.get(key)
     }
 
-    override fun compareAndExchange(key: String, expected: String, new: String): String? {
-        val witness = jedis.evalsha(
-            caeSha,
-            listOf(key),
-            listOf(expected, new)
-        )
+    override fun compareAndExchange(
+        key: String,
+        expected: String,
+        new: String,
+    ): String? {
+        val witness =
+            jedis.evalsha(
+                caeSha,
+                listOf(key),
+                listOf(expected, new),
+            )
         logger.trace("CAE expected: $expected, new: $new -> witness: $witness")
         return witness as String?
     }

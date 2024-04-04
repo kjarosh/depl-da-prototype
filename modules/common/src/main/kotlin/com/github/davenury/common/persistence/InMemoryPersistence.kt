@@ -13,7 +13,10 @@ class InMemoryPersistence : Persistence {
         logger.info("Using in-memory persistence")
     }
 
-    override fun set(key: String, value: String) {
+    override fun set(
+        key: String,
+        value: String,
+    ) {
         values[key] = value
     }
 
@@ -21,7 +24,11 @@ class InMemoryPersistence : Persistence {
         return values[key]
     }
 
-    override fun compareAndExchange(key: String, expected: String, new: String): String? {
+    override fun compareAndExchange(
+        key: String,
+        expected: String,
+        new: String,
+    ): String? {
         var witness: String? = null
         values.compute(key) { _, value ->
             witness = value

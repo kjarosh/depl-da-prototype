@@ -1,6 +1,9 @@
 package com.github.davenury.ucac
 
-import com.github.davenury.common.*
+import com.github.davenury.common.PeerId
+import com.github.davenury.common.PeersetId
+import com.github.davenury.common.parsePeers
+import com.github.davenury.common.parsePeersets
 import com.github.davenury.ucac.common.PeerResolver
 import java.time.Duration
 
@@ -11,7 +14,6 @@ data class Config(
     val peers: String,
     // peerset1=peer1,peer2;peerset2=peer3,peer4
     val peersets: String,
-
     val consensus: ConsensusConfig = ConsensusConfig(),
     val gpac: GpacConfig = GpacConfig(),
     val twoPC: TwoPCConfig = TwoPCConfig(),
@@ -24,9 +26,10 @@ data class Config(
 ) {
     fun peerId() = PeerId(peerId)
 
-    fun peersetIds(): Set<PeersetId> = parsePeersets(peersets)
-        .filterValues { peers -> peers.contains(PeerId(peerId)) }
-        .keys
+    fun peersetIds(): Set<PeersetId> =
+        parsePeersets(peersets)
+            .filterValues { peers -> peers.contains(PeerId(peerId)) }
+            .keys
 
     fun newPeerResolver() = PeerResolver(peerId(), parsePeers(peers), parsePeersets(peersets))
 }
@@ -48,7 +51,7 @@ data class GpacConfig(
 data class PhasesTimeouts(
     val electTimeout: Duration = Duration.ofSeconds(2),
     val agreeTimeout: Duration = Duration.ofSeconds(2),
-    val applyTimeout: Duration = Duration.ofSeconds(2)
+    val applyTimeout: Duration = Duration.ofSeconds(2),
 )
 
 data class ConsensusConfig(
@@ -56,12 +59,11 @@ data class ConsensusConfig(
     val leaderTimeout: Duration = Duration.ofSeconds(1),
     val name: String = "raft",
     val isEnabled: Boolean = true,
-    val maxChangesPerMessage: Int = 200
+    val maxChangesPerMessage: Int = 200,
 )
 
-
 data class RestConfig(
-    val defaultSyncTimeout: Duration = Duration.ofMinutes(1)
+    val defaultSyncTimeout: Duration = Duration.ofMinutes(1),
 )
 
 enum class PersistenceType {

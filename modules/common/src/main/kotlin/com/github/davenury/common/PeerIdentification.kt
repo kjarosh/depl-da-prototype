@@ -29,6 +29,9 @@ data class PeerAddress(val peerId: PeerId, val address: String) {
     }
 
     companion object {
-        fun of(peerId: String, address: String) = PeerAddress(PeerId(peerId), address)
+        fun of(
+            peerId: String,
+            address: String,
+        ) = PeerAddress(PeerId(peerId), address)
     }
 }

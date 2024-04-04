@@ -1,6 +1,10 @@
 package com.github.davenury.ucac.consensus
 
-import com.github.davenury.common.*
+import com.github.davenury.common.Change
+import com.github.davenury.common.ChangeResult
+import com.github.davenury.common.PeerAddress
+import com.github.davenury.common.PeerId
+import com.github.davenury.common.PeersetId
 import com.github.davenury.common.history.History
 import com.github.davenury.common.txblocker.PersistentTransactionBlocker
 import com.github.davenury.ucac.Config
@@ -18,15 +22,19 @@ import com.github.davenury.ucac.consensus.raft.RaftProtocolClientImpl
 import kotlinx.coroutines.ExecutorCoroutineDispatcher
 import java.util.concurrent.CompletableFuture
 
-//Add tests for PigPaxos and Alvin where for some time there are no quorum and then one peer starts responding to verify that it is possible to synchronize state
-
+// Add tests for PigPaxos and Alvin where for some time there are no quorum and then one peer starts responding to verify that it is possible to synchronize state
 
 interface ConsensusProtocol {
     suspend fun begin()
+
     fun stop()
+
     suspend fun proposeChangeAsync(change: Change): CompletableFuture<ChangeResult>
 
-    suspend fun proposeChangeToLedger(result: CompletableFuture<ChangeResult>, change: Change)
+    suspend fun proposeChangeToLedger(
+        result: CompletableFuture<ChangeResult>,
+        change: Change,
+    )
 
     fun getState(): History
 
@@ -36,10 +44,10 @@ interface ConsensusProtocol {
 
     fun isMoreThanHalf(value: Int): Boolean = (value + 1) * 2 > otherConsensusPeers().size + 1
 
-
     fun otherConsensusPeers(): List<PeerAddress>
 
     suspend fun getProposedChanges(): List<Change>
+
     suspend fun getAcceptedChanges(): List<Change>
 
     companion object {
@@ -52,68 +60,72 @@ interface ConsensusProtocol {
             peerResolver: PeerResolver,
             signalPublisher: SignalPublisher,
             subscribers: Subscribers?,
-        ): ConsensusProtocol = when (config.consensus.name) {
+        ): ConsensusProtocol =
+            when (config.consensus.name) {
+                "raft" ->
+                    RaftConsensusProtocolImpl(
+                        peersetId,
+                        history,
+                        config,
+                        ctx,
+                        peerResolver,
+                        signalPublisher,
+                        RaftProtocolClientImpl(peersetId),
+                        transactionBlocker = transactionBlocker,
+                        subscribers,
+                    )
 
-            "raft" -> RaftConsensusProtocolImpl(
-                peersetId,
-                history,
-                config,
-                ctx,
-                peerResolver,
-                signalPublisher,
-                RaftProtocolClientImpl(peersetId),
-                transactionBlocker = transactionBlocker,
-                subscribers
-            )
+                "oldRaft" ->
+                    OldRaftConsensusProtocolImpl(
+                        peersetId,
+                        history,
+                        config,
+                        ctx,
+                        peerResolver,
+                        signalPublisher,
+                        OldRaftProtocolClientImpl(peersetId),
+                        transactionBlocker = transactionBlocker,
+                        subscribers,
+                    )
 
-            "oldRaft" -> OldRaftConsensusProtocolImpl(
-                peersetId,
-                history,
-                config,
-                ctx,
-                peerResolver,
-                signalPublisher,
-                OldRaftProtocolClientImpl(peersetId),
-                transactionBlocker = transactionBlocker,
-                subscribers
-            )
+                "alvin" ->
+                    AlvinProtocol(
+                        peersetId,
+                        history,
+                        ctx,
+                        peerResolver,
+                        signalPublisher,
+                        AlvinProtocolClientImplImpl(peersetId),
+                        heartbeatTimeout = config.consensus.heartbeatTimeout,
+                        heartbeatDelay = config.consensus.leaderTimeout,
+                        transactionBlocker = transactionBlocker,
+                        config.metricTest,
+                        subscribers,
+                        maxChangesPerMessage = config.consensus.maxChangesPerMessage,
+                    )
 
-            "alvin" -> AlvinProtocol(
-                peersetId,
-                history,
-                ctx,
-                peerResolver,
-                signalPublisher,
-                AlvinProtocolClientImplImpl(peersetId),
-                heartbeatTimeout = config.consensus.heartbeatTimeout,
-                heartbeatDelay = config.consensus.leaderTimeout,
-                transactionBlocker = transactionBlocker,
-                config.metricTest,
-                subscribers,
-                maxChangesPerMessage = config.consensus.maxChangesPerMessage
-            )
+                "paxos" ->
+                    PaxosProtocolImpl(
+                        peersetId,
+                        history,
+                        ctx,
+                        peerResolver,
+                        signalPublisher,
+                        PigPaxosProtocolClientImpl(peersetId),
+                        heartbeatTimeout = config.consensus.heartbeatTimeout,
+                        heartbeatDelay = config.consensus.leaderTimeout,
+                        transactionBlocker = transactionBlocker,
+                        config.metricTest,
+                        subscribers,
+                        maxChangesPerMessage = config.consensus.maxChangesPerMessage,
+                    )
 
-            "paxos" -> PaxosProtocolImpl(
-                peersetId,
-                history,
-                ctx,
-                peerResolver,
-                signalPublisher,
-                PigPaxosProtocolClientImpl(peersetId),
-                heartbeatTimeout = config.consensus.heartbeatTimeout,
-                heartbeatDelay = config.consensus.leaderTimeout,
-                transactionBlocker = transactionBlocker,
-                config.metricTest,
-                subscribers,
-                maxChangesPerMessage = config.consensus.maxChangesPerMessage
-            )
-
-            else -> throw IllegalStateException("Unknow consensus type ${config.consensus.name}")
-        }
+                else -> throw IllegalStateException("Unknow consensus type ${config.consensus.name}")
+            }
     }
 
-
     fun amILeader(): Boolean
+
     fun getLeaderId(): PeerId?
 }
 

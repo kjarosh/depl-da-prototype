@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory
 
 class HistoryStateMachine(override var state: History) :
     StateMachine<History>(state) {
-
     override fun serializeState(): String = ""
 
     override fun applyOperation(operation: String): String? {

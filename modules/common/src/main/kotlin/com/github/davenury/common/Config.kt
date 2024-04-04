@@ -1,9 +1,9 @@
 package com.github.davenury.common
 
 import com.sksamuel.hoplite.ConfigLoaderBuilder
-import com.sksamuel.hoplite.sources.MapPropertySource
 import com.sksamuel.hoplite.addResourceSource
 import com.sksamuel.hoplite.decoder.Decoder
+import com.sksamuel.hoplite.sources.MapPropertySource
 
 fun parsePeersets(peersets: String): Map<PeersetId, List<PeerId>> {
     return peersets.split(";").associate { parsePeerset(it) }
@@ -24,14 +24,22 @@ fun parsePeer(peer: String): Pair<PeerId, PeerAddress> {
     return peerId to PeerAddress(peerId, split[1].trim())
 }
 
-inline fun <reified T>loadConfig(overrides: Map<String, Any> = emptyMap(), decoders: List<Decoder<*>> = listOf()): T {
-    val configFile = System.getProperty("configFile")
-        ?: System.getenv("CONFIG_FILE")
-        ?: "application.conf"
+inline fun <reified T> loadConfig(
+    overrides: Map<String, Any> = emptyMap(),
+    decoders: List<Decoder<*>> = listOf(),
+): T {
+    val configFile =
+        System.getProperty("configFile")
+            ?: System.getenv("CONFIG_FILE")
+            ?: "application.conf"
     return loadConfig(configFile, overrides, decoders = decoders)
 }
 
-inline fun <reified T>loadConfig(configFileName: String, overrides: Map<String, Any> = emptyMap(), decoders: List<Decoder<*>> = listOf()): T =
+inline fun <reified T> loadConfig(
+    configFileName: String,
+    overrides: Map<String, Any> = emptyMap(),
+    decoders: List<Decoder<*>> = listOf(),
+): T =
     ConfigLoaderBuilder
         .default()
         .addSource(MapPropertySource(overrides))

@@ -15,7 +15,10 @@ class Subscribers {
         subscribers.add(subscriber)
     }
 
-    fun notifyAboutConsensusLeaderChange(newPeerId: PeerId, newPeersetId: PeersetId) {
+    fun notifyAboutConsensusLeaderChange(
+        newPeerId: PeerId,
+        newPeersetId: PeersetId,
+    ) {
         coroutineScope.launch {
             subscribers.forEach {
                 launch {

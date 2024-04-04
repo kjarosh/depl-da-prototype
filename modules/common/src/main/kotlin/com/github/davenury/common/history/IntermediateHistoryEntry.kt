@@ -25,7 +25,7 @@ data class IntermediateHistoryEntry(
             mapOf(
                 "parentId" to parentId,
                 "content" to content,
-            )
+            ),
         )
     }
 }

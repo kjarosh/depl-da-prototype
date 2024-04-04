@@ -2,19 +2,19 @@ package com.github.davenury.ucac.commitment.gpac
 
 import com.github.davenury.common.Change
 
-
 enum class Accept {
     COMMIT,
-    ABORT;
+    ABORT,
 }
 
 data class ElectMe(val ballotNumber: Int, val change: Change, val acceptNum: Int? = null)
+
 data class ElectedYou(
     val ballotNumber: Int,
     val initVal: Accept,
     val acceptNum: Int,
     val acceptVal: Accept?,
-    val decision: Boolean
+    val decision: Boolean,
 )
 
 data class Agree(
@@ -22,8 +22,9 @@ data class Agree(
     val acceptVal: Accept,
     val change: Change,
     val decision: Boolean = false,
-    val acceptNum: Int? = null
+    val acceptNum: Int? = null,
 )
 
 data class Agreed(val ballotNumber: Int, val acceptVal: Accept)
+
 data class Apply(val ballotNumber: Int, val decision: Boolean, val acceptVal: Accept, val change: Change)
