@@ -1,6 +1,6 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-val ktor_version = "1.6.8"
+val ktorVersion = "1.6.8"
 
 plugins {
     id("application")
@@ -17,16 +17,16 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-databind:2.13.2.2")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.2")
 
-    implementation("io.ktor:ktor-client-core:$ktor_version")
-    implementation("io.ktor:ktor-client-okhttp:$ktor_version")
-    implementation("io.ktor:ktor-client-jackson:$ktor_version")
+    implementation("io.ktor:ktor-client-core:$ktorVersion")
+    implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
+    implementation("io.ktor:ktor-client-jackson:$ktorVersion")
 
     implementation("io.micrometer:micrometer-registry-prometheus:1.9.2")
     // traces
     implementation("io.jaegertracing:jaeger-client:1.8.1")
     implementation("com.zopa:ktor-opentracing:0.3.6")
 
-    implementation("io.ktor:ktor-metrics-micrometer:$ktor_version")
+    implementation("io.ktor:ktor-metrics-micrometer:$ktorVersion")
 
     // config reading
     implementation("com.sksamuel.hoplite:hoplite-core:2.7.5")
