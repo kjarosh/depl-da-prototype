@@ -30,7 +30,7 @@ dependencies {
 
     // config reading
     implementation("com.sksamuel.hoplite:hoplite-core:2.7.5")
-    implementation("com.sksamuel.hoplite:hoplite-hocon:2.6.5")
+    implementation("com.sksamuel.hoplite:hoplite-hocon:2.7.5")
 
     implementation(kotlin("stdlib-jdk8"))
 
