@@ -20,4 +20,3 @@ data class AlvinFastRecoveryResponse(val entries: List<AlvinEntryDto?>, val hist
 enum class AlvinResult{
     COMMIT, ABORT
 }
-
