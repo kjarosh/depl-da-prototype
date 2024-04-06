@@ -75,8 +75,8 @@ dependencies {
     testImplementation("io.strikt:strikt-core:0.34.1")
     testImplementation("io.mockk:mockk:1.13.2")
     testImplementation("org.awaitility:awaitility:4.2.1")
-    testImplementation("org.testcontainers:testcontainers:1.17.5")
-    testImplementation("org.testcontainers:junit-jupiter:1.17.5")
+    testImplementation("org.testcontainers:testcontainers:1.19.7")
+    testImplementation("org.testcontainers:junit-jupiter:1.19.7")
 
     // for disabling AnsiConsole in tests
     testImplementation("org.fusesource.jansi:jansi:2.4.1")
