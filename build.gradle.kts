@@ -42,7 +42,7 @@ dependencies {
     implementation("io.ktor:ktor-client-jackson:$ktorVersion")
 
     // object mapper
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.14.0")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.17.0")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.0")
 
     // config reading
