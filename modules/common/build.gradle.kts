@@ -14,7 +14,7 @@ sourceSets {
 }
 
 dependencies {
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.13.2.2")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.17.0")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.2")
 
     implementation("io.ktor:ktor-client-core:$ktorVersion")
