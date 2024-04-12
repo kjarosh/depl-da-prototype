@@ -1,4 +1,3 @@
-val kotlinVersion: String by project
 val logbackVersion: String by project
 val ktorVersion = "1.6.8"
 val ratisVersion = "2.2.0"
@@ -6,7 +5,7 @@ val slf4jVersion = "2.0.12"
 
 plugins {
     application
-    kotlin("jvm") version "1.6.21"
+    kotlin("jvm") version "1.7.21"
     kotlin("plugin.serialization") version "1.6.10"
     id("com.adarshr.test-logger") version "4.0.0"
     id("org.jlleitschuh.gradle.ktlint") version "12.1.0"
