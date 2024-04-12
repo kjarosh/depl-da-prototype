@@ -22,12 +22,12 @@ import com.github.davenury.ucac.utils.TestApplicationSet
 import com.github.davenury.ucac.utils.TestApplicationSet.Companion.NON_RUNNING_PEER
 import com.github.davenury.ucac.utils.TestLogExtension
 import com.github.davenury.ucac.utils.arriveAndAwaitAdvanceWithTimeout
-import io.ktor.client.features.ClientRequestException
 import io.ktor.client.features.ServerResponseException
 import io.ktor.client.request.accept
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.readText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
@@ -39,6 +39,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.fail
 import org.slf4j.LoggerFactory
+import strikt.api.expect
 import strikt.api.expectCatching
 import strikt.api.expectThat
 import strikt.api.expectThrows
@@ -343,8 +344,11 @@ class TwoPCSpec : IntegrationTestBase() {
                     accept(ContentType.Application.Json)
                 }
                 fail("executing change didn't fail")
-            } catch (e: ClientRequestException) {
-                expectThat(e.response.status).isEqualTo(HttpStatusCode.NotFound)
+            } catch (e: ServerResponseException) {
+                expect {
+                    that(e.response.status).isEqualTo(HttpStatusCode.InternalServerError)
+                    that(e.response.readText()).contains("Change was applied with ABORT result")
+                }
             }
         }
 
