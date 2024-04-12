@@ -1,5 +1,3 @@
-### if we change project name we should also change any place where PoC appears
-
 FROM gradle:8.7.0-jdk11-alpine AS builder
 COPY --chown=gradle:gradle . /home/gradle/src
 WORKDIR /home/gradle/src
@@ -15,9 +13,9 @@ RUN apk add openjdk11 && apk add --no-cache jattach --repository http://dl-cdn.a
 
 WORKDIR /application
 
-COPY --from=builder /home/gradle/src/build/install/PoC .
+COPY --from=builder /home/gradle/src/build/install/depl-da-prototype .
 
-ENTRYPOINT ["sh", "-c", "/application/bin/PoC"]
+ENTRYPOINT ["sh", "-c", "/application/bin/depl-da-prototype"]
 
 ###
 

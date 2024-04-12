@@ -12,8 +12,8 @@ plugins {
     id("org.jlleitschuh.gradle.ktlint") version "12.1.0"
 }
 
-group = "com.example"
-version = "0.0.1"
+group = "com.github.kjarosh.depldaprototype"
+version = "0.1.0"
 application {
     mainClass.set("com.github.davenury.ucac.ApplicationUcacKt")
 
