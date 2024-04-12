@@ -62,6 +62,28 @@ fun Application.apiV2Routing(service: ApiV2Service) {
                 )
             }
 
+            ChangeResult.Status.REJECTED -> {
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    ChangeCreationResponse(
+                        "Change was rejected",
+                        detailedMessage = result.detailedMessage,
+                        changeStatus = ChangeCreationStatus.NOT_APPLIED,
+                    ),
+                )
+            }
+
+            ChangeResult.Status.ABORTED -> {
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    ChangeCreationResponse(
+                        "Change was applied with ABORT result (???)",
+                        detailedMessage = null,
+                        changeStatus = ChangeCreationStatus.UNKNOWN,
+                    ),
+                )
+            }
+
             null -> {
                 call.respond(
                     HttpStatusCode.InternalServerError,
