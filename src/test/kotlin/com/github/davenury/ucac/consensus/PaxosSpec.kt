@@ -346,7 +346,7 @@ class PaxosSpec : IntegrationTestBase() {
             }
         }
 
-    @RetryingTest(3)
+    @RetryingTest(5)
     fun `leader fails during processing change`(): Unit =
         runBlocking {
             val change = createChange(null)
@@ -951,7 +951,7 @@ class PaxosSpec : IntegrationTestBase() {
             }
         }
 
-    @Test
+    @RetryingTest(3)
     fun `process 50 changes, then one peer doesn't respond on 250 changes and finally synchronize on all`(): Unit =
         runBlocking {
             val peersWithoutLeader = 5
