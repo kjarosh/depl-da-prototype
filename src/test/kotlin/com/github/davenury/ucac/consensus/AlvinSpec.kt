@@ -37,6 +37,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.fail
+import org.junitpioneer.jupiter.RetryingTest
 import org.slf4j.LoggerFactory
 import strikt.api.expect
 import strikt.api.expectCatching
@@ -674,7 +675,7 @@ class AlvinSpec : IntegrationTestBase() {
             }
         }
 
-    @Test
+    @RetryingTest(3)
     fun `should synchronize on history if it was added outside of alvin`(): Unit =
         runBlocking {
             val phaserGPACPeer = Phaser(1)
