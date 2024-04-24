@@ -369,7 +369,7 @@ class ApplicationUcac(
                 val oldAddress = peerResolver.resolve(peerId)
                 peerResolver.setPeerAddress(peerId, address)
                 val newAddress = peerResolver.resolve(peerId)
-                logger.debug("Updated peer address $peerId $oldAddress -> $newAddress")
+                logger.debug("Updated peer address $peerId ${oldAddress.address} -> ${newAddress.address}")
             }
         }
 
