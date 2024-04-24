@@ -86,7 +86,12 @@ open class ConsensusProtocolClientImpl(open val peersetId: PeersetId) : Consensu
                 try {
                     it.second.await()
                 } catch (e: Exception) {
-                    logger.error("Error while evaluating response from ${it.first}", e)
+                    if (it.first.address.endsWith(":0")) {
+                        // Peer address is not valid, this may happen
+                        // e.g. when initializing peers in tests.
+                    } else {
+                        logger.error("Error while evaluating response from ${it.first}", e)
+                    }
                     null
                 }
 
