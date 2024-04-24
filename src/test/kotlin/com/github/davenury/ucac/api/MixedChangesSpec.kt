@@ -22,7 +22,6 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.slf4j.LoggerFactory
@@ -31,7 +30,6 @@ import strikt.assertions.isEqualTo
 import strikt.assertions.isGreaterThanOrEqualTo
 import java.util.concurrent.Phaser
 
-@Disabled("For fixing consensuses")
 @Suppress("HttpUrlsUsage")
 @ExtendWith(TestLogExtension::class)
 class MixedChangesSpec : IntegrationTestBase() {

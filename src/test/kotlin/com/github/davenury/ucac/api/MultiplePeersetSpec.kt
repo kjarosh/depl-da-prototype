@@ -68,7 +68,6 @@ import kotlin.collections.toMap
 import kotlin.collections.toMutableMap
 import kotlin.system.measureTimeMillis
 
-@Disabled("For fixing consensuses")
 @Suppress("HttpUrlsUsage")
 @ExtendWith(TestLogExtension::class)
 class MultiplePeersetSpec : IntegrationTestBase() {
