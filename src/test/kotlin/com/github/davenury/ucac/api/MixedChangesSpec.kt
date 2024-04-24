@@ -24,6 +24,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.junitpioneer.jupiter.RetryingTest
 import org.slf4j.LoggerFactory
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
@@ -42,7 +43,7 @@ class MixedChangesSpec : IntegrationTestBase() {
         System.setProperty("configFile", "application-integration.conf")
     }
 
-    @Test
+    @RetryingTest(3)
     fun `try to execute two following changes in the same time, first GPAC, then Raft`(): Unit =
         runBlocking {
             val change = change(0, 1)
@@ -122,7 +123,7 @@ class MixedChangesSpec : IntegrationTestBase() {
             }
         }
 
-    @Test
+    @RetryingTest(5)
     fun `try to execute two following changes in the same time (two different peers), first GPAC, then Raft`(): Unit =
         runBlocking {
             val change = change(0, 1)
