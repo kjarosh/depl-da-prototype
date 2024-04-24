@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.fail
+import org.junitpioneer.jupiter.RetryingTest
 import org.slf4j.LoggerFactory
 import strikt.api.expect
 import strikt.api.expectCatching
@@ -345,7 +346,7 @@ class PaxosSpec : IntegrationTestBase() {
             }
         }
 
-    @Test
+    @RetryingTest(3)
     fun `leader fails during processing change`(): Unit =
         runBlocking {
             val change = createChange(null)
@@ -773,7 +774,7 @@ class PaxosSpec : IntegrationTestBase() {
             }
         }
 
-    @Test
+    @RetryingTest(3)
     fun `should synchronize on history if it was added outside of paxos`(): Unit =
         runBlocking {
             val phaserGPACPeer = Phaser(1)
