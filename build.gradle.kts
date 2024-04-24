@@ -77,6 +77,7 @@ dependencies {
     testImplementation("org.awaitility:awaitility:4.2.1")
     testImplementation("org.testcontainers:testcontainers:1.19.7")
     testImplementation("org.testcontainers:junit-jupiter:1.19.7")
+    testImplementation("org.junit-pioneer:junit-pioneer:2.2.0")
 
     // for disabling AnsiConsole in tests
     testImplementation("org.fusesource.jansi:jansi:2.4.1")
