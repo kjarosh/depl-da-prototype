@@ -539,7 +539,7 @@ class RaftConsensusProtocolImpl(
                 response = deferred.await()
             }
 
-        logger.info("Respond from peer $peer took $time ms")
+        logger.debug("Peer $peer took $time ms to respond")
 
         when {
             response.message == null -> {
@@ -597,7 +597,7 @@ class RaftConsensusProtocolImpl(
 
             response.message.missingValues -> {
                 logger.info(
-                    "Peer ${peerAddress.peerId} is not up to date, decrementing index (they told me their commit entry is ${response.message.lastCommittedEntryId})",
+                    "Peer ${peerAddress.peerId} is not up to date, decrementing index (their commit entry is ${response.message.lastCommittedEntryId})",
                 )
                 val oldValues = peerToNextIndex[peerAddress.peerId]
 //                Done: Add decrement method for PeerIndices
@@ -615,11 +615,11 @@ class RaftConsensusProtocolImpl(
             }
 
             response.message.isLeaderCurrentEntryOutdated -> {
-                logger.info("Peer ${peerAddress.peerId} doesn't accept heartbeat, because I have outdated history")
+                logger.info("Peer ${peerAddress.peerId} did not accept a heartbeat, because I have outdated history")
             }
 
             response.message.term >= currentTerm && !response.message.success -> {
-                logger.info("Based on info from $peer, someone else is currently leader")
+                logger.info("Based on info from $peer, someone else is currently a leader")
                 mutex.withLock {
                     stopBeingLeader(response.message.term)
                     votedFor = null
@@ -711,7 +711,7 @@ class RaftConsensusProtocolImpl(
                     .filter { state.isNotApplied(it.entry.getId()) }
                     .forEach {
                         logger.info(
-                            "Votes after message to peer ${peerAddress.peerId},  ${
+                            "Votes after message to peer ${peerAddress.peerId}, ${
                                 voteContainer.getVotes(
                                     it.entry.getId(),
                                 )
@@ -840,9 +840,8 @@ class RaftConsensusProtocolImpl(
                 }
 
                 val acquisition: TransactionAcquisition
-                val updatedChange: Change
 
-                updatedChange = TwoPC.updateParentIdFor2PCCompatibility(change, history, peersetId)
+                val updatedChange: Change = TwoPC.updateParentIdFor2PCCompatibility(change, history, peersetId)
                 entry = updatedChange.toHistoryEntry(peersetId)
 
                 acquisition = TransactionAcquisition(ProtocolName.CONSENSUS, updatedChange.id)
@@ -946,7 +945,7 @@ class RaftConsensusProtocolImpl(
         return isDuring2PC && !(changeIsAbortingOf2PC || changeIsApplyingOf2PC)
     }
 
-    private suspend fun releaseBlockerFromPreviousTermChanges() {
+    private fun releaseBlockerFromPreviousTermChanges() {
         val blockedChange =
             state.proposedEntries.find {
                 it.changeId == transactionBlocker.getChangeId()
