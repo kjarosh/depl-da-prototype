@@ -19,7 +19,6 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.slf4j.LoggerFactory
@@ -57,7 +56,6 @@ class SinglePeersetApiSpec {
             ),
         )
 
-    @Disabled("Failing locally")
     @Test
     fun `sync api`(): Unit =
         runBlocking {
@@ -74,14 +72,14 @@ class SinglePeersetApiSpec {
 
             val peer0Address = environment.getAddress("peer0")
             val response =
-                http.post<HttpResponse>("http://$peer0Address/v2/change/sync") {
+                http.post<HttpResponse>("http://$peer0Address/v2/change/sync?peerset=peerset0") {
                     contentType(ContentType.Application.Json)
                     body = change
                 }
             expectThat(response.status.value).isEqualTo(201)
 
             val changes =
-                http.get<Changes>("http://$peer0Address/v2/change") {
+                http.get<Changes>("http://$peer0Address/v2/change?peerset=peerset0") {
                     contentType(ContentType.Application.Json)
                     body = change
                 }
