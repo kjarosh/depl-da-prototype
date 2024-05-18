@@ -71,6 +71,7 @@ import kotlin.collections.take
 import kotlin.collections.toList
 import kotlin.system.measureTimeMillis
 
+@Disabled("protocol temporarily not used")
 @ExtendWith(TestLogExtension::class)
 class PaxosSpec : IntegrationTestBase() {
     private val knownPeerIp = "localhost"

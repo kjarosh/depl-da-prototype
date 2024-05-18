@@ -34,6 +34,7 @@ import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.fail
@@ -56,6 +57,7 @@ import java.util.concurrent.Phaser
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.system.measureTimeMillis
 
+@Disabled("protocol temporarily not used")
 @ExtendWith(TestLogExtension::class)
 class AlvinSpec : IntegrationTestBase() {
     private val knownPeerIp = "localhost"
