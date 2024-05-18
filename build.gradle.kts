@@ -66,7 +66,7 @@ dependencies {
     implementation("org.apache.ratis:ratis-server-api:$ratisVersion")
     implementation("org.apache.ratis:ratis-tools:$ratisVersion")
     implementation("org.apache.ratis:ratis-client:$ratisVersion")
-    implementation("org.apache.ratis:ratis-thirdparty-misc:1.0.5")
+    implementation("org.apache.ratis:ratis-thirdparty-misc:1.0.6")
 
     implementation("com.github.loki4j:loki-logback-appender:1.5.1")
     testImplementation(platform("org.junit:junit-bom:5.10.2"))
