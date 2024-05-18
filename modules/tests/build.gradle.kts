@@ -29,7 +29,7 @@ dependencies {
     implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
     implementation("io.ktor:ktor-client-jackson:$ktorVersion")
 
-    implementation("org.slf4j:slf4j-api:1.7.36")
+    implementation("org.slf4j:slf4j-api:2.0.13")
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
     implementation("com.github.loki4j:loki-logback-appender:1.4.0")
 
