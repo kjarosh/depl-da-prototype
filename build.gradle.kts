@@ -72,7 +72,7 @@ dependencies {
     testImplementation(platform("org.junit:junit-bom:5.10.2"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation("io.strikt:strikt-core:0.34.1")
-    testImplementation("io.mockk:mockk:1.13.2")
+    testImplementation("io.mockk:mockk:1.13.11")
     testImplementation("org.awaitility:awaitility:4.2.1")
     testImplementation("org.testcontainers:testcontainers:1.19.7")
     testImplementation("org.testcontainers:junit-jupiter:1.19.7")
