@@ -42,7 +42,7 @@ dependencies {
 
     // object mapper
     implementation("com.fasterxml.jackson.core:jackson-databind:2.17.0")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.17.0")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.17.1")
 
     // config reading
     implementation("com.sksamuel.hoplite:hoplite-core:2.7.5")
