@@ -5,7 +5,7 @@ val slf4jVersion = "2.0.12"
 
 plugins {
     application
-    kotlin("jvm") version "1.8.22"
+    kotlin("jvm") version "1.9.24"
     kotlin("plugin.serialization") version "1.6.10"
     id("com.adarshr.test-logger") version "4.0.0"
     id("org.jlleitschuh.gradle.ktlint") version "12.1.0"
