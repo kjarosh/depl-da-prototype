@@ -5,7 +5,7 @@ val slf4jVersion = "2.0.12"
 
 plugins {
     application
-    kotlin("jvm") version "1.7.21"
+    kotlin("jvm") version "1.8.22"
     kotlin("plugin.serialization") version "1.6.10"
     id("com.adarshr.test-logger") version "4.0.0"
     id("org.jlleitschuh.gradle.ktlint") version "12.1.0"
@@ -82,8 +82,8 @@ dependencies {
     testImplementation("org.fusesource.jansi:jansi:2.4.1")
 }
 
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-    kotlinOptions.jvmTarget = "11"
+tasks.withType<JavaCompile>().configureEach {
+    targetCompatibility = "11"
 }
 
 tasks.test {
@@ -102,5 +102,9 @@ subprojects {
 
     repositories {
         mavenCentral()
+    }
+
+    tasks.withType<JavaCompile>().configureEach {
+        targetCompatibility = "11"
     }
 }
