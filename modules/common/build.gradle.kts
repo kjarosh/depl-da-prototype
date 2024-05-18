@@ -1,6 +1,6 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-val ktorVersion = "1.6.8"
+val ktorVersion = "3.0.0-tls-eap-907"
 
 plugins {
     id("application")
