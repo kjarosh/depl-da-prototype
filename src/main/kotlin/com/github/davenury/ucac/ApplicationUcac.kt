@@ -30,7 +30,6 @@ import com.github.davenury.ucac.history.historyRouting
 import com.github.davenury.ucac.routing.alvinProtocolRouting
 import com.github.davenury.ucac.routing.gpacProtocolRouting
 import com.github.davenury.ucac.routing.metaRouting
-import com.github.davenury.ucac.routing.oldRaftProtocolRouting
 import com.github.davenury.ucac.routing.pigPaxosProtocolRouting
 import com.github.davenury.ucac.routing.raftProtocolRouting
 import com.github.davenury.ucac.routing.twoPCRouting
@@ -347,7 +346,6 @@ class ApplicationUcac(
             gpacProtocolRouting(multiplePeersetProtocols)
             when (config.consensus.name) {
                 "raft" -> raftProtocolRouting(multiplePeersetProtocols)
-                "oldRaft" -> oldRaftProtocolRouting(multiplePeersetProtocols)
                 "alvin" -> alvinProtocolRouting(multiplePeersetProtocols)
                 "paxos" -> pigPaxosProtocolRouting(multiplePeersetProtocols)
                 else -> throw IllegalStateException("Unknown consensus type ${config.consensus.name}")
