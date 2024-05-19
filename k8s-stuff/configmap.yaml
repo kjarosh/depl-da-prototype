@@ -6,6 +6,4 @@ metadata:
 data:
   PEERSET_ID: "1"
   RAFT_NODE_ID: "1"
-  RATIS_PEERS_ADDRESSES: "[]"
-  RATIS_CLUSTER_GROUPS_IDS: "[]"
   GPAC_PEERS_ADDRESSES: "[]"
