@@ -114,7 +114,6 @@ class RaftConsensusProtocolImpl(
     private var timer = ProtocolTimerImpl(heartbeatTimeout, heartbeatTimeout, ctx)
     private var lastHeartbeatTime = Instant.now()
 
-    //    DONE: Use only one mutex
     private val mutex = Mutex()
     private val mutexChangeToBePropagatedToLeader = Mutex()
     private var executorService: ExecutorCoroutineDispatcher? = null

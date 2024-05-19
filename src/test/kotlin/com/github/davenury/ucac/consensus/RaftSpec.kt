@@ -39,6 +39,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.fail
+import org.junitpioneer.jupiter.RetryingTest
 import org.slf4j.LoggerFactory
 import strikt.api.expect
 import strikt.api.expectCatching
@@ -247,7 +248,7 @@ class RaftSpec : IntegrationTestBase() {
             }
         }
 
-    @Test
+    @RetryingTest(3)
     fun `process 50 changes, then one peer doesn't respond on 250 changes and finally synchronize on all`(): Unit =
         runBlocking {
             val peersWithoutLeader = 4

@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 val logbackVersion: String by project
 val ktorVersion = "1.6.8"
 val slf4jVersion = "2.0.13"
@@ -76,6 +78,10 @@ tasks.withType<JavaCompile>().configureEach {
     targetCompatibility = "11"
 }
 
+tasks.withType<KotlinCompile>().configureEach {
+    kotlinOptions.jvmTarget = "11"
+}
+
 tasks.test {
     useJUnitPlatform()
     maxParallelForks = 16
@@ -96,5 +102,9 @@ subprojects {
 
     tasks.withType<JavaCompile>().configureEach {
         targetCompatibility = "11"
+    }
+
+    tasks.withType<KotlinCompile>().configureEach {
+        kotlinOptions.jvmTarget = "11"
     }
 }
