@@ -2,7 +2,6 @@ package com.github.davenury.ucac.common
 
 import com.github.davenury.common.PeersetId
 import com.github.davenury.common.UnknownPeersetException
-import com.github.davenury.common.history.History
 import com.github.davenury.ucac.Config
 import com.github.davenury.ucac.SignalPublisher
 import com.github.davenury.ucac.common.structure.Subscriber
@@ -36,10 +35,6 @@ class MultiplePeersetProtocols(
 
     fun forPeerset(peersetId: PeersetId): PeersetProtocols {
         return protocols[peersetId] ?: throw UnknownPeersetException(peersetId)
-    }
-
-    fun getHistories(): Map<PeersetId, History> {
-        return protocols.mapValues { it.value.history }
     }
 
     fun registerSubscriber(

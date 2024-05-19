@@ -49,14 +49,11 @@ class ProtocolTimerImpl(
                     val exponent = 1.5.pow(iteration)
 
                     val backoff =
-                        (
-                            if (backoffBound.isZero) {
-                                0
-                            } else {
-                                randomGenerator.nextLong().absoluteValue % (backoffBound.toMillis() * exponent).toLong()
-                            }
-                        )
-                            .let { Duration.ofMillis(it) }
+                        if (backoffBound.isZero) {
+                            0
+                        } else {
+                            randomGenerator.nextLong().absoluteValue % (backoffBound.toMillis() * exponent).toLong()
+                        }.let { Duration.ofMillis(it) }
                     val timeout = delay.plus(backoff)
                     delay(timeout.toMillis())
                     action()
