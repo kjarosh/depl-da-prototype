@@ -54,7 +54,6 @@ func (cfg *DeployConfig) GetDeployFunction() func(config DeployConfig, peers str
 	return DoDeployV1
 }
 
-const ratisPort = 10024
 const servicePort = 8080
 
 func CreateDeployCommand() *cobra.Command {
@@ -83,7 +82,6 @@ func CreateDeployCommand() *cobra.Command {
 	deployCommand.Flags().StringVar(&config.ProxyLimit, "proxy-limit", "0", "Bandwidth limit in bytes per second, e.g. 100, 2M")
 	deployCommand.Flags().StringVar(&config.MonitoringNamespace, "monitoring-namespace", "ddebowski", "Namespace with monitoring deployed")
 	deployCommand.Flags().StringVar(&config.ConsensusProtocol, "consensus-protocol", "raft", "Consensus protocol to use. For now it's one protocol")
-
 
 	return deployCommand
 
@@ -143,7 +141,7 @@ func deploySingle(config DeployConfig, peerConfig utils.PeerConfig, peers string
 	createPVC(config.DeployNamespace, peerConfig, config.CreateResources)
 	createRedisConfigmap(config.DeployNamespace, peerConfig)
 
-	deploySinglePeerService(config.DeployNamespace, peerConfig, ratisPort)
+	deploySinglePeerService(config.DeployNamespace, peerConfig)
 
 	deploySinglePeerConfigMap(config, peerConfig, peers, peersets, experimentUUID)
 
@@ -434,7 +432,7 @@ func deploySinglePeerConfigMap(config DeployConfig, peerConfig utils.PeerConfig,
 	clientset.CoreV1().ConfigMaps(config.DeployNamespace).Create(context.Background(), configMap, metav1.CreateOptions{})
 }
 
-func deploySinglePeerService(namespace string, peerConfig utils.PeerConfig, currentRatisPort int) {
+func deploySinglePeerService(namespace string, peerConfig utils.PeerConfig) {
 	clientset, err := utils.GetClientset()
 	if err != nil {
 		panic(err)
@@ -458,11 +456,6 @@ func deploySinglePeerService(namespace string, peerConfig utils.PeerConfig, curr
 					Name:       "service",
 					Port:       8080,
 					TargetPort: intstr.FromInt(servicePort),
-				},
-				{
-					Name:       "ratis",
-					Port:       int32(currentRatisPort),
-					TargetPort: intstr.FromInt(currentRatisPort),
 				},
 			},
 		},

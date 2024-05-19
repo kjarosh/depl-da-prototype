@@ -1,6 +1,5 @@
 val logbackVersion: String by project
 val ktorVersion = "1.6.8"
-val ratisVersion = "2.2.0"
 val slf4jVersion = "2.0.13"
 
 plugins {
@@ -58,15 +57,6 @@ dependencies {
     // traces
     implementation("io.jaegertracing:jaeger-client:1.8.1")
     implementation("com.zopa:ktor-opentracing:0.3.6")
-
-    implementation("org.apache.ratis:ratis:$ratisVersion")
-    implementation("org.apache.ratis:ratis-proto:$ratisVersion")
-    implementation("org.apache.ratis:ratis-grpc:$ratisVersion")
-    implementation("org.apache.ratis:ratis-common:$ratisVersion")
-    implementation("org.apache.ratis:ratis-server-api:$ratisVersion")
-    implementation("org.apache.ratis:ratis-tools:$ratisVersion")
-    implementation("org.apache.ratis:ratis-client:$ratisVersion")
-    implementation("org.apache.ratis:ratis-thirdparty-misc:1.0.5")
 
     implementation("com.github.loki4j:loki-logback-appender:1.5.1")
     testImplementation(platform("org.junit:junit-bom:5.10.2"))
