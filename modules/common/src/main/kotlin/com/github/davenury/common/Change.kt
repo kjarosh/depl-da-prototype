@@ -49,7 +49,7 @@ sealed class Change(open val id: String = UUID.randomUUID().toString()) {
     abstract val notificationUrl: String?
 
     // TODO remove
-    abstract val acceptNum: Int?
+    val acceptNum: Int? = null
 
     fun getPeersetInfo(peersetId: PeersetId): ChangePeersetInfo? = peersets.find { it.peersetId == peersetId }
 
@@ -96,7 +96,6 @@ sealed class Change(open val id: String = UUID.randomUUID().toString()) {
 data class AddRelationChange(
     val from: String,
     val to: String,
-    override val acceptNum: Int? = null,
     @JsonProperty("notification_url")
     override val notificationUrl: String? = null,
     override val id: String = UUID.randomUUID().toString(),
@@ -135,7 +134,6 @@ data class AddRelationChange(
 data class DeleteRelationChange(
     val from: String,
     val to: String,
-    override val acceptNum: Int? = null,
     @JsonProperty("notification_url")
     override val notificationUrl: String? = null,
     override val id: String = UUID.randomUUID().toString(),
@@ -173,7 +171,6 @@ data class DeleteRelationChange(
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class AddUserChange(
     val userName: String,
-    override val acceptNum: Int? = null,
     override val id: String = UUID.randomUUID().toString(),
     override val peersets: List<ChangePeersetInfo> = listOf(),
     @JsonProperty("notification_url")
@@ -209,7 +206,6 @@ data class AddUserChange(
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class AddGroupChange(
     val groupName: String,
-    override val acceptNum: Int? = null,
     @JsonProperty("notification_url")
     override val notificationUrl: String? = null,
     override val id: String = UUID.randomUUID().toString(),
@@ -252,7 +248,6 @@ enum class TwoPCStatus {
 // Else: 2PCChange-Accept -> 2PCChange-Abort
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class TwoPCChange(
-    override val acceptNum: Int? = null,
     @JsonProperty("notification_url")
     override val notificationUrl: String? = null,
     val twoPCStatus: TwoPCStatus,
