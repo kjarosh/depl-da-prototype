@@ -123,7 +123,7 @@ class PaxosSpec : IntegrationTestBase() {
             logger.info("Leader elected")
 
             // when: peer1 executed change
-            val change1 = createChange(null)
+            val change1 = createChange()
             executeChange("${apps.getPeer(peer(0)).address}/v2/change/sync?peerset=peerset0", change1)
 
             changePhaser.arriveAndAwaitAdvanceWithTimeout()
@@ -134,12 +134,11 @@ class PaxosSpec : IntegrationTestBase() {
                 expectThat(changes.size).isEqualTo(1)
                 expect {
                     that(changes[0]).isEqualTo(change1)
-                    that(changes[0].acceptNum).isEqualTo(null)
                 }
             }
 
             // when: peer2 executes change
-            val change2 = createChange(1, userName = "userName2", parentId = change1.toHistoryEntry(peerset(0)).getId())
+            val change2 = createChange(userName = "userName2", parentId = change1.toHistoryEntry(peerset()).getId())
             executeChange("${apps.getPeer(peer(1)).address}/v2/change/sync?peerset=peerset0", change2)
 
             changePhaser.arriveAndAwaitAdvanceWithTimeout()
@@ -151,7 +150,7 @@ class PaxosSpec : IntegrationTestBase() {
                 expect {
                     that(changes[1]).isEqualTo(change2)
                     that(changes[0]).isEqualTo(change1)
-                    that(changes[1].acceptNum).isEqualTo(1)
+                    that((changes[1] as AddUserChange).userName).isEqualTo("userName2")
                 }
             }
         }
@@ -167,7 +166,7 @@ class PaxosSpec : IntegrationTestBase() {
             val phaser = Phaser(peers)
             phaser.register()
 
-            var change = createChange(null)
+            var change = createChange()
 
             val peerLeaderElected =
                 SignalListener {
@@ -212,7 +211,7 @@ class PaxosSpec : IntegrationTestBase() {
                 logger.info("Change $it is processed $newTime ms")
                 time += newTime
 
-                change = createChange(null, parentId = change.toHistoryEntry(peerset(0)).getId())
+                change = createChange(parentId = change.toHistoryEntry(peerset()).getId())
             }
             // when: peer1 executed change
 
@@ -254,7 +253,7 @@ class PaxosSpec : IntegrationTestBase() {
 
             logger.info("Sending change")
 
-            val change = createChange(null)
+            val change = createChange()
             executeChange("${apps.getPeer(peer(0)).address}/v2/change/sync?peerset=peerset0", change)
 
             phaser.arriveAndAwaitAdvanceWithTimeout()
@@ -350,7 +349,7 @@ class PaxosSpec : IntegrationTestBase() {
     @RetryingTest(5)
     fun `leader fails during processing change`(): Unit =
         runBlocking {
-            val change = createChange(null)
+            val change = createChange()
             var peers = 5
 
             val failurePhaser = Phaser(2)
@@ -429,7 +428,7 @@ class PaxosSpec : IntegrationTestBase() {
 
             changePeers = {
                 val peers =
-                    apps.getRunningPeers(peerset(0).peersetId).mapValues { entry ->
+                    apps.getRunningPeers(peerset().peersetId).mapValues { entry ->
                         val peer = entry.value
                         peer.copy(address = peer.address.replace(knownPeerIp, unknownPeerIp))
                     }
@@ -448,7 +447,7 @@ class PaxosSpec : IntegrationTestBase() {
             election2Phaser.arriveAndAwaitAdvanceWithTimeout()
             changePhaser.arriveAndAwaitAdvanceWithTimeout()
 
-            apps.getRunningPeers(peerset(0).peersetId)
+            apps.getRunningPeers(peerset().peersetId)
                 .values
                 .filter { it != firstLeaderAddress }
                 .forEach {
@@ -460,7 +459,6 @@ class PaxosSpec : IntegrationTestBase() {
                     }
                     expect {
                         that(acceptedChanges.first()).isEqualTo(change)
-                        that(acceptedChanges.first().acceptNum).isEqualTo(null)
                     }
                 }
         }
@@ -497,7 +495,7 @@ class PaxosSpec : IntegrationTestBase() {
                 )
             val peers = apps.getRunningApps()
 
-            val peerAddresses = apps.getRunningPeers(peerset(0).peersetId).values
+            val peerAddresses = apps.getRunningPeers(peerset().peersetId).values
 
             electionPhaser.arriveAndAwaitAdvanceWithTimeout()
 
@@ -506,7 +504,7 @@ class PaxosSpec : IntegrationTestBase() {
             val peersToStop = peerAddresses.filter { it != firstLeaderAddress }.take(2)
             peersToStop.forEach { apps.getApp(it.peerId).stop(0, 0) }
             val runningPeers = peerAddresses.filter { address -> address !in peersToStop }
-            val change = createChange(null)
+            val change = createChange()
 
 //      Start processing
             executeChange("${runningPeers.first().address}/v2/change/sync?peerset=peerset0", change)
@@ -522,7 +520,6 @@ class PaxosSpec : IntegrationTestBase() {
                 }
                 expect {
                     that(acceptedChanges.first()).isEqualTo(change)
-                    that(acceptedChanges.first().acceptNum).isEqualTo(null)
                 }
             }
         }
@@ -558,7 +555,7 @@ class PaxosSpec : IntegrationTestBase() {
                 )
             val peers = apps.getRunningApps()
 
-            val peerAddresses = apps.getRunningPeers(peerset(0).peersetId).values
+            val peerAddresses = apps.getRunningPeers(peerset().peersetId).values
 
             electionPhaser.arriveAndAwaitAdvanceWithTimeout()
 
@@ -573,7 +570,7 @@ class PaxosSpec : IntegrationTestBase() {
             val peersToStop = peerAddresses.filter { it != firstLeaderAddress }.take(3)
             peersToStop.forEach { apps.getApp(it.peerId).stop(0, 0) }
             val runningPeers = peerAddresses.filter { address -> address !in peersToStop }
-            val change = createChange(null)
+            val change = createChange()
 
 //      Start processing
             executeChange("${firstLeaderAddress!!.address}/v2/change/async?peerset=peerset0", change)
@@ -590,7 +587,6 @@ class PaxosSpec : IntegrationTestBase() {
                 }
                 expect {
                     that(proposedChanges.first()).isEqualTo(change)
-                    that(proposedChanges.first().acceptNum).isEqualTo(null)
                 }
             }
         }
@@ -658,8 +654,8 @@ class PaxosSpec : IntegrationTestBase() {
                 )
             val peers = apps.getRunningApps()
 
-            val peerAddresses = apps.getRunningPeers(peerset(0).peersetId).values
-            val peerAddresses2 = apps.getRunningPeers(peerset(0).peersetId)
+            val peerAddresses = apps.getRunningPeers(peerset().peersetId).values
+            val peerAddresses2 = apps.getRunningPeers(peerset().peersetId)
 
             election1Phaser.arriveAndAwaitAdvanceWithTimeout()
 
@@ -679,7 +675,7 @@ class PaxosSpec : IntegrationTestBase() {
 
             firstHalf.forEach { address ->
                 val peers =
-                    apps.getRunningPeers(peerset(0).peersetId).mapValues { entry ->
+                    apps.getRunningPeers(peerset().peersetId).mapValues { entry ->
                         val peer = entry.value
                         if (secondHalf.contains(peer)) {
                             peer.copy(address = peer.address.replace(knownPeerIp, unknownPeerIp))
@@ -692,7 +688,7 @@ class PaxosSpec : IntegrationTestBase() {
 
             secondHalf.forEach { address ->
                 val peers =
-                    apps.getRunningPeers(peerset(0).peersetId).mapValues { entry ->
+                    apps.getRunningPeers(peerset().peersetId).mapValues { entry ->
                         val peer = entry.value
                         if (firstHalf.contains(peer)) {
                             peer.copy(address = peer.address.replace(knownPeerIp, unknownPeerIp))
@@ -707,8 +703,8 @@ class PaxosSpec : IntegrationTestBase() {
 
             logger.info("Second election finished")
 
-            val change1 = createChange(1)
-            val change2 = createChange(2)
+            val change1 = createChange(userName = "user1")
+            val change2 = createChange(userName = "user2")
 
 //      Run change in both halfs
             executeChange("${firstHalf.first().address}/v2/change/async?peerset=peerset0", change1)
@@ -730,7 +726,7 @@ class PaxosSpec : IntegrationTestBase() {
                 if (proposedChanges.size == 1) {
                     expect {
                         that(proposedChanges.first()).isEqualTo(change1)
-                        that(proposedChanges.first().acceptNum).isEqualTo(1)
+                        that((proposedChanges.first() as AddUserChange).userName).isEqualTo("user1")
                     }
                 }
             }
@@ -745,7 +741,7 @@ class PaxosSpec : IntegrationTestBase() {
                 }
                 expect {
                     that(acceptedChanges.first()).isEqualTo(change2)
-                    that(acceptedChanges.first().acceptNum).isEqualTo(2)
+                    that((acceptedChanges.first() as AddUserChange).userName).isEqualTo("user2")
                 }
             }
 
@@ -770,7 +766,7 @@ class PaxosSpec : IntegrationTestBase() {
                 }
                 expect {
                     that(acceptedChanges.first()).isEqualTo(change2)
-                    that(acceptedChanges.first().acceptNum).isEqualTo(2)
+                    that((acceptedChanges.first() as AddUserChange).userName).isEqualTo("user2")
                 }
             }
         }
@@ -789,7 +785,7 @@ class PaxosSpec : IntegrationTestBase() {
             val change1 =
                 AddGroupChange(
                     "name",
-                    peersets = listOf(ChangePeersetInfo(peerset(0), InitialHistoryEntry.getId())),
+                    peersets = listOf(ChangePeersetInfo(peerset(), InitialHistoryEntry.getId())),
                 )
 
             val change2 =
@@ -798,8 +794,8 @@ class PaxosSpec : IntegrationTestBase() {
                     peersets =
                         listOf(
                             ChangePeersetInfo(
-                                peerset(0),
-                                change1.toHistoryEntry(peerset(0)).getId(),
+                                peerset(),
+                                change1.toHistoryEntry(peerset()).getId(),
                             ),
                         ),
                 )
@@ -931,7 +927,7 @@ class PaxosSpec : IntegrationTestBase() {
 
             phaserPigPaxosPeers.arriveAndAwaitAdvanceWithTimeout()
 
-            apps.getRunningPeers(peerset(0).peersetId).forEach { (_, peerAddress) ->
+            apps.getRunningPeers(peerset().peersetId).forEach { (_, peerAddress) ->
                 // and should not execute this change couple of times
                 val changes =
                     testHttpClient.get<Changes>("http://${peerAddress.address}/changes?peerset=peerset0") {
@@ -959,7 +955,7 @@ class PaxosSpec : IntegrationTestBase() {
             var iter = 0
             val isFirstPartCommitted = AtomicBoolean(false)
             val isAllChangeCommitted = AtomicBoolean(false)
-            var change = createChange(null)
+            var change = createChange()
             val firstPart = 100
             val secondPart = 400
 
@@ -979,7 +975,7 @@ class PaxosSpec : IntegrationTestBase() {
 
             val peerChangeAccepted =
                 SignalListener {
-                    logger.info("Arrived change: ${it.change?.acceptNum}")
+                    logger.info("Arrived change: ${(it.change as AddUserChange?)?.userName}")
                     if (isFirstPartCommitted.get()) {
                         changePhaser.arrive()
                     } else {
@@ -989,8 +985,8 @@ class PaxosSpec : IntegrationTestBase() {
 
             val ignoringPeerChangeAccepted =
                 SignalListener {
-                    logger.info("Arrived change: ${it.change?.acceptNum}")
-                    if (isAllChangeCommitted.get() && it.change?.acceptNum == firstPart + secondPart - 1) {
+                    logger.info("Arrived change: ${(it.change as AddUserChange?)?.userName}")
+                    if (isAllChangeCommitted.get() && (it.change as AddUserChange?)?.userName == "user${firstPart + secondPart - 1}") {
                         endingPhaser.arrive()
                     } else if (!isFirstPartCommitted.get()) {
                         allPeerChangePhaser.arrive()
@@ -1026,7 +1022,6 @@ class PaxosSpec : IntegrationTestBase() {
                                         Signal.PigPaxosBeginHandleMessages to ignoreHeartbeat,
                                         Signal.PigPaxosTryToBecomeLeader to
                                             SignalListener {
-//                            if (!isAllChangeCommitted.get())
                                                 throw RuntimeException("Don't try to become a leader")
                                             },
                                     ),
@@ -1041,7 +1036,7 @@ class PaxosSpec : IntegrationTestBase() {
                 executeChange("${apps.getPeer("peer0").address}/v2/change/sync?peerset=peerset0", change)
                 allPeerChangePhaser.arriveAndAwaitAdvanceWithTimeout(Duration.ofSeconds(30))
                 iter += 1
-                change = createChange(it, parentId = change.toHistoryEntry(PeersetId("peerset0")).getId())
+                change = createChange(userName = "user$it", parentId = change.toHistoryEntry(PeersetId("peerset0")).getId())
             }
             // when: peer1 executed change
 
@@ -1053,7 +1048,7 @@ class PaxosSpec : IntegrationTestBase() {
                 iter += 1
                 logger.info("Change second part moved $it")
                 change =
-                    createChange(it + 1 + firstPart, parentId = change.toHistoryEntry(PeersetId("peerset0")).getId())
+                    createChange(userName = "user${it + 1 + firstPart}", parentId = change.toHistoryEntry(PeersetId("peerset0")).getId())
             }
 
             isAllChangeCommitted.set(true)
@@ -1084,9 +1079,9 @@ class PaxosSpec : IntegrationTestBase() {
             repeat(peersetCount) { i ->
                 logger.info("Sending changes to peerset$i")
 
-                val change1 = createChange(null, peersetId = "peerset$i")
+                val change1 = createChange(peersetId = "peerset$i")
                 val parentId = change1.toHistoryEntry(PeersetId("peerset$i")).getId()
-                val change2 = createChange(null, peersetId = "peerset$i", parentId = parentId)
+                val change2 = createChange(peersetId = "peerset$i", parentId = parentId)
 
                 val peerAddress = apps.getPeerAddresses("peerset$i").values.iterator().next().address
 
@@ -1103,13 +1098,11 @@ class PaxosSpec : IntegrationTestBase() {
         }
 
     private fun createChange(
-        acceptNum: Int?,
         userName: String = "userName",
         parentId: String = InitialHistoryEntry.getId(),
         peersetId: String = "peerset0",
     ) = AddUserChange(
         userName,
-        acceptNum,
         peersets = listOf(ChangePeersetInfo(PeersetId(peersetId), parentId)),
     )
 
@@ -1169,7 +1162,7 @@ class PaxosSpec : IntegrationTestBase() {
 
     private fun peerId(peerId: Int): PeerId = PeerId(peer(peerId))
 
-    private fun peerset(peersetId: Int): PeersetId = PeersetId("peerset$peersetId")
+    private fun peerset(): PeersetId = PeersetId("peerset0")
 
     companion object {
         private val logger = LoggerFactory.getLogger(PaxosSpec::class.java)

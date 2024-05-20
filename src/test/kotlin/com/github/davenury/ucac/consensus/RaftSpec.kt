@@ -96,10 +96,9 @@ class RaftSpec : IntegrationTestBase() {
     @Test
     fun `happy path`(): Unit =
         runBlocking {
-            val change1 = createChange(null)
+            val change1 = createChange()
             val change2 =
                 createChange(
-                    1,
                     userName = "userName2",
                     parentId = change1.toHistoryEntry(PeersetId("peerset0")).getId(),
                 )
@@ -154,7 +153,6 @@ class RaftSpec : IntegrationTestBase() {
                 expectThat(changes.size).isEqualTo(1)
                 expect {
                     that(changes[0]).isEqualTo(change1)
-                    that(changes[0].acceptNum).isEqualTo(null)
                 }
             }
 
@@ -172,7 +170,7 @@ class RaftSpec : IntegrationTestBase() {
                 expect {
                     that(changes[1]).isEqualTo(change2)
                     that(changes[0]).isEqualTo(change1)
-                    that(changes[1].acceptNum).isEqualTo(1)
+                    that((changes[1] as AddUserChange).userName).isEqualTo("userName2")
                 }
             }
         }
@@ -221,7 +219,7 @@ class RaftSpec : IntegrationTestBase() {
             leaderElectedPhaser.arriveAndAwaitAdvanceWithTimeout()
             logger.info("Leader elected")
 
-            var change = createChange(null)
+            var change = createChange()
 
             val endRange = 1000
 
@@ -236,7 +234,7 @@ class RaftSpec : IntegrationTestBase() {
                     }
                 phaser.arriveAndAwaitAdvanceWithTimeout()
                 iter += 1
-                change = createChange(null, parentId = change.toHistoryEntry(PeersetId("peerset0")).getId())
+                change = createChange(parentId = change.toHistoryEntry(PeersetId("peerset0")).getId())
             }
             // when: peer1 executed change
 
@@ -255,7 +253,7 @@ class RaftSpec : IntegrationTestBase() {
             var iter = 0
             val isFirstPartCommitted = AtomicBoolean(false)
             val isAllChangeCommitted = AtomicBoolean(false)
-            var change = createChange(null)
+            var change = createChange()
             val firstPart = 100
             val secondPart = 400
 
@@ -275,7 +273,7 @@ class RaftSpec : IntegrationTestBase() {
 
             val peerChangeAccepted =
                 SignalListener {
-                    logger.info("Arrived change: ${it.change?.acceptNum}")
+                    logger.info("Arrived change: ${(it.change as AddUserChange?)?.userName}")
                     if (isFirstPartCommitted.get()) {
                         changePhaser.arrive()
                     } else {
@@ -285,8 +283,8 @@ class RaftSpec : IntegrationTestBase() {
 
             val ignoringPeerChangeAccepted =
                 SignalListener {
-                    logger.info("Arrived change: ${it.change?.acceptNum}")
-                    if (isAllChangeCommitted.get() && it.change?.acceptNum == firstPart + secondPart - 1) {
+                    logger.info("Arrived change: ${(it.change as AddUserChange?)?.userName}")
+                    if (isAllChangeCommitted.get() && (it.change as AddUserChange?)?.userName == "user${firstPart + secondPart - 1}") {
                         endingPhaser.arrive()
                     } else if (!isFirstPartCommitted.get()) {
                         allPeerChangePhaser.arrive()
@@ -338,7 +336,7 @@ class RaftSpec : IntegrationTestBase() {
                 }.isSuccess()
                 allPeerChangePhaser.arriveAndAwaitAdvanceWithTimeout()
                 iter += 1
-                change = createChange(it, parentId = change.toHistoryEntry(PeersetId("peerset0")).getId())
+                change = createChange(userName = "user$it", parentId = change.toHistoryEntry(PeersetId("peerset0")).getId())
             }
             // when: peer1 executed change
 
@@ -351,7 +349,7 @@ class RaftSpec : IntegrationTestBase() {
                 changePhaser.arriveAndAwaitAdvanceWithTimeout()
                 iter += 1
                 logger.info("Change second part moved $it")
-                change = createChange(it + 1 + firstPart, parentId = change.toHistoryEntry(PeersetId("peerset0")).getId())
+                change = createChange(userName = "user${it + 1 + firstPart}", parentId = change.toHistoryEntry(PeersetId("peerset0")).getId())
             }
 
             isAllChangeCommitted.set(true)
@@ -395,7 +393,7 @@ class RaftSpec : IntegrationTestBase() {
 
             logger.info("Sending change")
 
-            val change = createChange(null)
+            val change = createChange()
             expectCatching {
                 executeChange("${apps.getPeer("peer0").address}/v2/change/sync?peerset=peerset0", change)
             }.isSuccess()
@@ -657,7 +655,7 @@ class RaftSpec : IntegrationTestBase() {
     @Test
     fun `leader fails during processing change`(): Unit =
         runBlocking {
-            val change = createChange(null)
+            val change = createChange()
             var peersWithoutLeader = 4
 
             val failurePhaser = Phaser(2)
@@ -779,7 +777,6 @@ class RaftSpec : IntegrationTestBase() {
                     }
                     expect {
                         that(acceptedChanges2.first()).isEqualTo(change)
-                        that(acceptedChanges2.first().acceptNum).isEqualTo(null)
                     }
                 }
         }
@@ -825,7 +822,7 @@ class RaftSpec : IntegrationTestBase() {
             val peersToStop = peerAddresses.filter { it != firstLeaderAddress }.take(2)
             peersToStop.forEach { apps.getApp(it.peerId).stop(0, 0) }
             val runningPeers = peerAddresses.filter { address -> address !in peersToStop }
-            val change = createChange(null)
+            val change = createChange()
 
 //      Start processing
             expectCatching {
@@ -843,7 +840,6 @@ class RaftSpec : IntegrationTestBase() {
                 }
                 expect {
                     that(acceptedChanges.first()).isEqualTo(change)
-                    that(acceptedChanges.first().acceptNum).isEqualTo(null)
                 }
             }
         }
@@ -888,7 +884,7 @@ class RaftSpec : IntegrationTestBase() {
             val peersToStop = peerAddresses.filter { it != firstLeaderAddress }.take(3)
             peersToStop.forEach { apps.getApp(it.peerId).stop(0, 0) }
             val runningPeers = peerAddresses.filter { address -> address !in peersToStop }
-            val change = createChange(null)
+            val change = createChange()
 
 //      Start processing
             expectCatching {
@@ -907,7 +903,6 @@ class RaftSpec : IntegrationTestBase() {
                 }
                 expect {
                     that(proposedChanges.first()).isEqualTo(change)
-                    that(proposedChanges.first().acceptNum).isEqualTo(null)
                 }
             }
         }
@@ -1026,8 +1021,8 @@ class RaftSpec : IntegrationTestBase() {
                 }
             }
 
-            val change1 = createChange(1)
-            val change2 = createChange(2)
+            val change1 = createChange(userName = "user1")
+            val change2 = createChange(userName = "user2")
 
 //      Run change in both halfs
             expectCatching {
@@ -1052,7 +1047,7 @@ class RaftSpec : IntegrationTestBase() {
                 }
                 expect {
                     that(proposedChanges.first()).isEqualTo(change1)
-                    that(proposedChanges.first().acceptNum).isEqualTo(1)
+                    that((proposedChanges.first() as AddUserChange).userName).isEqualTo("user1")
                 }
             }
 
@@ -1066,7 +1061,7 @@ class RaftSpec : IntegrationTestBase() {
                 }
                 expect {
                     that(acceptedChanges.first()).isEqualTo(change2)
-                    that(acceptedChanges.first().acceptNum).isEqualTo(2)
+                    that((acceptedChanges.first() as AddUserChange).userName).isEqualTo("user2")
                 }
             }
 
@@ -1091,7 +1086,7 @@ class RaftSpec : IntegrationTestBase() {
                 }
                 expect {
                     that(acceptedChanges.first()).isEqualTo(change2)
-                    that(acceptedChanges.first().acceptNum).isEqualTo(2)
+                    that((acceptedChanges.first() as AddUserChange).userName).isEqualTo("user2")
                 }
             }
         }
@@ -1358,9 +1353,9 @@ class RaftSpec : IntegrationTestBase() {
                 )
 
             expectCatching {
-                val change1 = createChange(null)
+                val change1 = createChange()
                 val peerAddress = apps.getPeer("peer0").address
-                val change2 = createChange(null, parentId = change1.toHistoryEntry(PeersetId("peerset0")).getId())
+                val change2 = createChange(parentId = change1.toHistoryEntry(PeersetId("peerset0")).getId())
                 executeChange("$peerAddress/v2/change/sync?peerset=peerset0", change1)
                 executeChange("$peerAddress/v2/change/sync?peerset=peerset0", change2)
             }.isSuccess()
@@ -1387,9 +1382,9 @@ class RaftSpec : IntegrationTestBase() {
             repeat(peersetCount) { i ->
                 logger.info("Sending changes to peerset$i")
 
-                val change1 = createChange(null, peersetId = "peerset$i")
+                val change1 = createChange(peersetId = "peerset$i")
                 val parentId = change1.toHistoryEntry(PeersetId("peerset$i")).getId()
-                val change2 = createChange(null, peersetId = "peerset$i", parentId = parentId)
+                val change2 = createChange(peersetId = "peerset$i", parentId = parentId)
 
                 val peerAddress = apps.getPeerAddresses("peerset$i").values.iterator().next().address
 
@@ -1408,13 +1403,11 @@ class RaftSpec : IntegrationTestBase() {
         }
 
     private fun createChange(
-        acceptNum: Int?,
         userName: String = "userName",
         parentId: String = InitialHistoryEntry.getId(),
         peersetId: String = "peerset0",
     ) = AddUserChange(
         userName,
-        acceptNum,
         peersets = listOf(ChangePeersetInfo(PeersetId(peersetId), parentId)),
     )
 
