@@ -48,9 +48,6 @@ sealed class Change(open val id: String = UUID.randomUUID().toString()) {
     abstract val peersets: List<ChangePeersetInfo>
     abstract val notificationUrl: String?
 
-    // TODO remove
-    val acceptNum: Int? = null
-
     fun getPeersetInfo(peersetId: PeersetId): ChangePeersetInfo? = peersets.find { it.peersetId == peersetId }
 
     fun toHistoryEntry(
