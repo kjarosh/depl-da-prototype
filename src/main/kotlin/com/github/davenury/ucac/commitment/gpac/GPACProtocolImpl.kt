@@ -65,22 +65,6 @@ class GPACProtocolImpl(
         span("GPAC.handleElect") {
             return phaseMutex.withLock {
                 logger.debug("Handling elect {}", message)
-                val decision =
-                    message.acceptNum?.let { acceptNum ->
-                        Changes.fromHistory(history).find { it.acceptNum == acceptNum }
-                    }
-                if (decision != null) {
-                    logger.debug("Decision is not null")
-                    // meaning that I'm the cohort that got apply for transaction of original leader
-                    return@withLock ElectedYou(
-                        message.ballotNumber,
-                        Accept.COMMIT,
-                        message.acceptNum,
-                        Accept.COMMIT,
-                        true,
-                    )
-                }
-
                 signal(Signal.OnHandlingElectBegin, null, message.change)
 
                 val acquisition = transactionBlocker.getAcquisition()
