@@ -34,7 +34,7 @@ dependencies {
 
     implementation(kotlin("stdlib-jdk8"))
 
-    implementation("redis.clients:jedis:5.1.2")
+    implementation("redis.clients:jedis:5.1.3")
 
     testImplementation(platform("org.junit:junit-bom:5.10.2"))
     testImplementation("org.junit.jupiter:junit-jupiter")
