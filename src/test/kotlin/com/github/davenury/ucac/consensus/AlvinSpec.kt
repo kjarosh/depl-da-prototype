@@ -1,13 +1,12 @@
 package com.github.davenury.ucac.consensus
 
-import com.github.davenury.common.AddGroupChange
-import com.github.davenury.common.AddUserChange
 import com.github.davenury.common.Change
 import com.github.davenury.common.ChangePeersetInfo
 import com.github.davenury.common.Changes
 import com.github.davenury.common.PeerAddress
 import com.github.davenury.common.PeerId
 import com.github.davenury.common.PeersetId
+import com.github.davenury.common.StandardChange
 import com.github.davenury.common.history.InitialHistoryEntry
 import com.github.davenury.common.history.PersistentHistory
 import com.github.davenury.common.persistence.InMemoryPersistence
@@ -34,7 +33,6 @@ import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.fail
@@ -57,7 +55,6 @@ import java.util.concurrent.Phaser
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.system.measureTimeMillis
 
-@Disabled("protocol temporarily not used")
 @Suppress("LoggingSimilarMessage", "HttpUrlsUsage")
 @ExtendWith(TestLogExtension::class)
 class AlvinSpec : IntegrationTestBase() {
@@ -117,7 +114,7 @@ class AlvinSpec : IntegrationTestBase() {
             }
 
             // when: peer2 executes change
-            val change2 = createChange(userName = "userName2", parentId = change1.toHistoryEntry(peerset()).getId())
+            val change2 = createChange(content = "change2", parentId = change1.toHistoryEntry(peerset()).getId())
             expectCatching {
                 executeChange("${apps.getPeer(peer(0)).address}/v2/change/sync?peerset=peerset0", change2)
             }.isSuccess()
@@ -131,7 +128,7 @@ class AlvinSpec : IntegrationTestBase() {
                 expect {
                     that(changes[1]).isEqualTo(change2)
                     that(changes[0]).isEqualTo(change1)
-                    that((changes[1] as AddUserChange).userName).isEqualTo("userName2")
+                    that((changes[1] as StandardChange).content).isEqualTo("change2")
                 }
             }
         }
@@ -458,8 +455,8 @@ class AlvinSpec : IntegrationTestBase() {
             val change1AbortPhaser = Phaser(5)
             val change2PropagatePhaser = Phaser(2)
             val change2CommitPhaser = Phaser(3)
-            val change1 = createChange(userName = "user1")
-            val change2 = createChange(userName = "user2")
+            val change1 = createChange(content = "change1")
+            val change2 = createChange(content = "change2")
 
             listOf(change1AbortPhaser, change2CommitPhaser, change2PropagatePhaser).forEach { it.register() }
 
@@ -549,7 +546,7 @@ class AlvinSpec : IntegrationTestBase() {
                 }
                 expect {
                     that(proposedChanges.first()).isEqualTo(change1)
-                    that((proposedChanges.first() as AddUserChange).userName).isEqualTo("user1")
+                    that((proposedChanges.first() as StandardChange).content).isEqualTo("change1")
                 }
             }
 
@@ -563,7 +560,7 @@ class AlvinSpec : IntegrationTestBase() {
                 }
                 expect {
                     that(acceptedChanges.first()).isEqualTo(change2)
-                    that((acceptedChanges.first() as AddUserChange).userName).isEqualTo("user2")
+                    that((acceptedChanges.first() as StandardChange).content).isEqualTo("change2")
                 }
             }
 
@@ -590,7 +587,7 @@ class AlvinSpec : IntegrationTestBase() {
                 }
                 expect {
                     that(acceptedChanges.first()).isEqualTo(change2)
-                    that((acceptedChanges.first() as AddUserChange).userName).isEqualTo("user2")
+                    that((acceptedChanges.first() as StandardChange).content).isEqualTo("change2")
                 }
             }
         }
@@ -684,8 +681,8 @@ class AlvinSpec : IntegrationTestBase() {
             listOf(phaserGPACPeer, phaserAlvinPeers).forEach { it.register() }
 
             val change1 =
-                AddGroupChange(
-                    "name",
+                StandardChange(
+                    "change",
                     peersets =
                         listOf(
                             ChangePeersetInfo(
@@ -695,8 +692,8 @@ class AlvinSpec : IntegrationTestBase() {
                         ),
                 )
             val change2 =
-                AddGroupChange(
-                    "name",
+                StandardChange(
+                    "change",
                     peersets =
                         listOf(
                             ChangePeersetInfo(
@@ -734,7 +731,7 @@ class AlvinSpec : IntegrationTestBase() {
             val consensusPeersAction =
                 SignalListener {
                     logger.info("Arrived: ${it.change}")
-                    if (it.change == change2)phaserAlvinPeers.arrive()
+                    if (it.change == change2) phaserAlvinPeers.arrive()
                 }
 
             val firstPeerSignals =
@@ -813,8 +810,8 @@ class AlvinSpec : IntegrationTestBase() {
                 }
 
             expect {
-                that(change).isA<AddGroupChange>()
-                that((change as AddGroupChange).groupName).isEqualTo(change1.groupName)
+                that(change).isA<StandardChange>()
+                that((change as StandardChange).content).isEqualTo(change1.content)
             }
 
             executeChange(
@@ -834,12 +831,12 @@ class AlvinSpec : IntegrationTestBase() {
 
                 expectThat(changes.size).isGreaterThanOrEqualTo(2)
                 expect {
-                    that(changes[0]).isA<AddGroupChange>()
-                    that((changes[0] as AddGroupChange).groupName).isEqualTo(change1.groupName)
+                    that(changes[0]).isA<StandardChange>()
+                    that((changes[0] as StandardChange).content).isEqualTo(change1.content)
                 }
                 expect {
-                    that(changes[1]).isA<AddGroupChange>()
-                    that((changes[1] as AddGroupChange).groupName).isEqualTo(change2.groupName)
+                    that(changes[1]).isA<StandardChange>()
+                    that((changes[1] as StandardChange).content).isEqualTo(change2.content)
                 }
             }
         }
@@ -899,7 +896,7 @@ class AlvinSpec : IntegrationTestBase() {
 
             val peerChangeAccepted =
                 SignalListener {
-                    logger.info("Arrived change: ${(it.change as AddUserChange?)?.userName}")
+                    logger.info("Arrived change: ${(it.change as StandardChange?)?.content}")
                     if (isFirstPartCommitted.get()) {
                         changePhaser.arrive()
                     } else {
@@ -909,8 +906,8 @@ class AlvinSpec : IntegrationTestBase() {
 
             val ignoringPeerChangeAccepted =
                 SignalListener {
-                    logger.info("Arrived change: ${(it.change as AddUserChange?)?.userName}")
-                    if (isAllChangeCommitted.get() && (it.change as AddUserChange?)?.userName == "user${firstPart + secondPart - 1}") {
+                    logger.info("Arrived change: ${(it.change as StandardChange?)?.content}")
+                    if (isAllChangeCommitted.get() && (it.change as StandardChange?)?.content == "change${firstPart + secondPart - 1}") {
                         endingPhaser.arrive()
                     } else if (!isFirstPartCommitted.get()) {
                         allPeerChangePhaser.arrive()
@@ -953,7 +950,7 @@ class AlvinSpec : IntegrationTestBase() {
                 }.isSuccess()
                 allPeerChangePhaser.arriveAndAwaitAdvanceWithTimeout()
                 iter += 1
-                change = createChange(userName = "user$it", parentId = change.toHistoryEntry(PeersetId("peerset0")).getId())
+                change = createChange(content = "change$it", parentId = change.toHistoryEntry(PeersetId("peerset0")).getId())
             }
             // when: peer1 executed change
 
@@ -966,7 +963,7 @@ class AlvinSpec : IntegrationTestBase() {
                 changePhaser.arriveAndAwaitAdvanceWithTimeout()
                 iter += 1
                 logger.info("Change second part moved $it")
-                change = createChange(userName = "user${it + 1 + firstPart}", parentId = change.toHistoryEntry(PeersetId("peerset0")).getId())
+                change = createChange(content = "change${it + 1 + firstPart}", parentId = change.toHistoryEntry(PeersetId("peerset0")).getId())
             }
 
             isAllChangeCommitted.set(true)
@@ -980,11 +977,11 @@ class AlvinSpec : IntegrationTestBase() {
         }
 
     private fun createChange(
-        userName: String = "userName",
+        content: String = "change",
         parentId: String = InitialHistoryEntry.getId(),
         peersetId: String = "peerset0",
-    ) = AddUserChange(
-        userName,
+    ) = StandardChange(
+        content,
         peersets = listOf(ChangePeersetInfo(PeersetId(peersetId), parentId)),
     )
 

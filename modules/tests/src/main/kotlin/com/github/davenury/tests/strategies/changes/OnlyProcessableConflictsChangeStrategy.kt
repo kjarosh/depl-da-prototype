@@ -1,9 +1,9 @@
 package com.github.davenury.tests.strategies.changes
 
-import com.github.davenury.common.AddUserChange
 import com.github.davenury.common.Change
 import com.github.davenury.common.ChangePeersetInfo
 import com.github.davenury.common.PeersetId
+import com.github.davenury.common.StandardChange
 import com.github.davenury.tests.OnePeersetChanges
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -26,9 +26,9 @@ class OnlyProcessableConflictsChangeStrategy(
                 }
             }
 
-        return AddUserChange(
+        return StandardChange(
             id = changeId,
-            userName = "user${counter.incrementAndGet()}",
+            content = "change${counter.incrementAndGet()}",
             peersets = peersets,
             notificationUrl = "$ownAddress/api/v1/notification",
         )

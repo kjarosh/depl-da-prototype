@@ -1,6 +1,5 @@
 package com.github.davenury.tests
 
-import com.github.davenury.common.AddUserChange
 import com.github.davenury.common.Change
 import com.github.davenury.common.ChangeResult
 import com.github.davenury.common.CurrentLeaderFullInfoDto
@@ -8,6 +7,7 @@ import com.github.davenury.common.Notification
 import com.github.davenury.common.PeerAddress
 import com.github.davenury.common.PeerId
 import com.github.davenury.common.PeersetId
+import com.github.davenury.common.StandardChange
 import com.github.davenury.common.SubscriberAddress
 import com.github.davenury.common.history.InitialHistoryEntry
 import com.github.davenury.tests.strategies.changes.CreateChangeStrategy
@@ -99,7 +99,7 @@ class Changes(
                         val parentId = change.toHistoryEntry(peersetId).getId()
                         changes[peersetId]!!.overrideParentId(parentId)
                         logger.info(
-                            "Setting new parent id for peerset $peersetId: $parentId, change type: ${change::class.java.simpleName}${if (change is AddUserChange) "change was for ${change.userName}" else ""}",
+                            "Setting new parent id for peerset $peersetId: $parentId, change type: ${change::class.java.simpleName}${if (change is StandardChange) " change content: ${change.content}" else ""}",
                         )
                     } else if (notification.result.status == ChangeResult.Status.CONFLICT && notification.result.currentEntryId != null) {
                         logger.info(

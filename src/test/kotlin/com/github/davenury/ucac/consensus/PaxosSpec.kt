@@ -1,13 +1,12 @@
 package com.github.davenury.ucac.consensus
 
-import com.github.davenury.common.AddGroupChange
-import com.github.davenury.common.AddUserChange
 import com.github.davenury.common.Change
 import com.github.davenury.common.ChangePeersetInfo
 import com.github.davenury.common.Changes
 import com.github.davenury.common.PeerAddress
 import com.github.davenury.common.PeerId
 import com.github.davenury.common.PeersetId
+import com.github.davenury.common.StandardChange
 import com.github.davenury.common.history.InitialHistoryEntry
 import com.github.davenury.ucac.ApplicationUcac
 import com.github.davenury.ucac.Signal
@@ -71,7 +70,6 @@ import kotlin.collections.take
 import kotlin.collections.toList
 import kotlin.system.measureTimeMillis
 
-@Disabled("protocol temporarily not used")
 @ExtendWith(TestLogExtension::class)
 class PaxosSpec : IntegrationTestBase() {
     private val knownPeerIp = "localhost"
@@ -138,7 +136,7 @@ class PaxosSpec : IntegrationTestBase() {
             }
 
             // when: peer2 executes change
-            val change2 = createChange(userName = "userName2", parentId = change1.toHistoryEntry(peerset()).getId())
+            val change2 = createChange(content = "change2", parentId = change1.toHistoryEntry(peerset()).getId())
             executeChange("${apps.getPeer(peer(1)).address}/v2/change/sync?peerset=peerset0", change2)
 
             changePhaser.arriveAndAwaitAdvanceWithTimeout()
@@ -150,7 +148,7 @@ class PaxosSpec : IntegrationTestBase() {
                 expect {
                     that(changes[1]).isEqualTo(change2)
                     that(changes[0]).isEqualTo(change1)
-                    that((changes[1] as AddUserChange).userName).isEqualTo("userName2")
+                    that((changes[1] as StandardChange).content).isEqualTo("change2")
                 }
             }
         }
@@ -703,8 +701,8 @@ class PaxosSpec : IntegrationTestBase() {
 
             logger.info("Second election finished")
 
-            val change1 = createChange(userName = "user1")
-            val change2 = createChange(userName = "user2")
+            val change1 = createChange(content = "change1")
+            val change2 = createChange(content = "change2")
 
 //      Run change in both halfs
             executeChange("${firstHalf.first().address}/v2/change/async?peerset=peerset0", change1)
@@ -726,7 +724,7 @@ class PaxosSpec : IntegrationTestBase() {
                 if (proposedChanges.size == 1) {
                     expect {
                         that(proposedChanges.first()).isEqualTo(change1)
-                        that((proposedChanges.first() as AddUserChange).userName).isEqualTo("user1")
+                        that((proposedChanges.first() as StandardChange).content).isEqualTo("change1")
                     }
                 }
             }
@@ -741,7 +739,7 @@ class PaxosSpec : IntegrationTestBase() {
                 }
                 expect {
                     that(acceptedChanges.first()).isEqualTo(change2)
-                    that((acceptedChanges.first() as AddUserChange).userName).isEqualTo("user2")
+                    that((acceptedChanges.first() as StandardChange).content).isEqualTo("change2")
                 }
             }
 
@@ -766,7 +764,7 @@ class PaxosSpec : IntegrationTestBase() {
                 }
                 expect {
                     that(acceptedChanges.first()).isEqualTo(change2)
-                    that((acceptedChanges.first() as AddUserChange).userName).isEqualTo("user2")
+                    that((acceptedChanges.first() as StandardChange).content).isEqualTo("change2")
                 }
             }
         }
@@ -783,14 +781,14 @@ class PaxosSpec : IntegrationTestBase() {
             listOf(phaserGPACPeer, phaserPigPaxosPeers, leaderElectedPhaser).forEach { it.register() }
 
             val change1 =
-                AddGroupChange(
-                    "name",
+                StandardChange(
+                    "change",
                     peersets = listOf(ChangePeersetInfo(peerset(), InitialHistoryEntry.getId())),
                 )
 
             val change2 =
-                AddGroupChange(
-                    "name",
+                StandardChange(
+                    "change",
                     peersets =
                         listOf(
                             ChangePeersetInfo(
@@ -916,8 +914,8 @@ class PaxosSpec : IntegrationTestBase() {
                 }
 
             expect {
-                that(change).isA<AddGroupChange>()
-                that((change as AddGroupChange).groupName).isEqualTo(change1.groupName)
+                that(change).isA<StandardChange>()
+                that((change as StandardChange).content).isEqualTo(change1.content)
             }
 
             executeChange(
@@ -938,12 +936,12 @@ class PaxosSpec : IntegrationTestBase() {
                 // only one change and this change shouldn't be applied two times
                 expectThat(changes.size).isGreaterThanOrEqualTo(2)
                 expect {
-                    that(changes[0]).isA<AddGroupChange>()
-                    that((changes[0] as AddGroupChange).groupName).isEqualTo(change1.groupName)
+                    that(changes[0]).isA<StandardChange>()
+                    that((changes[0] as StandardChange).content).isEqualTo(change1.content)
                 }
                 expect {
-                    that(changes[1]).isA<AddGroupChange>()
-                    that((changes[1] as AddGroupChange).groupName).isEqualTo(change2.groupName)
+                    that(changes[1]).isA<StandardChange>()
+                    that((changes[1] as StandardChange).content).isEqualTo(change2.content)
                 }
             }
         }
@@ -975,7 +973,7 @@ class PaxosSpec : IntegrationTestBase() {
 
             val peerChangeAccepted =
                 SignalListener {
-                    logger.info("Arrived change: ${(it.change as AddUserChange?)?.userName}")
+                    logger.info("Arrived change: ${(it.change as StandardChange?)?.content}")
                     if (isFirstPartCommitted.get()) {
                         changePhaser.arrive()
                     } else {
@@ -985,8 +983,8 @@ class PaxosSpec : IntegrationTestBase() {
 
             val ignoringPeerChangeAccepted =
                 SignalListener {
-                    logger.info("Arrived change: ${(it.change as AddUserChange?)?.userName}")
-                    if (isAllChangeCommitted.get() && (it.change as AddUserChange?)?.userName == "user${firstPart + secondPart - 1}") {
+                    logger.info("Arrived change: ${(it.change as StandardChange?)?.content}")
+                    if (isAllChangeCommitted.get() && (it.change as StandardChange?)?.content == "change${firstPart + secondPart - 1}") {
                         endingPhaser.arrive()
                     } else if (!isFirstPartCommitted.get()) {
                         allPeerChangePhaser.arrive()
@@ -1036,7 +1034,7 @@ class PaxosSpec : IntegrationTestBase() {
                 executeChange("${apps.getPeer("peer0").address}/v2/change/sync?peerset=peerset0", change)
                 allPeerChangePhaser.arriveAndAwaitAdvanceWithTimeout(Duration.ofSeconds(30))
                 iter += 1
-                change = createChange(userName = "user$it", parentId = change.toHistoryEntry(PeersetId("peerset0")).getId())
+                change = createChange(content = "change$it", parentId = change.toHistoryEntry(PeersetId("peerset0")).getId())
             }
             // when: peer1 executed change
 
@@ -1048,7 +1046,7 @@ class PaxosSpec : IntegrationTestBase() {
                 iter += 1
                 logger.info("Change second part moved $it")
                 change =
-                    createChange(userName = "user${it + 1 + firstPart}", parentId = change.toHistoryEntry(PeersetId("peerset0")).getId())
+                    createChange(content = "change${it + 1 + firstPart}", parentId = change.toHistoryEntry(PeersetId("peerset0")).getId())
             }
 
             isAllChangeCommitted.set(true)
@@ -1098,11 +1096,11 @@ class PaxosSpec : IntegrationTestBase() {
         }
 
     private fun createChange(
-        userName: String = "userName",
+        content: String = "change",
         parentId: String = InitialHistoryEntry.getId(),
         peersetId: String = "peerset0",
-    ) = AddUserChange(
-        userName,
+    ) = StandardChange(
+        content,
         peersets = listOf(ChangePeersetInfo(PeersetId(peersetId), parentId)),
     )
 

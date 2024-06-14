@@ -1,11 +1,10 @@
 package com.github.davenury.ucac.api
 
-import com.github.davenury.common.AddGroupChange
-import com.github.davenury.common.AddUserChange
 import com.github.davenury.common.Change
 import com.github.davenury.common.ChangePeersetInfo
 import com.github.davenury.common.Changes
 import com.github.davenury.common.PeersetId
+import com.github.davenury.common.StandardChange
 import com.github.davenury.common.history.InitialHistoryEntry
 import com.github.davenury.ucac.Signal
 import com.github.davenury.ucac.SignalListener
@@ -262,8 +261,8 @@ class SinglePeersetSpec : IntegrationTestBase() {
             val phaserAllPeers = Phaser(5)
 
             val proposedChange =
-                AddGroupChange(
-                    "name",
+                StandardChange(
+                    "first",
                     peersets =
                         listOf(
                             ChangePeersetInfo(PeersetId("peerset0"), InitialHistoryEntry.getId()),
@@ -352,8 +351,8 @@ class SinglePeersetSpec : IntegrationTestBase() {
                 }
 
             expect {
-                that(change).isA<AddGroupChange>()
-                that((change as AddGroupChange).groupName).isEqualTo(proposedChange.groupName)
+                that(change).isA<StandardChange>()
+                that((change as StandardChange).content).isEqualTo(proposedChange.content)
             }
 
             // leader timeout is 5 seconds for integration tests - in the meantime other peer should wake up and execute transaction
@@ -370,8 +369,8 @@ class SinglePeersetSpec : IntegrationTestBase() {
                 // only one change and this change shouldn't be applied two times
                 expectThat(changes.size).isGreaterThanOrEqualTo(1)
                 expect {
-                    that(changes[0]).isA<AddGroupChange>()
-                    that((changes[0] as AddGroupChange).groupName).isEqualTo(proposedChange.groupName)
+                    that(changes[0]).isA<StandardChange>()
+                    that((changes[0] as StandardChange).content).isEqualTo(proposedChange.content)
                 }
             }
         }
@@ -386,8 +385,8 @@ class SinglePeersetSpec : IntegrationTestBase() {
     }
 
     private fun change() =
-        AddUserChange(
-            "userName",
+        StandardChange(
+            "change",
             peersets =
                 listOf(
                     ChangePeersetInfo(PeersetId("peerset0"), InitialHistoryEntry.getId()),

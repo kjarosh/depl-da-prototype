@@ -12,12 +12,12 @@ internal class ChangeTest {
     @Test
     internal fun idUniqueness() {
         val change1 =
-            AddUserChange(
+            StandardChange(
                 "test1",
                 peersets = listOf(),
             )
         val change2 =
-            AddUserChange(
+            StandardChange(
                 "test2",
                 peersets = listOf(),
             )

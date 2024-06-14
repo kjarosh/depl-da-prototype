@@ -1,14 +1,12 @@
 package com.github.davenury.ucac.api
 
-import com.github.davenury.common.AddGroupChange
-import com.github.davenury.common.AddRelationChange
-import com.github.davenury.common.AddUserChange
 import com.github.davenury.common.Change
 import com.github.davenury.common.ChangePeersetInfo
 import com.github.davenury.common.Changes
 import com.github.davenury.common.PeerAddress
 import com.github.davenury.common.PeerId
 import com.github.davenury.common.PeersetId
+import com.github.davenury.common.StandardChange
 import com.github.davenury.common.TwoPCChange
 import com.github.davenury.common.TwoPCStatus
 import com.github.davenury.common.history.InitialHistoryEntry
@@ -114,8 +112,8 @@ class TwoPCSpec : IntegrationTestBase() {
                 expectThat(changes[0]).isA<TwoPCChange>()
                     .with(TwoPCChange::twoPCStatus) { isEqualTo(TwoPCStatus.ACCEPTED) }
                     .with(TwoPCChange::change) { isEqualTo(change) }
-                expectThat(changes[1]).isA<AddUserChange>()
-                    .with(AddUserChange::userName) { isEqualTo("userName") }
+                expectThat(changes[1]).isA<StandardChange>()
+                    .with(StandardChange::content) { isEqualTo("change") }
             }
         }
 
@@ -187,7 +185,7 @@ class TwoPCSpec : IntegrationTestBase() {
                 // then: there are two changes
                 expectThat(changes.size).isEqualTo(endRange * 2)
                 expectThat(
-                    changes.all { it is TwoPCChange && it.twoPCStatus == TwoPCStatus.ACCEPTED || it is AddUserChange },
+                    changes.all { it is TwoPCChange && it.twoPCStatus == TwoPCStatus.ACCEPTED || (it as StandardChange).content == "change" },
                 ).isTrue()
             }
         }
@@ -249,13 +247,13 @@ class TwoPCSpec : IntegrationTestBase() {
                 expectThat(changes[0]).isA<TwoPCChange>()
                     .with(TwoPCChange::twoPCStatus) { isEqualTo(TwoPCStatus.ACCEPTED) }
                     .with(TwoPCChange::change) { isEqualTo(change) }
-                expectThat(changes[1]).isA<AddUserChange>()
-                    .with(AddUserChange::userName) { isEqualTo("userName") }
+                expectThat(changes[1]).isA<StandardChange>()
+                    .with(StandardChange::content) { isEqualTo("change") }
                 expectThat(changes[2]).isA<TwoPCChange>()
                     .with(TwoPCChange::twoPCStatus) { isEqualTo(TwoPCStatus.ACCEPTED) }
                     .with(TwoPCChange::change) { isEqualTo(changeSecond) }
-                expectThat(changes[3]).isA<AddUserChange>()
-                    .with(AddUserChange::userName) { isEqualTo("userName") }
+                expectThat(changes[3]).isA<StandardChange>()
+                    .with(StandardChange::content) { isEqualTo("change") }
             }
         }
 
@@ -442,8 +440,8 @@ class TwoPCSpec : IntegrationTestBase() {
                     .with(Change::peersets) { isEqualTo(change.peersets) }
                     .with(TwoPCChange::twoPCStatus) { isEqualTo(TwoPCStatus.ACCEPTED) }
                     .with(TwoPCChange::change) { isEqualTo(change) }
-                expectThat(changes[1]).isA<AddUserChange>()
-                    .with(AddUserChange::userName) { isEqualTo("userName") }
+                expectThat(changes[1]).isA<StandardChange>()
+                    .with(StandardChange::content) { isEqualTo("change") }
             }
         }
 
@@ -526,8 +524,8 @@ class TwoPCSpec : IntegrationTestBase() {
                     .with(TwoPCChange::change) {
                         isEqualTo(change)
                     }
-                expectThat(changes[1]).isA<AddUserChange>()
-                    .with(AddUserChange::userName) { isEqualTo("userName") }
+                expectThat(changes[1]).isA<StandardChange>()
+                    .with(StandardChange::content) { isEqualTo("change") }
             }
         }
 
@@ -607,18 +605,18 @@ class TwoPCSpec : IntegrationTestBase() {
 
             val firstChangeListener =
                 SignalListener {
-                    if (it.change!! is AddUserChange) {
+                    if (it.change is StandardChange && (it.change as StandardChange).content == "first") {
                         firstChangePhaser.arrive()
-                    } else if (it.change is AddRelationChange) {
+                    } else if (it.change is StandardChange && (it.change as StandardChange).content == "third") {
                         finalChangePhaser.arrive()
                     }
                 }
 
             val secondChangeListener =
                 SignalListener {
-                    if (it.change!! is AddGroupChange) {
+                    if (it.change is StandardChange && (it.change as StandardChange).content == "second") {
                         secondChangePhaser.arrive()
-                    } else if (it.change is AddRelationChange) {
+                    } else if (it.change is StandardChange && (it.change as StandardChange).content == "third") {
                         finalChangePhaser.arrive()
                     }
                 }
@@ -655,8 +653,8 @@ class TwoPCSpec : IntegrationTestBase() {
 
             // given - change in first peerset
             val firstChange =
-                AddUserChange(
-                    "firstUserName",
+                StandardChange(
+                    "first",
                     peersets = listOf(ChangePeersetInfo(PeersetId("peerset0"), InitialHistoryEntry.getId())),
                 )
             expectCatching {
@@ -667,8 +665,8 @@ class TwoPCSpec : IntegrationTestBase() {
 
             // and - change in second peerset
             val secondChange =
-                AddGroupChange(
-                    "firstGroup",
+                StandardChange(
+                    "second",
                     peersets = listOf(ChangePeersetInfo(PeersetId("peerset1"), InitialHistoryEntry.getId())),
                 )
             expectCatching {
@@ -682,9 +680,8 @@ class TwoPCSpec : IntegrationTestBase() {
 
             // when - executing change between two peersets
             val lastChange: Change =
-                AddRelationChange(
-                    "firstUserName",
-                    "firstGroup",
+                StandardChange(
+                    "third",
                     peersets =
                         listOf(
                             ChangePeersetInfo(
@@ -714,9 +711,8 @@ class TwoPCSpec : IntegrationTestBase() {
                 expectThat(it[1]).isA<TwoPCChange>()
                     .with(TwoPCChange::change) { isEqualTo(lastChange) }
                     .with(TwoPCChange::twoPCStatus) { isEqualTo(TwoPCStatus.ACCEPTED) }
-                expectThat(it[2]).isA<AddRelationChange>()
-                    .with(AddRelationChange::from) { isEqualTo("firstUserName") }
-                    .with(AddRelationChange::to) { isEqualTo("firstGroup") }
+                expectThat(it[2]).isA<StandardChange>()
+                    .with(StandardChange::content) { isEqualTo("third") }
             }
 
             askAllForChanges("peerset1").forEach {
@@ -725,9 +721,8 @@ class TwoPCSpec : IntegrationTestBase() {
                 expectThat(it[1]).isA<TwoPCChange>()
                     .with(TwoPCChange::change) { isEqualTo(lastChange) }
                     .with(TwoPCChange::twoPCStatus) { isEqualTo(TwoPCStatus.ACCEPTED) }
-                expectThat(it[2]).isA<AddRelationChange>()
-                    .with(AddRelationChange::from) { isEqualTo("firstUserName") }
-                    .with(AddRelationChange::to) { isEqualTo("firstGroup") }
+                expectThat(it[2]).isA<StandardChange>()
+                    .with(StandardChange::content) { isEqualTo("third") }
             }
         }
 
@@ -1086,7 +1081,7 @@ class TwoPCSpec : IntegrationTestBase() {
             askAllForChanges("peerset0", "peerset1").forEach {
                 logger.info("changes: $it")
                 expectThat(it.size).isEqualTo(2)
-                expectThat(it[1]).isA<AddUserChange>()
+                expectThat(it[1]).isA<StandardChange>()
             }
         }
 
@@ -1121,8 +1116,8 @@ class TwoPCSpec : IntegrationTestBase() {
         }
 
     private fun change(vararg peersetNums: Int) =
-        AddUserChange(
-            "userName",
+        StandardChange(
+            "change",
             peersets =
                 peersetNums.map {
                     ChangePeersetInfo(PeersetId("peerset$it"), InitialHistoryEntry.getId())
@@ -1130,8 +1125,8 @@ class TwoPCSpec : IntegrationTestBase() {
         )
 
     private fun change(vararg peersetToChangeId: Pair<Int, String>) =
-        AddUserChange(
-            "userName",
+        StandardChange(
+            "change",
             peersets =
                 peersetToChangeId.map {
                     ChangePeersetInfo(PeersetId("peerset${it.first}"), it.second)
@@ -1139,8 +1134,8 @@ class TwoPCSpec : IntegrationTestBase() {
         )
 
     private fun twoPeersetChange(change: Change) =
-        AddUserChange(
-            "userName",
+        StandardChange(
+            "change",
             peersets =
                 (0..1).map { PeersetId("peerset$it") }
                     .map { ChangePeersetInfo(it, change.toHistoryEntry(it).getId()) },
