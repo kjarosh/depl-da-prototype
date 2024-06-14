@@ -1,9 +1,9 @@
 package com.github.davenury.ucac.testcontainers
 
-import com.github.davenury.common.AddUserChange
 import com.github.davenury.common.ChangePeersetInfo
 import com.github.davenury.common.Changes
 import com.github.davenury.common.PeersetId
+import com.github.davenury.common.StandardChange
 import com.github.davenury.common.history.InitialHistoryEntry
 import com.github.davenury.common.objectMapper
 import com.github.davenury.ucac.utils.ApplicationTestcontainersEnvironment
@@ -60,8 +60,8 @@ class SinglePeersetApiSpec {
     fun `sync api`(): Unit =
         runBlocking {
             val change =
-                AddUserChange(
-                    "test user",
+                StandardChange(
+                    "test change",
                     peersets =
                         listOf(
                             ChangePeersetInfo(PeersetId("peerset0"), InitialHistoryEntry.getId()),

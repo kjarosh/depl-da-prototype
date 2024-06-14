@@ -1,6 +1,5 @@
 package com.github.davenury.test
 
-import com.github.davenury.common.AddUserChange
 import com.github.davenury.common.Change
 import com.github.davenury.common.ChangePeersetInfo
 import com.github.davenury.common.ChangeResult
@@ -8,6 +7,7 @@ import com.github.davenury.common.Notification
 import com.github.davenury.common.PeerAddress
 import com.github.davenury.common.PeerId
 import com.github.davenury.common.PeersetId
+import com.github.davenury.common.StandardChange
 import com.github.davenury.common.history.InitialHistoryEntry
 import com.github.davenury.tests.Changes
 import com.github.davenury.tests.strategies.changes.DefaultChangeStrategy
@@ -249,8 +249,8 @@ class ChangesTest {
             )
 
         val singleChange =
-            AddUserChange(
-                "userName",
+            StandardChange(
+                "change",
                 peersets = listOf(ChangePeersetInfo(PeersetId("peerset0"), "a2fasda2f")),
             )
         repeat(3) {

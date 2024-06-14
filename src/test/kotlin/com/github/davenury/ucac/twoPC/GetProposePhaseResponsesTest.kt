@@ -1,9 +1,9 @@
 package com.github.davenury.ucac.twoPC
 
-import com.github.davenury.common.AddUserChange
 import com.github.davenury.common.PeerAddress
 import com.github.davenury.common.PeerId
 import com.github.davenury.common.PeersetId
+import com.github.davenury.common.StandardChange
 import com.github.davenury.ucac.TwoPCConfig
 import com.github.davenury.ucac.commitment.twopc.TwoPC
 import com.github.davenury.ucac.commitment.twopc.TwoPCProtocolClient
@@ -67,7 +67,7 @@ class GetProposePhaseResponsesTest {
             val decision =
                 subject.getProposePhaseResponses(
                     mapOf(PeersetId("peerset1") to peerResolver.resolve(PeerId("peer3"))),
-                    change = AddUserChange(userName = ""),
+                    change = StandardChange(content = "", peersets = listOf()),
                     mapOf(),
                 )
 
@@ -109,7 +109,7 @@ class GetProposePhaseResponsesTest {
                         PeersetId("peerset1") to peerResolver.resolve(PeerId("peer3")),
                         PeersetId("peerset2") to peerResolver.resolve(PeerId("peer4")),
                     ),
-                    change = AddUserChange(""),
+                    change = StandardChange("", peersets = listOf()),
                     mapOf(),
                 )
 
@@ -171,7 +171,7 @@ class GetProposePhaseResponsesTest {
                         PeersetId("peerset1") to peerResolver.resolve(PeerId("peer3")),
                         PeersetId("peerset2") to peerResolver.resolve(PeerId("peer4")),
                     ),
-                    change = AddUserChange(""),
+                    change = StandardChange("", peersets = listOf()),
                     mapOf(),
                 )
 

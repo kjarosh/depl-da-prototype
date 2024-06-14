@@ -1,6 +1,5 @@
 package com.github.davenury.ucac.gpac
 
-import com.github.davenury.common.AddUserChange
 import com.github.davenury.common.ChangePeersetInfo
 import com.github.davenury.common.NotElectingYou
 import com.github.davenury.common.NotValidLeader
@@ -8,6 +7,7 @@ import com.github.davenury.common.PeerAddress
 import com.github.davenury.common.PeerId
 import com.github.davenury.common.PeersetId
 import com.github.davenury.common.ProtocolName
+import com.github.davenury.common.StandardChange
 import com.github.davenury.common.history.InitialHistoryEntry
 import com.github.davenury.common.history.PersistentHistory
 import com.github.davenury.common.persistence.InMemoryPersistence
@@ -202,8 +202,8 @@ class GPACProtocolSpec {
         }
 
     private val change =
-        AddUserChange(
-            "userName",
+        StandardChange(
+            "change",
             peersets =
                 listOf(
                     ChangePeersetInfo(PeersetId("peerset0"), InitialHistoryEntry.getId()),

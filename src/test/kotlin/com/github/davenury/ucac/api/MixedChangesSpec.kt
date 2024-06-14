@@ -1,11 +1,11 @@
 package com.github.davenury.ucac.api
 
-import com.github.davenury.common.AddUserChange
 import com.github.davenury.common.Change
 import com.github.davenury.common.ChangePeersetInfo
 import com.github.davenury.common.Changes
 import com.github.davenury.common.PeerAddress
 import com.github.davenury.common.PeersetId
+import com.github.davenury.common.StandardChange
 import com.github.davenury.common.history.InitialHistoryEntry
 import com.github.davenury.ucac.Signal
 import com.github.davenury.ucac.SignalListener
@@ -473,8 +473,8 @@ class MixedChangesSpec : IntegrationTestBase() {
     private suspend fun askAllForChanges(peersetId: String) = apps.getPeerAddresses(peersetId).values.map { Pair(it, askForChanges(it, peersetId)) }
 
     private fun change(vararg peersetIds: Int) =
-        AddUserChange(
-            "userName",
+        StandardChange(
+            "change",
             peersets =
                 peersetIds.map {
                     ChangePeersetInfo(PeersetId("peerset$it"), InitialHistoryEntry.getId())
@@ -482,8 +482,8 @@ class MixedChangesSpec : IntegrationTestBase() {
         )
 
     private fun change(peerSetIdToId: Map<Int, String>) =
-        AddUserChange(
-            "userName",
+        StandardChange(
+            "change",
             peersets =
                 peerSetIdToId.map {
                     ChangePeersetInfo(PeersetId("peerset${it.key}"), it.value)

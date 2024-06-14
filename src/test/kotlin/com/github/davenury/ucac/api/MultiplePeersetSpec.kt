@@ -1,13 +1,11 @@
 package com.github.davenury.ucac.api
 
-import com.github.davenury.common.AddGroupChange
-import com.github.davenury.common.AddRelationChange
-import com.github.davenury.common.AddUserChange
 import com.github.davenury.common.Change
 import com.github.davenury.common.ChangePeersetInfo
 import com.github.davenury.common.Changes
 import com.github.davenury.common.PeerAddress
 import com.github.davenury.common.PeersetId
+import com.github.davenury.common.StandardChange
 import com.github.davenury.common.history.InitialHistoryEntry
 import com.github.davenury.ucac.Signal
 import com.github.davenury.ucac.SignalListener
@@ -50,22 +48,9 @@ import strikt.assertions.isLessThanOrEqualTo
 import strikt.assertions.isSuccess
 import java.time.Duration
 import java.util.concurrent.Phaser
-import kotlin.collections.List
-import kotlin.collections.associateWith
 import kotlin.collections.component1
 import kotlin.collections.component2
-import kotlin.collections.count
-import kotlin.collections.filter
-import kotlin.collections.flatMap
-import kotlin.collections.forEach
-import kotlin.collections.last
-import kotlin.collections.listOf
-import kotlin.collections.map
-import kotlin.collections.mapOf
-import kotlin.collections.plus
 import kotlin.collections.set
-import kotlin.collections.toMap
-import kotlin.collections.toMutableMap
 import kotlin.system.measureTimeMillis
 
 @Suppress("HttpUrlsUsage")
@@ -484,7 +469,9 @@ class MultiplePeersetSpec : IntegrationTestBase() {
                             accept(ContentType.Application.Json)
                             body =
                                 Apply(
-                                    data.transaction!!.ballotNumber, true, Accept.COMMIT,
+                                    data.transaction!!.ballotNumber,
+                                    true,
+                                    Accept.COMMIT,
                                     change(0, 1),
                                 )
                         }.also {
@@ -499,7 +486,9 @@ class MultiplePeersetSpec : IntegrationTestBase() {
                             accept(ContentType.Application.Json)
                             body =
                                 Apply(
-                                    data.transaction!!.ballotNumber, true, Accept.COMMIT,
+                                    data.transaction!!.ballotNumber,
+                                    true,
+                                    Accept.COMMIT,
                                     change(0, 1),
                                 )
                         }.also {
@@ -581,7 +570,7 @@ class MultiplePeersetSpec : IntegrationTestBase() {
 
             val firstChangeListener =
                 SignalListener {
-                    if (it.change!! is AddUserChange) {
+                    if ((it.change!! as StandardChange).content == "first") {
                         logger.info("Arrived ${it.subject.getPeerName()}")
                         firstChangePhaser.arrive()
                     }
@@ -589,7 +578,7 @@ class MultiplePeersetSpec : IntegrationTestBase() {
 
             val secondChangeListener =
                 SignalListener {
-                    if (it.change!! is AddGroupChange) {
+                    if ((it.change!! as StandardChange).content == "second") {
                         logger.info("Arrived ${it.subject.getPeerName()}")
                         secondChangePhaser.arrive()
                     }
@@ -597,7 +586,7 @@ class MultiplePeersetSpec : IntegrationTestBase() {
 
             val finalChangeListener =
                 SignalListener {
-                    if (it.change is AddRelationChange) {
+                    if ((it.change!! as StandardChange).content == "third") {
                         logger.info("Arrived ${it.subject.getPeerName()}")
                         finalChangePhaser.arrive()
                     }
@@ -641,8 +630,8 @@ class MultiplePeersetSpec : IntegrationTestBase() {
             expectCatching {
                 executeChange(
                     "http://${apps.getPeer("peer0").address}/v2/change/sync?peerset=peerset0",
-                    AddUserChange(
-                        "firstUserName",
+                    StandardChange(
+                        "first",
                         peersets =
                             listOf(
                                 ChangePeersetInfo(PeersetId("peerset0"), InitialHistoryEntry.getId()),
@@ -657,8 +646,8 @@ class MultiplePeersetSpec : IntegrationTestBase() {
             expectCatching {
                 executeChange(
                     "http://${apps.getPeer("peer3").address}/v2/change/sync?peerset=peerset1",
-                    AddGroupChange(
-                        "firstGroup",
+                    StandardChange(
+                        "second",
                         peersets =
                             listOf(
                                 ChangePeersetInfo(PeersetId("peerset1"), InitialHistoryEntry.getId()),
@@ -673,10 +662,9 @@ class MultiplePeersetSpec : IntegrationTestBase() {
             val lastChange1 = askForChanges(apps.getPeer("peer3"), "peerset1").last()
 
             // when - executing change between two peersets
-            val addRelationChange =
-                AddRelationChange(
-                    "firstUserName",
-                    "firstGroup",
+            val change =
+                StandardChange(
+                    "third",
                     peersets =
                         listOf(
                             ChangePeersetInfo(
@@ -693,7 +681,7 @@ class MultiplePeersetSpec : IntegrationTestBase() {
             expectCatching {
                 executeChange(
                     "http://${apps.getPeer("peer0").address}/v2/change/sync?peerset=peerset0",
-                    addRelationChange,
+                    change,
                 )
             }.isSuccess()
 
@@ -701,9 +689,8 @@ class MultiplePeersetSpec : IntegrationTestBase() {
 
             askAllForChanges("peerset0", "peerset1").let {
                 it.forEach {
-                    (it.last() as AddRelationChange).let {
-                        expectThat(it.from).isEqualTo(addRelationChange.from)
-                        expectThat(it.to).isEqualTo(addRelationChange.to)
+                    (it.last() as StandardChange).let {
+                        expectThat(it.content).isEqualTo(change.content)
                     }
                 }
             }
@@ -1049,8 +1036,8 @@ class MultiplePeersetSpec : IntegrationTestBase() {
         }
 
     private fun change(vararg peersetIds: Int) =
-        AddUserChange(
-            "userName",
+        StandardChange(
+            "change",
             peersets =
                 peersetIds.map {
                     ChangePeersetInfo(PeersetId("peerset$it"), InitialHistoryEntry.getId())
@@ -1058,8 +1045,8 @@ class MultiplePeersetSpec : IntegrationTestBase() {
         )
 
     private fun change(vararg peersetParentIds: Pair<Int, String>) =
-        AddUserChange(
-            "userName",
+        StandardChange(
+            "change",
             peersets =
                 peersetParentIds.map {
                     ChangePeersetInfo(PeersetId("peerset${it.first}"), it.second)
@@ -1067,8 +1054,8 @@ class MultiplePeersetSpec : IntegrationTestBase() {
         )
 
     private fun twoPeersetChange(change: Change) =
-        AddUserChange(
-            "userName",
+        StandardChange(
+            "change",
             peersets =
                 (0..1).map { PeersetId("peerset$it") }
                     .map { ChangePeersetInfo(it, change.toHistoryEntry(it).getId()) },

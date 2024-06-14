@@ -1,13 +1,12 @@
 package com.github.davenury.ucac.consensus
 
-import com.github.davenury.common.AddGroupChange
-import com.github.davenury.common.AddUserChange
 import com.github.davenury.common.Change
 import com.github.davenury.common.ChangePeersetInfo
 import com.github.davenury.common.Changes
 import com.github.davenury.common.PeerAddress
 import com.github.davenury.common.PeerId
 import com.github.davenury.common.PeersetId
+import com.github.davenury.common.StandardChange
 import com.github.davenury.common.history.InitialHistoryEntry
 import com.github.davenury.common.history.PersistentHistory
 import com.github.davenury.common.persistence.InMemoryPersistence
@@ -99,7 +98,7 @@ class RaftSpec : IntegrationTestBase() {
             val change1 = createChange()
             val change2 =
                 createChange(
-                    userName = "userName2",
+                    content = "change2",
                     parentId = change1.toHistoryEntry(PeersetId("peerset0")).getId(),
                 )
 
@@ -170,7 +169,7 @@ class RaftSpec : IntegrationTestBase() {
                 expect {
                     that(changes[1]).isEqualTo(change2)
                     that(changes[0]).isEqualTo(change1)
-                    that((changes[1] as AddUserChange).userName).isEqualTo("userName2")
+                    that((changes[1] as StandardChange).content).isEqualTo(change2.content)
                 }
             }
         }
@@ -273,7 +272,7 @@ class RaftSpec : IntegrationTestBase() {
 
             val peerChangeAccepted =
                 SignalListener {
-                    logger.info("Arrived change: ${(it.change as AddUserChange?)?.userName}")
+                    logger.info("Arrived change: ${(it.change as StandardChange?)?.content}")
                     if (isFirstPartCommitted.get()) {
                         changePhaser.arrive()
                     } else {
@@ -283,8 +282,8 @@ class RaftSpec : IntegrationTestBase() {
 
             val ignoringPeerChangeAccepted =
                 SignalListener {
-                    logger.info("Arrived change: ${(it.change as AddUserChange?)?.userName}")
-                    if (isAllChangeCommitted.get() && (it.change as AddUserChange?)?.userName == "user${firstPart + secondPart - 1}") {
+                    logger.info("Arrived change: ${(it.change as StandardChange?)?.content}")
+                    if (isAllChangeCommitted.get() && (it.change as StandardChange?)?.content == "change${firstPart + secondPart - 1}") {
                         endingPhaser.arrive()
                     } else if (!isFirstPartCommitted.get()) {
                         allPeerChangePhaser.arrive()
@@ -336,7 +335,7 @@ class RaftSpec : IntegrationTestBase() {
                 }.isSuccess()
                 allPeerChangePhaser.arriveAndAwaitAdvanceWithTimeout()
                 iter += 1
-                change = createChange(userName = "user$it", parentId = change.toHistoryEntry(PeersetId("peerset0")).getId())
+                change = createChange(content = "change$it", parentId = change.toHistoryEntry(PeersetId("peerset0")).getId())
             }
             // when: peer1 executed change
 
@@ -349,7 +348,7 @@ class RaftSpec : IntegrationTestBase() {
                 changePhaser.arriveAndAwaitAdvanceWithTimeout()
                 iter += 1
                 logger.info("Change second part moved $it")
-                change = createChange(userName = "user${it + 1 + firstPart}", parentId = change.toHistoryEntry(PeersetId("peerset0")).getId())
+                change = createChange(content = "change${it + 1 + firstPart}", parentId = change.toHistoryEntry(PeersetId("peerset0")).getId())
             }
 
             isAllChangeCommitted.set(true)
@@ -1021,8 +1020,8 @@ class RaftSpec : IntegrationTestBase() {
                 }
             }
 
-            val change1 = createChange(userName = "user1")
-            val change2 = createChange(userName = "user2")
+            val change1 = createChange(content = "change1")
+            val change2 = createChange(content = "change2")
 
 //      Run change in both halfs
             expectCatching {
@@ -1047,7 +1046,7 @@ class RaftSpec : IntegrationTestBase() {
                 }
                 expect {
                     that(proposedChanges.first()).isEqualTo(change1)
-                    that((proposedChanges.first() as AddUserChange).userName).isEqualTo("user1")
+                    that((proposedChanges.first() as StandardChange).content).isEqualTo(change1.content)
                 }
             }
 
@@ -1061,7 +1060,7 @@ class RaftSpec : IntegrationTestBase() {
                 }
                 expect {
                     that(acceptedChanges.first()).isEqualTo(change2)
-                    that((acceptedChanges.first() as AddUserChange).userName).isEqualTo("user2")
+                    that((acceptedChanges.first() as StandardChange).content).isEqualTo(change2.content)
                 }
             }
 
@@ -1086,7 +1085,7 @@ class RaftSpec : IntegrationTestBase() {
                 }
                 expect {
                     that(acceptedChanges.first()).isEqualTo(change2)
-                    that((acceptedChanges.first() as AddUserChange).userName).isEqualTo("user2")
+                    that((acceptedChanges.first() as StandardChange).content).isEqualTo(change2.content)
                 }
             }
         }
@@ -1198,8 +1197,8 @@ class RaftSpec : IntegrationTestBase() {
             listOf(phaserGPACPeer, phaserRaftPeers, leaderElectedPhaser).forEach { it.register() }
 
             val proposedChange =
-                AddGroupChange(
-                    "name",
+                StandardChange(
+                    "change",
                     peersets =
                         listOf(
                             ChangePeersetInfo(PeersetId("peerset0"), InitialHistoryEntry.getId()),
@@ -1319,8 +1318,8 @@ class RaftSpec : IntegrationTestBase() {
                 }
 
             expect {
-                that(change).isA<AddGroupChange>()
-                that((change as AddGroupChange).groupName).isEqualTo(proposedChange.groupName)
+                that(change).isA<StandardChange>()
+                that((change as StandardChange).content).isEqualTo(proposedChange.content)
             }
 
             phaserRaftPeers.arriveAndAwaitAdvanceWithTimeout()
@@ -1336,8 +1335,8 @@ class RaftSpec : IntegrationTestBase() {
                 // only one change and this change shouldn't be applied two times
                 expectThat(changes.size).isGreaterThanOrEqualTo(1)
                 expect {
-                    that(changes[0]).isA<AddGroupChange>()
-                    that((changes[0] as AddGroupChange).groupName).isEqualTo(proposedChange.groupName)
+                    that(changes[0]).isA<StandardChange>()
+                    that((changes[0] as StandardChange).content).isEqualTo(proposedChange.content)
                 }
             }
         }
@@ -1403,11 +1402,11 @@ class RaftSpec : IntegrationTestBase() {
         }
 
     private fun createChange(
-        userName: String = "userName",
+        content: String = "change",
         parentId: String = InitialHistoryEntry.getId(),
         peersetId: String = "peerset0",
-    ) = AddUserChange(
-        userName,
+    ) = StandardChange(
+        content,
         peersets = listOf(ChangePeersetInfo(PeersetId(peersetId), parentId)),
     )
 
