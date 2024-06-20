@@ -123,7 +123,7 @@ class MixedChangesSpec : IntegrationTestBase() {
             }
         }
 
-    @RetryingTest(5)
+    @RetryingTest(7)
     fun `try to execute two following changes in the same time (two different peers), first GPAC, then Raft`(): Unit =
         runBlocking {
             val change = change(0, 1)

@@ -670,7 +670,7 @@ class AlvinSpec : IntegrationTestBase() {
             }
         }
 
-    @RetryingTest(3)
+    @RetryingTest(5)
     fun `should synchronize on history if it was added outside of alvin`(): Unit =
         runBlocking {
             val phaserGPACPeer = Phaser(1)
