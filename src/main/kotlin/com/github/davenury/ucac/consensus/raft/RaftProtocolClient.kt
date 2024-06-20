@@ -49,7 +49,7 @@ class RaftProtocolClientImpl(override val peersetId: PeersetId) : RaftProtocolCl
         logger.debug("Sending elect me requests to ${otherPeers.map { it.peerId }}")
         return otherPeers
             .map { Pair(it, message) }
-            .let { sendRequests(it, "raft/request_vote") }
+            .let { sendRequests(it, "protocols/raft/request_vote") }
     }
 
     override suspend fun sendConsensusHeartbeat(
@@ -62,7 +62,7 @@ class RaftProtocolClientImpl(override val peersetId: PeersetId) : RaftProtocolCl
             try {
                 sendConsensusMessage<ConsensusHeartbeat, ConsensusHeartbeatResponse>(
                     peer,
-                    "raft/heartbeat",
+                    "protocols/raft/heartbeat",
                     message,
                 ).let { ConsensusResponse(peer.address, it) }
             } catch (e: Exception) {
@@ -89,7 +89,7 @@ class RaftProtocolClientImpl(override val peersetId: PeersetId) : RaftProtocolCl
     override suspend fun sendRequestApplyChange(
         address: String,
         change: Change,
-    ) = httpClient.post<ChangeResult>("http://$address/raft/request_apply_change?peerset=$peersetId") {
+    ) = httpClient.post<ChangeResult>("http://$address/protocols/raft/request_apply_change?peerset=$peersetId") {
         contentType(ContentType.Application.Json)
         accept(ContentType.Application.Json)
         body = change

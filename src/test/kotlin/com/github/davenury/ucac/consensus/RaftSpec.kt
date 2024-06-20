@@ -1422,7 +1422,7 @@ class RaftSpec : IntegrationTestBase() {
     private suspend fun genericAskForChange(
         suffix: String,
         peerAddress: PeerAddress,
-    ) = testHttpClient.get<Changes>("http://${peerAddress.address}/raft/$suffix?peerset=peerset0") {
+    ) = testHttpClient.get<Changes>("http://${peerAddress.address}/protocols/raft/$suffix?peerset=peerset0") {
         contentType(ContentType.Application.Json)
         accept(ContentType.Application.Json)
     }
