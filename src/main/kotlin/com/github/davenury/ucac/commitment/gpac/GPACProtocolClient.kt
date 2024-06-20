@@ -40,7 +40,7 @@ class GPACProtocolClientImpl : GPACProtocolClient {
         sendRequests<ElectMe, ElectedYou>(
             otherPeers,
             message,
-            "elect",
+            "protocols/gpac/elect",
         ) { peer, e -> "Peer ${peer.peerId} responded with exception: $e - election" }
 
     override suspend fun sendFTAgree(
@@ -50,7 +50,7 @@ class GPACProtocolClientImpl : GPACProtocolClient {
         sendRequests<Agree, Agreed>(
             otherPeers,
             message,
-            "ft-agree",
+            "protocols/gpac/ft-agree",
         ) { peer, e -> "Peer ${peer.peerId} responded with exception: $e - ft agreement" }
 
     override suspend fun sendApply(
@@ -60,7 +60,7 @@ class GPACProtocolClientImpl : GPACProtocolClient {
         sendRequests<Apply, HttpResponse>(
             otherPeers,
             message,
-            "apply",
+            "protocols/gpac/apply",
         ) { peer, e -> "Peer: ${peer.peerId} didn't apply transaction: $e" }
 
     private suspend inline fun <T, reified K> sendRequests(

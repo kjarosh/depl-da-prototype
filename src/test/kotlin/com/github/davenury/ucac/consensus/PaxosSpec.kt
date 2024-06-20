@@ -807,7 +807,7 @@ class PaxosSpec : IntegrationTestBase() {
 
             val firstLeaderAction =
                 SignalListener { signalData ->
-                    val url = "http://${signalData.peerResolver.resolve(peerId(1)).address}/apply?peerset=peerset0"
+                    val url = "http://${signalData.peerResolver.resolve(peerId(1)).address}/protocols/gpac/apply?peerset=peerset0"
                     runBlocking {
                         testHttpClient.post<HttpResponse>(url) {
                             contentType(ContentType.Application.Json)

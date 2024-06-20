@@ -191,7 +191,7 @@ class SinglePeersetSpec : IntegrationTestBase() {
                 SignalListener {
                     runBlocking {
                         val peer1Address = it.peerResolver.resolve("peer1").address
-                        testHttpClient.post<Agreed>("http://$peer1Address/ft-agree?peerset=peerset0") {
+                        testHttpClient.post<Agreed>("http://$peer1Address/protocols/gpac/ft-agree?peerset=peerset0") {
                             contentType(ContentType.Application.Json)
                             accept(ContentType.Application.Json)
                             body = Agree(it.transaction!!.ballotNumber, Accept.COMMIT, it.change!!)
@@ -271,7 +271,7 @@ class SinglePeersetSpec : IntegrationTestBase() {
 
             val firstLeaderAction =
                 SignalListener { signalData ->
-                    val url = "http://${signalData.peerResolver.resolve("peer1").address}/apply"
+                    val url = "http://${signalData.peerResolver.resolve("peer1").address}/protocols/gpac/apply"
                     runBlocking {
                         testHttpClient.post<HttpResponse>(url) {
                             contentType(ContentType.Application.Json)

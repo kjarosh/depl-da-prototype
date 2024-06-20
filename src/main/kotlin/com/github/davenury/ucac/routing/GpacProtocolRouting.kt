@@ -21,17 +21,17 @@ fun Application.gpacProtocolRouting(multiplePeersetProtocols: MultiplePeersetPro
     }
 
     routing {
-        post("/elect") {
+        post("/protocols/gpac/elect") {
             val message = call.receive<ElectMe>()
             call.respond(call.gpac().handleElect(message))
         }
 
-        post("/ft-agree") {
+        post("/protocols/gpac/ft-agree") {
             val message = call.receive<Agree>()
             call.respond(call.gpac().handleAgree(message))
         }
 
-        post("/apply") {
+        post("/protocols/gpac/apply") {
             val message = call.receive<Apply>()
             call.gpac().handleApply(message)
             call.respond(HttpStatusCode.OK)
