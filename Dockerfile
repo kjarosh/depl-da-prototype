@@ -1,4 +1,4 @@
-FROM alpine:3.20.0
+FROM alpine:3.20.1
 
 RUN apk add --no-cache openjdk11 jattach --repository http://dl-cdn.alpinelinux.org/alpine/edge/community/
 
