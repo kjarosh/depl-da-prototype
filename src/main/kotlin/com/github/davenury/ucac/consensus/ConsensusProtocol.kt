@@ -12,7 +12,7 @@ import com.github.davenury.ucac.SignalPublisher
 import com.github.davenury.ucac.common.PeerResolver
 import com.github.davenury.ucac.common.structure.Subscribers
 import com.github.davenury.ucac.consensus.alvin.AlvinProtocol
-import com.github.davenury.ucac.consensus.alvin.AlvinProtocolClientImplImpl
+import com.github.davenury.ucac.consensus.alvin.AlvinProtocolClientImpl
 import com.github.davenury.ucac.consensus.paxos.PaxosProtocolImpl
 import com.github.davenury.ucac.consensus.paxos.PigPaxosProtocolClientImpl
 import com.github.davenury.ucac.consensus.raft.RaftConsensusProtocolImpl
@@ -80,7 +80,7 @@ interface ConsensusProtocol {
                         ctx,
                         peerResolver,
                         signalPublisher,
-                        AlvinProtocolClientImplImpl(peersetId),
+                        AlvinProtocolClientImpl(peersetId),
                         heartbeatTimeout = config.consensus.heartbeatTimeout,
                         heartbeatDelay = config.consensus.leaderTimeout,
                         transactionBlocker = transactionBlocker,

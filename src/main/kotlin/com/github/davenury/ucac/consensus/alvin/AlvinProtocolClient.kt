@@ -39,7 +39,7 @@ interface AlvinProtocolClient : ConsensusProtocolClient {
     ): ConsensusResponse<AlvinFastRecoveryResponse?>
 }
 
-public class AlvinProtocolClientImplImpl(override val peersetId: PeersetId) : AlvinProtocolClient, ConsensusProtocolClientImpl(
+class AlvinProtocolClientImpl(override val peersetId: PeersetId) : AlvinProtocolClient, ConsensusProtocolClientImpl(
     peersetId,
 ) {
     override suspend fun sendProposal(

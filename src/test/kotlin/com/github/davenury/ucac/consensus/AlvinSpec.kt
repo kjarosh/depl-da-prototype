@@ -17,7 +17,7 @@ import com.github.davenury.ucac.commitment.gpac.Accept
 import com.github.davenury.ucac.commitment.gpac.Apply
 import com.github.davenury.ucac.common.PeerResolver
 import com.github.davenury.ucac.consensus.alvin.AlvinProtocol
-import com.github.davenury.ucac.consensus.alvin.AlvinProtocolClientImplImpl
+import com.github.davenury.ucac.consensus.alvin.AlvinProtocolClientImpl
 import com.github.davenury.ucac.testHttpClient
 import com.github.davenury.ucac.utils.IntegrationTestBase
 import com.github.davenury.ucac.utils.TestApplicationSet
@@ -621,7 +621,7 @@ class AlvinSpec : IntegrationTestBase() {
                     PersistentHistory(InMemoryPersistence()),
                     Executors.newSingleThreadExecutor().asCoroutineDispatcher(),
                     peerResolver,
-                    protocolClient = AlvinProtocolClientImplImpl(peerset()),
+                    protocolClient = AlvinProtocolClientImpl(peerset()),
                     transactionBlocker = PersistentTransactionBlocker(InMemoryPersistence()),
                     isMetricTest = false,
                     subscribers = null,
