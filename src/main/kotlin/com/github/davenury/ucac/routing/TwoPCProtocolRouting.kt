@@ -20,18 +20,18 @@ fun Application.twoPCRouting(multiplePeersetProtocols: MultiplePeersetProtocols)
     }
 
     routing {
-        post("/2pc/accept") {
+        post("/protocols/2pc/accept") {
             val message = call.receive<Change>()
             call.twoPC().handleAccept(message)
             call.respond(HttpStatusCode.OK)
         }
-        post("/2pc/decision") {
+        post("/protocols/2pc/decision") {
             val message = call.receive<Change>()
             call.twoPC().handleDecision(message)
             call.respond(HttpStatusCode.OK)
         }
 
-        get("/2pc/ask/{changeId}") {
+        get("/protocols/2pc/ask/{changeId}") {
             val id = call.parameters["changeId"]!!
             val change = call.twoPC().getChange(id)
             call.respond(HttpStatusCode.OK, change)

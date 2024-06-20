@@ -49,19 +49,19 @@ class TwoPCProtocolClientImpl : TwoPCProtocolClient {
     override suspend fun sendAccept(
         peers: Map<PeersetId, PeerAddress>,
         change: Change,
-    ): Map<PeerAddress, TwoPCRequestResponse> = sendMessages(peers, change, "2pc/accept")
+    ): Map<PeerAddress, TwoPCRequestResponse> = sendMessages(peers, change, "protocols/2pc/accept")
 
     override suspend fun sendDecision(
         peers: Map<PeersetId, PeerAddress>,
         decisionChange: Change,
-    ): Map<PeerAddress, TwoPCRequestResponse> = sendMessages(peers, decisionChange, "2pc/decision")
+    ): Map<PeerAddress, TwoPCRequestResponse> = sendMessages(peers, decisionChange, "protocols/2pc/decision")
 
     override suspend fun askForChangeStatus(
         peer: PeerAddress,
         change: Change,
         peersetId: PeersetId,
     ): Change? {
-        val url = "http://${peer.address}/2pc/ask/${change.id}?peerset=$peersetId"
+        val url = "http://${peer.address}/protocols/2pc/ask/${change.id}?peerset=$peersetId"
         logger.info("Sending to: $url")
         return try {
             httpClient.get<Change?>(url) {
