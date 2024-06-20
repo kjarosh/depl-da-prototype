@@ -462,7 +462,7 @@ class MultiplePeersetSpec : IntegrationTestBase() {
 
             val leaderAction =
                 SignalListener { data ->
-                    val url2 = "${data.peerResolver.resolve("peer1")}/apply"
+                    val url2 = "${data.peerResolver.resolve("peer1")}/protocols/gpac/apply"
                     runBlocking {
                         httpClient.post<HttpResponse>(url2) {
                             contentType(ContentType.Application.Json)
@@ -479,7 +479,7 @@ class MultiplePeersetSpec : IntegrationTestBase() {
                         }
                     }
                     logger.info("${data.peerResolver.resolve("peer1")} sent response to apply")
-                    val url3 = "${data.peerResolver.resolve("peer2")}/apply"
+                    val url3 = "${data.peerResolver.resolve("peer2")}/protocols/gpac/apply"
                     runBlocking {
                         httpClient.post<HttpResponse>(url3) {
                             contentType(ContentType.Application.Json)
