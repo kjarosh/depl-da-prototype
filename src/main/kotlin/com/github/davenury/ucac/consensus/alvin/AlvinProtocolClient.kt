@@ -47,7 +47,7 @@ public class AlvinProtocolClientImplImpl(override val peersetId: PeersetId) : Al
         message: AlvinPropose,
     ): ConsensusResponse<AlvinAckPropose?> {
         logger.debug("Sending proposal request to ${peer.peerId}")
-        return sendRequest(Pair(peer, message), "alvin/proposal")
+        return sendRequest(Pair(peer, message), "protocols/alvin/proposal")
     }
 
     override suspend fun sendAccept(
@@ -55,7 +55,7 @@ public class AlvinProtocolClientImplImpl(override val peersetId: PeersetId) : Al
         message: AlvinAccept,
     ): ConsensusResponse<AlvinAckAccept?> {
         logger.debug("Sending accept request to ${peer.peerId}")
-        return sendRequest(Pair(peer, message), "alvin/accept")
+        return sendRequest(Pair(peer, message), "protocols/alvin/accept")
     }
 
     override suspend fun sendStable(
@@ -63,7 +63,7 @@ public class AlvinProtocolClientImplImpl(override val peersetId: PeersetId) : Al
         message: AlvinStable,
     ): ConsensusResponse<AlvinAckStable?> {
         logger.debug("Sending stable request to ${peer.peerId}")
-        return sendRequest(Pair(peer, message), "alvin/stable")
+        return sendRequest(Pair(peer, message), "protocols/alvin/stable")
     }
 
     override suspend fun sendPrepare(
@@ -71,7 +71,7 @@ public class AlvinProtocolClientImplImpl(override val peersetId: PeersetId) : Al
         message: AlvinAccept,
     ): ConsensusResponse<AlvinPromise?> {
         logger.debug("Sending prepare request to ${peer.peerId}")
-        return sendRequest(Pair(peer, message), "alvin/prepare")
+        return sendRequest(Pair(peer, message), "protocols/alvin/prepare")
     }
 
     override suspend fun sendCommit(
@@ -79,7 +79,7 @@ public class AlvinProtocolClientImplImpl(override val peersetId: PeersetId) : Al
         message: AlvinCommit,
     ): ConsensusResponse<AlvinCommitResponse?> {
         logger.debug("Sending commit request to ${peer.peerId}")
-        return sendRequest(Pair(peer, message), "alvin/commit")
+        return sendRequest(Pair(peer, message), "protocols/alvin/commit")
     }
 
     override suspend fun sendFastRecovery(
@@ -87,7 +87,7 @@ public class AlvinProtocolClientImplImpl(override val peersetId: PeersetId) : Al
         message: AlvinFastRecovery,
     ): ConsensusResponse<AlvinFastRecoveryResponse?> {
         logger.debug("Sending fastRecovery request to ${peer.peerId}")
-        return sendRequest(Pair(peer, message), "alvin/fast-recovery")
+        return sendRequest(Pair(peer, message), "protocols/alvin/fast-recovery")
     }
 
     companion object {
