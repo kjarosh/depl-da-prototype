@@ -50,7 +50,7 @@ class PigPaxosProtocolClientImpl(override val peersetId: PeersetId) : PigPaxosPr
         logger.debug("Sending proposes requestes to ${peers.map { it.peerId }}")
         return peers
             .map { Pair(it, message) }
-            .let { sendRequests(it, "paxos/propose") }
+            .let { sendRequests(it, "protocols/paxos/propose") }
     }
 
     override suspend fun sendAccept(
@@ -58,7 +58,7 @@ class PigPaxosProtocolClientImpl(override val peersetId: PeersetId) : PigPaxosPr
         message: PaxosAccept,
     ): ConsensusResponse<PaxosAccepted?> {
         logger.debug("Sending accept request to ${peer.peerId}")
-        return sendRequest(Pair(peer, message), "paxos/accept")
+        return sendRequest(Pair(peer, message), "protocols/paxos/accept")
     }
 
     override suspend fun sendCommit(
@@ -66,7 +66,7 @@ class PigPaxosProtocolClientImpl(override val peersetId: PeersetId) : PigPaxosPr
         message: PaxosCommit,
     ): ConsensusResponse<PaxosCommitResponse?> {
         logger.debug("Sending commit request to ${peer.peerId}")
-        return sendRequest(Pair(peer, message), "paxos/commit")
+        return sendRequest(Pair(peer, message), "protocols/paxos/commit")
     }
 
     override suspend fun sendBatchCommit(
@@ -74,14 +74,14 @@ class PigPaxosProtocolClientImpl(override val peersetId: PeersetId) : PigPaxosPr
         message: PaxosBatchCommit,
     ): ConsensusResponse<String?> {
         logger.debug("Sending batch commit request to ${peer.peerId}")
-        return sendRequest(Pair(peer, message), "paxos/batch-commit")
+        return sendRequest(Pair(peer, message), "protocols/paxos/batch-commit")
     }
 
     override suspend fun sendRequestApplyChange(
         peer: PeerAddress,
         change: Change,
     ): ChangeResult =
-        httpClient.post("http://${peer.address}/paxos/request_apply_change?peerset=$peersetId") {
+        httpClient.post("http://${peer.address}/protocols/paxos/request_apply_change?peerset=$peersetId") {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
             body = change

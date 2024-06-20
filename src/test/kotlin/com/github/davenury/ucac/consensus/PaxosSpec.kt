@@ -1116,7 +1116,7 @@ class PaxosSpec : IntegrationTestBase() {
     private suspend fun genericAskForChange(
         suffix: String,
         peerAddress: PeerAddress,
-    ) = testHttpClient.get<Changes>("http://${peerAddress.address}/paxos/$suffix?peerset=peerset0") {
+    ) = testHttpClient.get<Changes>("http://${peerAddress.address}/protocols/paxos/$suffix?peerset=peerset0") {
         contentType(ContentType.Application.Json)
         accept(ContentType.Application.Json)
     }
