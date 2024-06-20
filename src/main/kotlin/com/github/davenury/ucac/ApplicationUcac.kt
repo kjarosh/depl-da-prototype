@@ -26,6 +26,7 @@ import com.github.davenury.ucac.api.apiV2Routing
 import com.github.davenury.ucac.common.ChangeNotifier
 import com.github.davenury.ucac.common.MultiplePeersetProtocols
 import com.github.davenury.ucac.common.structure.Subscribers
+import com.github.davenury.ucac.gmmf.routing.gmmfRouting
 import com.github.davenury.ucac.history.historyRouting
 import com.github.davenury.ucac.routing.alvinProtocolRouting
 import com.github.davenury.ucac.routing.gpacProtocolRouting
@@ -344,6 +345,7 @@ class ApplicationUcac(
             historyRouting(multiplePeersetProtocols)
             apiV2Routing(service)
             gpacProtocolRouting(multiplePeersetProtocols)
+            gmmfRouting(multiplePeersetProtocols)
             when (config.consensus.name) {
                 "raft" -> raftProtocolRouting(multiplePeersetProtocols)
                 "alvin" -> alvinProtocolRouting(multiplePeersetProtocols)
