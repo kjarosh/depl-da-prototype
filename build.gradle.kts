@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 val logbackVersion: String by project
 val ktorVersion = "1.6.8"
 val slf4jVersion = "2.0.13"
@@ -29,6 +27,7 @@ repositories {
 dependencies {
 
     implementation(project(":modules:common"))
+    implementation(project(":modules:gmmf"))
 
     implementation("org.slf4j:slf4j-api:$slf4jVersion")
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
@@ -74,14 +73,6 @@ dependencies {
     testImplementation("org.fusesource.jansi:jansi:2.4.1")
 }
 
-tasks.withType<JavaCompile>().configureEach {
-    targetCompatibility = "11"
-}
-
-tasks.withType<KotlinCompile>().configureEach {
-    kotlinOptions.jvmTarget = "11"
-}
-
 tasks.test {
     useJUnitPlatform()
     maxParallelForks = 16
@@ -95,16 +86,19 @@ tasks.withType<Jar> {
 
 subprojects {
     apply(plugin = "org.jlleitschuh.gradle.ktlint")
+    apply(plugin = "java")
+    apply(plugin = "kotlin")
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+
+    kotlin {
+        jvmToolchain(11)
+    }
 
     repositories {
         mavenCentral()
-    }
-
-    tasks.withType<JavaCompile>().configureEach {
-        targetCompatibility = "11"
-    }
-
-    tasks.withType<KotlinCompile>().configureEach {
-        kotlinOptions.jvmTarget = "11"
     }
 }
