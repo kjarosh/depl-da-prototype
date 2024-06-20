@@ -22,29 +22,29 @@ fun Application.raftProtocolRouting(multiplePeersetProtocols: MultiplePeersetPro
         return multiplePeersetProtocols.forPeerset(this.peersetId()).consensusProtocol as RaftConsensusProtocol
     }
     routing {
-        post("/raft/request_vote") {
+        post("/protocols/raft/request_vote") {
             val message: ConsensusElectMe = call.receive()
             val response = call.consensus().handleRequestVote(message.peerId, message.term, message.lastEntryId)
             call.respond(response)
         }
 
-        post("/raft/heartbeat") {
+        post("/protocols/raft/heartbeat") {
             val message: ConsensusHeartbeat = call.receive()
             val heartbeatResult = call.consensus().handleHeartbeat(message)
             call.respond(heartbeatResult)
         }
 
-        post("/raft/request_apply_change") {
+        post("/protocols/raft/request_apply_change") {
             val message: ConsensusProposeChange = call.receive()
             val result = call.consensus().handleProposeChange(message).await()
             call.respond(result)
         }
 
-        get("/raft/proposed_changes") {
+        get("/protocols/raft/proposed_changes") {
             call.respond(Changes(call.consensus().getProposedChanges()))
         }
 
-        get("/raft/accepted_changes") {
+        get("/protocols/raft/accepted_changes") {
             call.respond(Changes(call.consensus().getAcceptedChanges()))
         }
     }
