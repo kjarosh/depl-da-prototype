@@ -24,41 +24,41 @@ fun Application.pigPaxosProtocolRouting(multiplePeersetProtocols: MultiplePeerse
         return multiplePeersetProtocols.forPeerset(this.peersetId()).consensusProtocol as PaxosProtocol
     }
     routing {
-        post("/paxos/propose") {
+        post("/protocols/paxos/propose") {
             val message: PaxosPropose = call.receive()
             val response = call.consensus().handlePropose(message)
             call.respond(response)
         }
 
-        post("/paxos/accept") {
+        post("/protocols/paxos/accept") {
             val message: PaxosAccept = call.receive()
             val acceptResult = call.consensus().handleAccept(message)
             call.respond(acceptResult)
         }
 
-        post("/paxos/commit") {
+        post("/protocols/paxos/commit") {
             val message: PaxosCommit = call.receive()
             val commitResult = call.consensus().handleCommit(message)
             call.respond(commitResult)
         }
 
-        post("/paxos/batch-commit") {
+        post("/protocols/paxos/batch-commit") {
             val message: PaxosBatchCommit = call.receive()
             val batchCommitResult = call.consensus().handleBatchCommit(message)
             call.respond(batchCommitResult)
         }
 
-        post("/paxos/request_apply_change") {
+        post("/protocols/paxos/request_apply_change") {
             val message: ConsensusProposeChange = call.receive()
             val result = call.consensus().handleProposeChange(message).await()
             call.respond(result)
         }
 
-        get("/paxos/proposed_changes") {
+        get("/protocols/paxos/proposed_changes") {
             call.respond(Changes(call.consensus().getProposedChanges()))
         }
 
-        get("/paxos/accepted_changes") {
+        get("/protocols/paxos/accepted_changes") {
             call.respond(Changes(call.consensus().getAcceptedChanges()))
         }
     }
