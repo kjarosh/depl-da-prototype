@@ -84,7 +84,9 @@ tasks.withType<KotlinCompile>().configureEach {
 
 tasks.test {
     useJUnitPlatform()
-    maxParallelForks = 16
+    maxParallelForks = 32
+    systemProperties["junit.jupiter.execution.parallel.enabled"] = true
+    systemProperties["junit.jupiter.execution.parallel.mode.default"] = "concurrent"
 }
 
 tasks.withType<Jar> {
