@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 val logbackVersion: String by project
-val ktorVersion = "1.6.8"
+val ktorVersion = "3.0.0-tls-eap-907"
 val slf4jVersion = "2.0.13"
 
 plugins {
