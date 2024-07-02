@@ -6,7 +6,7 @@ require (
 	github.com/goccy/kpoward v0.1.0
 	github.com/google/uuid v1.6.0
 	github.com/senseyeio/duration v0.0.0-20180430131211-7c2a214ada46
-	github.com/spf13/cobra v1.8.0
+	github.com/spf13/cobra v1.8.1
 	helm.sh/helm/v3 v3.11.0
 	k8s.io/api v0.26.1
 	k8s.io/apimachinery v0.26.1
