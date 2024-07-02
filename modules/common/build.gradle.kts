@@ -36,7 +36,7 @@ dependencies {
 
     implementation("redis.clients:jedis:5.1.3")
 
-    testImplementation(platform("org.junit:junit-bom:5.10.2"))
+    testImplementation(platform("org.junit:junit-bom:5.10.3"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation("io.strikt:strikt-core:0.34.1")
     testImplementation("org.testcontainers:testcontainers:1.19.8")
