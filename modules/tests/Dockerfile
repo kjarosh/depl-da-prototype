@@ -1,4 +1,4 @@
-FROM adoptopenjdk:11-jre-hotspot as tests
+FROM adoptopenjdk:11.0.11_9-jre-hotspot as tests
 WORKDIR /tests
 
 ADD build/distributions/tests*.tar /tests
