@@ -52,7 +52,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:1.8.1")
 
     // metrics
-    implementation("io.micrometer:micrometer-registry-prometheus:1.10.0")
+    implementation("io.micrometer:micrometer-registry-prometheus:1.13.1")
     implementation("io.ktor:ktor-metrics-micrometer:$ktorVersion")
 
     // traces
