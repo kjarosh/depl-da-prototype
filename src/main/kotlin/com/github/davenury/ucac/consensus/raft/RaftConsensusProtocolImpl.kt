@@ -283,7 +283,12 @@ class RaftConsensusProtocolImpl(
 
     override suspend fun handleHeartbeat(heartbeat: ConsensusHeartbeat): ConsensusHeartbeatResponse =
         mutex.withLock {
-            logger.info("Handling heartbeat from ${heartbeat.leaderId}, entries overall: ${heartbeat.logEntries.size}")
+            val size = heartbeat.logEntries.size
+            if (size != 0) {
+                logger.info("Handling heartbeat from ${heartbeat.leaderId}, entries overall: $size")
+            } else {
+                logger.debug("Handling empty heartbeat from ${heartbeat.leaderId}")
+            }
             heartbeat.logEntries.forEach {
                 val entry = HistoryEntry.deserialize(it.serializedEntry)
                 signalPublisher.signal(
