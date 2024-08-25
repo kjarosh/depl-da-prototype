@@ -10,6 +10,8 @@ private const val ENTRY_ID_PREFIX = "entry/"
  * @author Kamil Jarosz
  */
 class PersistentHistory(private val persistence: Persistence) : CachedHistory() {
+    private val listeners: MutableList<HistoryListener> = ArrayList()
+
     init {
         val initial = InitialHistoryEntry
 
@@ -69,7 +71,10 @@ class PersistentHistory(private val persistence: Persistence) : CachedHistory() 
 
         persistEntry(entry)
 
+        listeners.forEach { l -> l.beforeNewEntry(entry) }
         val successful = compareAndSetCurrentEntryId(expectedParentId, newId)
+        listeners.forEach { l -> l.afterNewEntry(entry, successful) }
+
         if (!successful) {
             throw HistoryException(
                 "Optimistic locking exception: parent changed concurrently, " +
@@ -78,6 +83,10 @@ class PersistentHistory(private val persistence: Persistence) : CachedHistory() 
         } else {
             logger.info("History entry added ($newId): $entry")
         }
+    }
+
+    override fun addListener(listener: HistoryListener) {
+        listeners.add(listener)
     }
 
     companion object {

@@ -1,7 +1,7 @@
 package com.github.davenury.ucac.gmmf
 
-import com.github.davenury.ucac.gmmf.routing.NewEdge
-import com.github.davenury.ucac.gmmf.routing.NewVertex
+import com.github.davenury.ucac.gmmf.routing.EdgeMessage
+import com.github.davenury.ucac.gmmf.routing.VertexMessage
 import com.github.davenury.ucac.testHttpClient
 import com.github.davenury.ucac.utils.IntegrationTestBase
 import com.github.davenury.ucac.utils.TestApplicationSet
@@ -11,6 +11,7 @@ import com.github.kjarosh.agh.pp.graph.model.Vertex
 import com.github.kjarosh.agh.pp.graph.model.VertexId
 import com.github.kjarosh.agh.pp.graph.model.ZoneId
 import io.ktor.client.request.accept
+import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
@@ -21,6 +22,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.slf4j.LoggerFactory
 import strikt.api.expectCatching
+import strikt.api.expectThat
+import strikt.assertions.isEqualTo
 import strikt.assertions.isSuccess
 
 @ExtendWith(TestLogExtension::class)
@@ -42,6 +45,20 @@ class GmmfModificationSpec : IntegrationTestBase() {
             expectCatching {
                 addVertex("http://${apps.getPeer("peer1").address}/gmmf/graph/vertex?peerset=peerset0", "user2", Vertex.Type.USER)
             }.isSuccess()
+
+            val user1Peer0 = getVertex("http://${apps.getPeer("peer0").address}/gmmf/graph/vertex/user1?peerset=peerset0")
+            val user2Peer0 = getVertex("http://${apps.getPeer("peer0").address}/gmmf/graph/vertex/user2?peerset=peerset0")
+            val user1Peer1 = getVertex("http://${apps.getPeer("peer1").address}/gmmf/graph/vertex/user1?peerset=peerset0")
+            val user2Peer1 = getVertex("http://${apps.getPeer("peer1").address}/gmmf/graph/vertex/user2?peerset=peerset0")
+
+            expectThat(user1Peer0.name).isEqualTo("user1")
+            expectThat(user1Peer0.type).isEqualTo(Vertex.Type.USER)
+            expectThat(user2Peer0.name).isEqualTo("user2")
+            expectThat(user2Peer0.type).isEqualTo(Vertex.Type.USER)
+            expectThat(user1Peer1.name).isEqualTo("user1")
+            expectThat(user1Peer1.type).isEqualTo(Vertex.Type.USER)
+            expectThat(user2Peer1.name).isEqualTo("user2")
+            expectThat(user2Peer1.type).isEqualTo(Vertex.Type.USER)
         }
 
     @Test
@@ -65,6 +82,12 @@ class GmmfModificationSpec : IntegrationTestBase() {
                     Permissions("01010"),
                 )
             }.isSuccess()
+
+            val edgePeer0 = getEdge("http://${apps.getPeer("peer0").address}/gmmf/graph/edge/user1/user2?peerset=peerset0")
+            val edgePeer1 = getEdge("http://${apps.getPeer("peer1").address}/gmmf/graph/edge/user1/user2?peerset=peerset0")
+
+            expectThat(edgePeer0.permissions).isEqualTo(Permissions("01010"))
+            expectThat(edgePeer1.permissions).isEqualTo(Permissions("01010"))
         }
 
     @Test
@@ -104,7 +127,14 @@ class GmmfModificationSpec : IntegrationTestBase() {
         testHttpClient.post<HttpResponse>(url) {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
-            body = NewVertex(name, type)
+            body = VertexMessage(name, type)
+        }
+    }
+
+    private suspend fun getVertex(url: String): VertexMessage {
+        return testHttpClient.get<VertexMessage>(url) {
+            contentType(ContentType.Application.Json)
+            accept(ContentType.Application.Json)
         }
     }
 
@@ -117,7 +147,14 @@ class GmmfModificationSpec : IntegrationTestBase() {
         testHttpClient.post<HttpResponse>(url) {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
-            body = NewEdge(from, to, permissions)
+            body = EdgeMessage(from, to, permissions)
+        }
+    }
+
+    private suspend fun getEdge(url: String): EdgeMessage {
+        return testHttpClient.get<EdgeMessage>(url) {
+            contentType(ContentType.Application.Json)
+            accept(ContentType.Application.Json)
         }
     }
 

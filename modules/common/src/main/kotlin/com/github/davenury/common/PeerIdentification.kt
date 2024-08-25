@@ -3,11 +3,13 @@ package com.github.davenury.common
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
 
-data class PeerId(val peerId: String) {
+data class PeerId(
+    val peerId: String,
+) {
     override fun toString(): String = peerId
 }
 
-data class PeersetId constructor(
+data class PeersetId(
     val peersetId: String,
 ) {
     @JsonValue
@@ -17,16 +19,15 @@ data class PeersetId constructor(
     companion object {
         @JvmStatic
         @JsonCreator
-        fun create(string: String): PeersetId {
-            return PeersetId(string)
-        }
+        fun create(string: String): PeersetId = PeersetId(string)
     }
 }
 
-data class PeerAddress(val peerId: PeerId, val address: String) {
-    override fun toString(): String {
-        return "($peerId at $address)"
-    }
+data class PeerAddress(
+    val peerId: PeerId,
+    val address: String,
+) {
+    override fun toString(): String = "($peerId at $address)"
 
     companion object {
         fun of(

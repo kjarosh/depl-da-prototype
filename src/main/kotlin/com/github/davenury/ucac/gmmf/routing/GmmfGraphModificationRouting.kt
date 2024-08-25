@@ -8,23 +8,30 @@ import com.github.davenury.common.peersetId
 import com.github.davenury.ucac.commitment.twopc.TwoPC
 import com.github.davenury.ucac.common.MultiplePeersetProtocols
 import com.github.davenury.ucac.consensus.ConsensusProtocol
-import com.github.davenury.ucac.gmmf.model.AddExternalEdgeTx
-import com.github.davenury.ucac.gmmf.model.AddLocalEdgeTx
+import com.github.davenury.ucac.gmmf.model.AddEdgeTx
 import com.github.davenury.ucac.gmmf.model.AddVertexTx
-import com.github.kjarosh.agh.pp.graph.GraphLoader
+import com.github.davenury.ucac.gmmf.model.GraphFromHistory
+import com.github.kjarosh.agh.pp.graph.model.EdgeId
+import com.github.kjarosh.agh.pp.graph.model.Graph
 import com.github.kjarosh.agh.pp.graph.model.Permissions
 import com.github.kjarosh.agh.pp.graph.model.Vertex
 import com.github.kjarosh.agh.pp.graph.model.VertexId
+import com.github.kjarosh.agh.pp.graph.model.ZoneId
 import io.ktor.application.Application
 import io.ktor.application.ApplicationCall
 import io.ktor.application.call
+import io.ktor.http.HttpStatusCode
 import io.ktor.request.receive
 import io.ktor.response.respond
+import io.ktor.routing.get
 import io.ktor.routing.post
 import io.ktor.routing.routing
 import kotlinx.coroutines.future.await
+import java.util.concurrent.ConcurrentHashMap
 
 fun Application.gmmfGraphModificationRouting(multiplePeersetProtocols: MultiplePeersetProtocols) {
+    val graphsPerPeerset: MutableMap<PeersetId, GraphFromHistory> = ConcurrentHashMap()
+
     fun ApplicationCall.consensus(): ConsensusProtocol {
         return multiplePeersetProtocols.forPeerset(this.peersetId()).consensusProtocol
     }
@@ -37,8 +44,12 @@ fun Application.gmmfGraphModificationRouting(multiplePeersetProtocols: MultipleP
         return multiplePeersetProtocols.forPeerset(this.peersetId()).history
     }
 
-    val graphLoader = GraphLoader()
-    graphLoader.init()
+    fun ApplicationCall.graph(): Graph {
+        val history = this.history()
+        return graphsPerPeerset.computeIfAbsent(this.peersetId()) { pid: PeersetId ->
+            GraphFromHistory(history, pid)
+        }.getGraph()
+    }
 
     suspend fun addVertex(
         call: ApplicationCall,
@@ -46,13 +57,25 @@ fun Application.gmmfGraphModificationRouting(multiplePeersetProtocols: MultipleP
         type: Vertex.Type,
     ) {
         val parentId = call.history().getCurrentEntryId()
-        val tx = AddVertexTx(name, type)
+        val vertexId = VertexId(ZoneId(call.peersetId().peersetId), name)
+        val tx = AddVertexTx(vertexId, type)
         val change =
             StandardChange(
                 tx.serialize(),
                 peersets = listOf(ChangePeersetInfo(call.peersetId(), parentId)),
             )
         call.consensus().proposeChangeAsync(change).await()
+    }
+
+    fun getVertex(
+        call: ApplicationCall,
+        name: String,
+    ): VertexMessage? {
+        val vertexId = VertexId(ZoneId(call.peersetId().peersetId), name)
+        val vertex = call.graph().getVertex(vertexId)
+        return vertex?.let {
+            VertexMessage(it.id().name(), it.type())
+        }
     }
 
     suspend fun addEdge(
@@ -80,7 +103,7 @@ fun Application.gmmfGraphModificationRouting(multiplePeersetProtocols: MultipleP
             }
 
         if (fromLocal && toLocal) {
-            val tx = AddLocalEdgeTx(from.name(), to.name(), permissions)
+            val tx = AddEdgeTx(from, to, permissions)
             val change =
                 StandardChange(
                     tx.serialize(),
@@ -88,7 +111,7 @@ fun Application.gmmfGraphModificationRouting(multiplePeersetProtocols: MultipleP
                 )
             call.consensus().proposeChangeAsync(change).await()
         } else if (fromLocal || toLocal) {
-            val tx = AddExternalEdgeTx(from, to, permissions)
+            val tx = AddEdgeTx(from, to, permissions)
             val change =
                 StandardChange(
                     tx.serialize(),
@@ -104,17 +127,49 @@ fun Application.gmmfGraphModificationRouting(multiplePeersetProtocols: MultipleP
         }
     }
 
+    fun getEdge(
+        call: ApplicationCall,
+        from: String,
+        to: String,
+    ): EdgeMessage? {
+        val zoneId = ZoneId(call.peersetId().peersetId)
+        val fromId = if (from.contains(":")) VertexId(from) else VertexId(zoneId, from)
+        val toId = if (from.contains(":")) VertexId(to) else VertexId(zoneId, to)
+
+        val edge = call.graph().getEdge(EdgeId(fromId, toId))
+        return edge?.let {
+            EdgeMessage(it.id().from, it.id().to, it.permissions())
+        }
+    }
+
     routing {
         post("/gmmf/graph/vertex") {
-            val request = call.receive<NewVertex>()
+            val request = call.receive<VertexMessage>()
             addVertex(call, request.name, request.type)
-            call.respond(true)
+            call.respond("")
+        }
+
+        get("/gmmf/graph/vertex/{name}") {
+            val name = call.parameters["name"]!!
+
+            getVertex(call, name)?.also {
+                call.respond(it)
+            } ?: call.respond(HttpStatusCode.NotFound, "")
         }
 
         post("/gmmf/graph/edge") {
-            val request = call.receive<NewEdge>()
+            val request = call.receive<EdgeMessage>()
             addEdge(call, request.from, request.to, request.permissions)
-            call.respond(true)
+            call.respond("")
+        }
+
+        get("/gmmf/graph/edge/{from}/{to}") {
+            val from = call.parameters["from"]!!
+            val to = call.parameters["to"]!!
+
+            getEdge(call, from, to)?.also {
+                call.respond(it)
+            } ?: call.respond(HttpStatusCode.NotFound, "")
         }
     }
 }
