@@ -10,6 +10,8 @@ interface History {
 
     fun addEntry(entry: HistoryEntry)
 
+    fun addListener(listener: HistoryListener)
+
     @Throws(EntryNotFoundException::class)
     fun getEntry(id: String): HistoryEntry
 

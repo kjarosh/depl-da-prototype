@@ -67,6 +67,8 @@ sealed class Change(open val id: String = UUID.randomUUID().toString()) {
         parentId: String?,
     ): Change
 
+    abstract fun getAppliedContent(): String?
+
     protected fun doesEqual(other: Any?): Boolean = (other is Change) && Objects.equals(id, other.id)
 
     companion object {
@@ -124,6 +126,10 @@ data class StandardChange(
                     }
                 },
         )
+
+    override fun getAppliedContent(): String {
+        return content
+    }
 }
 
 // TwoPC should always contain two changes:
@@ -165,4 +171,8 @@ data class TwoPCChange(
                     }
                 },
         )
+
+    override fun getAppliedContent(): String? {
+        return null
+    }
 }

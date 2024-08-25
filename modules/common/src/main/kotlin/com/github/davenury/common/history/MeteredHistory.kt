@@ -28,6 +28,10 @@ class MeteredHistory(
             }
         }
 
+    override fun addListener(listener: HistoryListener) {
+        delegate.addListener(listener)
+    }
+
     override fun getEntry(id: String): HistoryEntry =
         span("History.getEntry") {
             meterRegistry.timer("history_get_entry").record<HistoryEntry> { delegate.getEntry(id) }!!
