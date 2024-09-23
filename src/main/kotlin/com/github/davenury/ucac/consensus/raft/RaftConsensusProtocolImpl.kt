@@ -1044,7 +1044,7 @@ class RaftConsensusProtocolImpl(
         delay: Duration = heartbeatDelay,
     ) {
         if (shouldISendHeartbeatToPeer(peer)) {
-            CoroutineScope(executorService!!).async {
+            CoroutineScope(executorService!!).async(MDCContext()) {
                 if (!sendInstantly) {
                     logger.debug("Wait with sending heartbeat to $peer for ${delay.toMillis()} ms")
                     delay(delay.toMillis())
@@ -1091,7 +1091,8 @@ class RaftConsensusProtocolImpl(
         // TODO mutex?
         val votedFor = this.votedFor
         if (votedFor == null || !votedFor.elected) return
-        if (changesToBePropagatedToLeader.size > 0) logger.info("Try to propagate changes")
+        val changeCount = changesToBePropagatedToLeader.size
+        if (changeCount > 0) logger.info("Propagating {} changes to the leader", changeCount)
         while (true) {
             val changeToBePropagated: ChangeToBePropagatedToLeader
             mutexChangeToBePropagatedToLeader.withLock {

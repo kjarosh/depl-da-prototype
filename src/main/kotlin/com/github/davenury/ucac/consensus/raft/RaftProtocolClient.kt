@@ -15,6 +15,7 @@ import io.ktor.client.request.post
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
@@ -65,20 +66,18 @@ class RaftProtocolClientImpl(override val peersetId: PeersetId) : RaftProtocolCl
                     "protocols/raft/heartbeat",
                     message,
                 ).let { ConsensusResponse(peer.address, it) }
+            } catch (e: CancellationException) {
+                logger.debug("Canceled sendConsensusHeartbeat")
+                ConsensusResponse(peer.address, null)
             } catch (e: Exception) {
                 when {
                     e is ClientRequestException && e.response.status == HttpStatusCode.Unauthorized -> {
-                        ConsensusProtocolClientImpl.logger.error(
-                            "Received unauthorized response from peer: ${peer.peerId}",
-                        )
+                        logger.error("Received unauthorized response from peer: ${peer.peerId}", e)
                         ConsensusResponse(peer.address, null, true)
                     }
 
                     else -> {
-                        ConsensusProtocolClientImpl.logger.error(
-                            "Error while evaluating response from ${peer.peerId}",
-                            e,
-                        )
+                        logger.error("Error while evaluating response from ${peer.peerId}", e)
                         ConsensusResponse(peer.address, null)
                     }
                 }
