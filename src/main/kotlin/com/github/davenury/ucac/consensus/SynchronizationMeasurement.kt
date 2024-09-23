@@ -34,7 +34,7 @@ data class SynchronizationMeasurement(
                 var latestEntryId: String? = null
                 var iter = 3
                 while (iter-- > 0) {
-                    logger.info("Peers to which we send messages: ${consensusProtocol.otherConsensusPeers()}")
+                    logger.debug("Peers to which we send messages: ${consensusProtocol.otherConsensusPeers()}")
                     latestEntryId = getLatestEntryIdFromOtherPeers(currentEntryId)
                     if (latestEntryId != null) {
                         break
