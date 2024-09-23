@@ -23,7 +23,7 @@ data class SynchronizationMeasurement(
 ) {
     private val mutex = Mutex()
     private var isSynchronized = false
-    val startTime: Instant = Instant.now()
+    private val startTime: Instant = Instant.now()
     private val currentEntryId: String = history.getCurrentEntryId()
     private var latestEntryId: String? = null
     private val entryIdToTime: ConcurrentHashMap<String, Instant> = ConcurrentHashMap()
@@ -32,11 +32,13 @@ data class SynchronizationMeasurement(
         withContext(ctx) {
             launch {
                 var latestEntryId: String? = null
-                var iter = 0
-                while (latestEntryId == null && iter < 3) {
+                var iter = 3
+                while (iter-- > 0) {
                     logger.info("Peers to which we send messages: ${consensusProtocol.otherConsensusPeers()}")
                     latestEntryId = getLatestEntryIdFromOtherPeers(currentEntryId)
-                    iter += 1
+                    if (latestEntryId != null) {
+                        break
+                    }
                     delay(500)
                 }
 
