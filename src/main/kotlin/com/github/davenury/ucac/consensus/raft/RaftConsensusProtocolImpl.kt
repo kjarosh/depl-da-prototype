@@ -1027,7 +1027,7 @@ class RaftConsensusProtocolImpl(
                         changesToBePropagatedToLeader.push(ChangeToBePropagatedToLeader(change, result))
                     }
                 }
-            }.also { logger.info("ProposeChangeAsync took $it ms") }
+            }.also { logger.debug("ProposeChangeAsync took $it ms") }
             return result
         }
 
