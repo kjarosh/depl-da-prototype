@@ -38,6 +38,7 @@ import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.slf4j.MDCContext
@@ -125,11 +126,15 @@ class RaftConsensusProtocolImpl(
         return peerResolver.getPeersFromPeerset(peersetId).filter { it.peerId != peerId }
     }
 
-    override suspend fun begin() =
+    override suspend fun begin(): Unit =
         mdcProvider.withMdc {
             synchronizationMeasurement.begin(ctx)
             logger.info("Starting raft, other peers: ${otherConsensusPeers().map { it.peerId }}")
-            timer.startCounting { sendLeaderRequest() }
+            with(CoroutineScope(ctx)) {
+                launch(MDCContext()) {
+                    sendLeaderRequest()
+                }
+            }
         }
 
     override fun getPeerName() = peerId.toString()
