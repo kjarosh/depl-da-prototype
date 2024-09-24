@@ -23,7 +23,6 @@ import com.github.davenury.ucac.common.PeerResolver
 import com.github.davenury.ucac.common.ProtocolTimerImpl
 import com.github.davenury.ucac.common.structure.Subscribers
 import com.github.davenury.ucac.consensus.ConsensusResponse
-import com.github.davenury.ucac.consensus.SynchronizationMeasurement
 import com.github.davenury.ucac.consensus.VotedFor
 import com.github.davenury.ucac.raftHttpClients
 import com.github.davenury.ucac.utils.MdcProvider
@@ -96,8 +95,6 @@ class RaftConsensusProtocolImpl(
 
     private val mdcProvider = MdcProvider(mapOf("peerset" to peersetId.toString()))
     private val peerId = peerResolver.currentPeer()
-    private val synchronizationMeasurement =
-        SynchronizationMeasurement(history, protocolClient, this, peerId)
 
     private var currentTerm: Int = 0
     private val peerToNextIndex: MutableMap<PeerId, PeerIndices> = mutableMapOf()
@@ -108,7 +105,7 @@ class RaftConsensusProtocolImpl(
     private var votedFor: VotedFor? = null
     private var changesToBePropagatedToLeader: ConcurrentLinkedDeque<ChangeToBePropagatedToLeader> =
         ConcurrentLinkedDeque()
-    private var state: Ledger = Ledger(history, synchronizationMeasurement)
+    private var state: Ledger = Ledger(history)
 
     @Volatile
     private var role: RaftRole = RaftRole.Candidate
@@ -128,7 +125,6 @@ class RaftConsensusProtocolImpl(
 
     override suspend fun begin(): Unit =
         mdcProvider.withMdc {
-            synchronizationMeasurement.begin(ctx)
             logger.info("Starting raft, other peers: ${otherConsensusPeers().map { it.peerId }}")
             with(CoroutineScope(ctx)) {
                 launch(MDCContext()) {

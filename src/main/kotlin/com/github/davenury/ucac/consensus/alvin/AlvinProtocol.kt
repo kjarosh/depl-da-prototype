@@ -22,7 +22,6 @@ import com.github.davenury.ucac.common.ProtocolTimer
 import com.github.davenury.ucac.common.ProtocolTimerImpl
 import com.github.davenury.ucac.common.structure.Subscribers
 import com.github.davenury.ucac.consensus.ConsensusResponse
-import com.github.davenury.ucac.consensus.SynchronizationMeasurement
 import com.zopa.ktor.opentracing.launchTraced
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExecutorCoroutineDispatcher
@@ -35,7 +34,6 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.slf4j.LoggerFactory
 import java.time.Duration
-import java.time.Instant
 import java.util.PriorityQueue
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
@@ -68,8 +66,6 @@ class AlvinProtocol(
     private val initialChangeId = transactionBlocker.getChangeId()
 
     private val votesContainer = VotesContainer()
-    private val synchronizationMeasurement =
-        SynchronizationMeasurement(history, protocolClient, this, peerId)
 
     private var executorService: ExecutorCoroutineDispatcher =
         Executors.newCachedThreadPool().asCoroutineDispatcher()
@@ -83,7 +79,6 @@ class AlvinProtocol(
         initialChangeId
             ?.let { TransactionAcquisition(ProtocolName.CONSENSUS, it) }
             ?.let { transactionBlocker.tryRelease(it) }
-        synchronizationMeasurement.begin(ctx)
         Metrics.bumpLeaderElection(peerResolver.currentPeer(), peersetId)
         subscribers?.notifyAboutConsensusLeaderChange(peerId, peersetId)
     }
@@ -1041,10 +1036,9 @@ class AlvinProtocol(
     }
 
     //  mutex function
-    private suspend fun commitChange(historyEntry: HistoryEntry) {
+    private fun commitChange(historyEntry: HistoryEntry) {
         if (!history.containsEntry(historyEntry.getId())) {
             history.addEntry(historyEntry)
-            synchronizationMeasurement.entryIdCommitted(historyEntry.getId(), Instant.now())
         }
         val change = Change.fromHistoryEntry(historyEntry)!!
         changeIdToCompletableFuture.putIfAbsent(change.id, CompletableFuture())

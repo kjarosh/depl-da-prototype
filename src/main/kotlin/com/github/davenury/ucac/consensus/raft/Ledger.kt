@@ -4,14 +4,11 @@ import com.github.davenury.common.Change
 import com.github.davenury.common.history.History
 import com.github.davenury.common.history.HistoryEntry
 import com.github.davenury.common.history.InitialHistoryEntry
-import com.github.davenury.ucac.consensus.SynchronizationMeasurement
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import java.time.Instant
 
 data class Ledger(
     private val history: History,
-    private val synchronizationMeasurement: SynchronizationMeasurement,
 ) {
     val proposedEntries: MutableList<LedgerItem> = mutableListOf()
     private val mutex: Mutex = Mutex()
@@ -62,7 +59,6 @@ data class Ledger(
         newAcceptedItems.forEach {
             if (!history.containsEntry(it.entry.getId())) {
                 history.addEntry(it.entry)
-                synchronizationMeasurement.entryIdCommitted(it.entry.getId(), Instant.now())
             }
             proposedEntries.remove(it)
             lastApplied = it.entry.getId()
