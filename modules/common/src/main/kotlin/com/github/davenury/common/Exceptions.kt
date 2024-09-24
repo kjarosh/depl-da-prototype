@@ -12,7 +12,7 @@ class NotValidLeader(val ballotNumber: Int, val messageBallotNumber: Int) : Exce
 
 class HistoryCannotBeBuildException : Exception()
 
-class AlreadyLockedException(acquisition: TransactionAcquisition) : Exception(
+class AlreadyLockedException(val acquisition: TransactionAcquisition) : Exception(
     "We cannot perform your transaction, as another transaction is currently running: $acquisition",
 )
 
