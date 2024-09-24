@@ -7,6 +7,7 @@ import kotlinx.coroutines.ExecutorCoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.slf4j.MDCContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -29,7 +30,7 @@ data class SynchronizationMeasurement(
     private val entryIdToTime: ConcurrentHashMap<String, Instant> = ConcurrentHashMap()
 
     suspend fun begin(ctx: ExecutorCoroutineDispatcher): Job =
-        withContext(ctx) {
+        withContext(ctx + MDCContext()) {
             launch {
                 var latestEntryId: String? = null
                 var iter = 3
