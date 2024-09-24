@@ -835,21 +835,19 @@ class RaftConsensusProtocolImpl(
     ): Unit =
         span("Raft.proposeChangeToLedger") {
             this.setTag("changeId", change.id)
-            var entry = change.toHistoryEntry(peersetId)
+            var entry: HistoryEntry
 
             mutex.withLock {
                 logger.info("ProposedEntries: ${state.proposedEntries.size}")
-                if (state.entryAlreadyProposed(entry)) {
+                if (state.entryAlreadyProposed(change.toHistoryEntry(peersetId, history.getCurrentEntryId()))) {
                     logger.info("Already proposed that change: $change")
 //                    scheduleHeartbeatToPeers(isRegular = false)
                     return
                 }
 
-                val acquisition: TransactionAcquisition
-
                 val updatedChange: Change = TwoPC.updateParentIdFor2PCCompatibility(change, history, peersetId)
-                entry = updatedChange.toHistoryEntry(peersetId)
-                acquisition = TransactionAcquisition(ProtocolName.CONSENSUS, updatedChange.id)
+
+                val acquisition = TransactionAcquisition(ProtocolName.CONSENSUS, updatedChange.id)
 
                 try {
                     // TODO Why the hell are we blocking TX when proposing changes to the leader?
@@ -865,7 +863,7 @@ class RaftConsensusProtocolImpl(
                     }
                 }
 
-                val entry = updatedChange.toHistoryEntry(peersetId, history.getCurrentEntryId())
+                entry = updatedChange.toHistoryEntry(peersetId, history.getCurrentEntryId())
 
                 if (isDuring2PAndChangeDoesntFinishIt(change)) {
                     logger.info("Queued change, because is during 2PC")
