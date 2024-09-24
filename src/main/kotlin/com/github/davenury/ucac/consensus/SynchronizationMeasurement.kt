@@ -100,6 +100,6 @@ data class SynchronizationMeasurement(
     }
 
     companion object {
-        val logger = LoggerFactory.getLogger("consensus-synchronization-measuremenet")
+        val logger = LoggerFactory.getLogger("consensus-sync-measurement")
     }
 }
