@@ -63,8 +63,6 @@ data class SynchronizationMeasurement(
             }
         }
 
-    suspend fun isSynchronized(): Boolean = mutex.withLock { isSynchronized }
-
     private fun isSynchronizationFinished(entryId: String) =
         if (entryId == latestEntryId) {
             val timeElapsed = Duration.between(startTime, entryIdToTime[latestEntryId])

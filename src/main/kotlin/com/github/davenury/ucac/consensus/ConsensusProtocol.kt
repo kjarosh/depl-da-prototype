@@ -36,8 +36,6 @@ interface ConsensusProtocol {
 
     fun getState(): History
 
-    suspend fun isSynchronized(): Boolean
-
     fun getChangeResult(changeId: String): CompletableFuture<ChangeResult>?
 
     fun isMoreThanHalf(value: Int): Boolean = (value + 1) * 2 > otherConsensusPeers().size + 1

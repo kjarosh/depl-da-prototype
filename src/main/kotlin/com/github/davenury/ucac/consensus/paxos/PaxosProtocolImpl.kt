@@ -388,8 +388,6 @@ class PaxosProtocolImpl(
 
     override fun getState(): History = history
 
-    override suspend fun isSynchronized(): Boolean = synchronizationMeasurement.isSynchronized()
-
     override fun getChangeResult(changeId: String): CompletableFuture<ChangeResult>? = changeIdToCompletableFuture[changeId]
 
     override fun otherConsensusPeers(): List<PeerAddress> =
