@@ -1,5 +1,6 @@
 package com.github.davenury.ucac.consensus.raft
 
+import com.github.davenury.common.AlreadyLockedException
 import com.github.davenury.common.Change
 import com.github.davenury.common.ChangeResult
 import com.github.davenury.common.Metrics
@@ -848,20 +849,28 @@ class RaftConsensusProtocolImpl(
 
                 val updatedChange: Change = TwoPC.updateParentIdFor2PCCompatibility(change, history, peersetId)
                 entry = updatedChange.toHistoryEntry(peersetId)
-
                 acquisition = TransactionAcquisition(ProtocolName.CONSENSUS, updatedChange.id)
-                val acquisitionResult = transactionBlocker.tryAcquireReentrant(acquisition)
+
+                try {
+                    // TODO Why the hell are we blocking TX when proposing changes to the leader?
+                    transactionBlocker.acquireReentrant(acquisition)
+                } catch (e: AlreadyLockedException) {
+                    logger.info("Transaction blocked")
+                    if (e.acquisition.protocol == ProtocolName.CONSENSUS) {
+                        logger.error("Already acquired by consensus, trying to recover TX")
+                        recoveryEntry(e.acquisition.changeId)
+                        return
+                    } else {
+                        logger.error("Already acquired: ${e.acquisition}, FIXME possibly buggy behavior")
+                    }
+                }
+
+                val entry = updatedChange.toHistoryEntry(peersetId, history.getCurrentEntryId())
 
                 if (isDuring2PAndChangeDoesntFinishIt(change)) {
                     logger.info("Queued change, because is during 2PC")
                     changesToBePropagatedToLeader.add(ChangeToBePropagatedToLeader(change, result))
                     transactionBlocker.tryRelease(acquisition)
-                    return
-                }
-
-                if (!acquisitionResult && transactionBlocker.getProtocolName() == ProtocolName.CONSENSUS) {
-                    logger.info("Queued change, because transaction is blocked")
-                    recoveryEntry(transactionBlocker.getChangeId()!!)
                     return
                 }
 
@@ -900,6 +909,7 @@ class RaftConsensusProtocolImpl(
         }
 
     private suspend fun recoveryEntry(changeId: String) {
+        // TODO What the hell is going on in here?
         val blockedEntry = state.getLogEntries().firstOrNull { Change.fromHistoryEntry(it.entry)?.id == changeId }
 
         if (blockedEntry == null) {
