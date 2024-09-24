@@ -45,18 +45,18 @@ data class SynchronizationMeasurement(
 
                 mutex.withLock {
                     if (latestEntryId == currentEntryId) {
-                        logger.info("I am already synchronized")
+                        logger.debug("I am already synchronized")
                         isSynchronized = true
                         clearMap()
                     } else if (latestEntryId == null) {
-                        logger.info("Unable to get information about latest entry id, so assume we are synchronized")
+                        logger.debug("Unable to get information about latest entry id, so assume we are synchronized")
                         isSynchronized = true
                         clearMap()
                     } else if (entryIdToTime.containsKey(latestEntryId)) {
-                        logger.info("State was synchronized during asking for latest entry ID")
+                        logger.debug("State was synchronized during asking for latest entry ID")
                         isSynchronizationFinished(latestEntryId)
                     } else {
-                        logger.info("Waiting for synchronization entry")
+                        logger.debug("Waiting for synchronization entry")
                         this@SynchronizationMeasurement.latestEntryId = latestEntryId
                     }
                 }
