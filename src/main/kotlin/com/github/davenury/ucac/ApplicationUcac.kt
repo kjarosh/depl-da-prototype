@@ -357,6 +357,7 @@ class ApplicationUcac(
             runBlocking {
                 if (config.consensus.isEnabled) {
                     multiplePeersetProtocols.protocols.values.forEach { protocols ->
+                        logger.error("DUPA")
                         protocols.consensusProtocol.begin()
                     }
                 }
