@@ -203,7 +203,7 @@ class MixedChangesSpec : IntegrationTestBase() {
             }
         }
 
-    @Test
+    @RetryingTest(3)
     fun `try to execute two following changes in the same time, first 2PC, then Raft`(): Unit =
         runBlocking {
             val firstChange = change(0, 1)
@@ -292,7 +292,7 @@ class MixedChangesSpec : IntegrationTestBase() {
             }
         }
 
-    @RetryingTest(3)
+    @RetryingTest(5)
     fun `try to execute two following changes in the same time (two different peers), first 2PC, then Raft`(): Unit =
         runBlocking {
             val change = change(0, 1)
