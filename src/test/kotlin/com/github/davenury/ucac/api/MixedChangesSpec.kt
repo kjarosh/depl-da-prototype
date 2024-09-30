@@ -137,32 +137,36 @@ class MixedChangesSpec : IntegrationTestBase() {
 
             listOf(applyEndPhaser, electionPhaser, beforeSendingApplyPhaser, receivedAgreePhaser)
                 .forEach { it.register() }
-            val leaderElected =
-                SignalListener {
-                    logger.info("Arrived ${it.subject.getPeerName()}")
-                    electionPhaser.arrive()
-                }
 
             val signalListenersForCohort =
                 mapOf(
-                    Signal.OnHandlingApplyEnd to
+                    Signal.ConsensusLeaderElected to
                         SignalListener {
-                            logger.info("Arrived: ${it.subject.getPeerName()}")
-                            applyEndPhaser.arrive()
+                            logger.info("Arriving at leader election: ${it.subject.getPeerName()}")
+                            electionPhaser.arrive()
                         },
-                    Signal.ConsensusLeaderElected to leaderElected,
+                    Signal.ConsensusFollowerChangeAccepted to
+                        SignalListener {
+                            logger.info("Arriving at consensus change: ${it.subject.getPeerName()}")
+                            if (it.change?.id == secondChange.id) applyConsensusPhaser.arrive()
+                        },
+                    Signal.OnHandlingAgreeEnd to
+                        SignalListener {
+                            logger.info("Arriving at agree end: ${it.subject.getPeerName()}")
+                            receivedAgreePhaser.arrive()
+                        },
                     Signal.BeforeSendingApply to
                         SignalListener {
+                            logger.info("Arriving at before sending apply: ${it.subject.getPeerName()}")
                             runBlocking {
                                 receivedAgreePhaser.arriveAndAwaitAdvanceWithTimeout()
                                 beforeSendingApplyPhaser.arrive()
                             }
                         },
-                    Signal.OnHandlingAgreeEnd to SignalListener { receivedAgreePhaser.arrive() },
-                    Signal.ConsensusFollowerChangeAccepted to
+                    Signal.OnHandlingApplyEnd to
                         SignalListener {
-                            logger.info("Arrived consensus change: ${it.subject.getPeerName()}")
-                            if (it.change?.id == secondChange.id) applyConsensusPhaser.arrive()
+                            logger.info("Arriving at apply end: ${it.subject.getPeerName()}")
+                            applyEndPhaser.arrive()
                         },
                 )
 
