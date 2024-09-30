@@ -56,7 +56,7 @@ fun Application.gmmfGraphModificationRouting(multiplePeersetProtocols: MultipleP
                 tx.serialize(),
                 peersets = listOf(ChangePeersetInfo(call.peersetId(), null)),
             )
-        call.consensus().proposeChangeAsync(change).await()
+        call.consensus().proposeChangeAsync(change).await().assertSuccess()
     }
 
     fun getVertex(
@@ -101,7 +101,7 @@ fun Application.gmmfGraphModificationRouting(multiplePeersetProtocols: MultipleP
                     tx.serialize(),
                     peersets = listOf(ChangePeersetInfo(call.peersetId(), parentId)),
                 )
-            call.consensus().proposeChangeAsync(change).await()
+            call.consensus().proposeChangeAsync(change).await().assertSuccess()
         } else if (fromLocal || toLocal) {
             val tx = AddEdgeTx(from, to, permissions)
             val change =
@@ -113,7 +113,7 @@ fun Application.gmmfGraphModificationRouting(multiplePeersetProtocols: MultipleP
                             ChangePeersetInfo(PeersetId(to.owner().id), toParentId),
                         ),
                 )
-            call.twoPC().proposeChangeAsync(change).await()
+            call.twoPC().proposeChangeAsync(change).await().assertSuccess()
         } else {
             throw IllegalArgumentException("Trying to add an edge with no vertex in this peerset")
         }

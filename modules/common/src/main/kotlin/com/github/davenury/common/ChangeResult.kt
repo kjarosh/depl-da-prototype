@@ -34,4 +34,10 @@ data class ChangeResult(
          */
         ABORTED,
     }
+
+    fun assertSuccess() {
+        if (status != Status.SUCCESS) {
+            throw AssertionError("ChangeResult: Expected success, got $this")
+        }
+    }
 }
