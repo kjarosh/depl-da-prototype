@@ -114,16 +114,18 @@ class GPACProtocolImpl(
     override suspend fun handleAgree(message: Agree): Agreed =
         span("GPAC.handleAgree") {
             return phaseMutex.withLock {
+                logger.info("Handling agree")
                 if (this@GPACProtocolImpl.transaction.decision) {
+                    logger.info("There's a decision")
                     return Agreed(message.ballotNumber, this@GPACProtocolImpl.transaction.acceptVal!!)
                 }
 
                 signal(Signal.OnHandlingAgreeBegin, transaction, message.change)
 
                 if (message.ballotNumber < myBallotNumber) {
+                    logger.info("Cannot agree, not a valid leader")
                     throw NotValidLeader(myBallotNumber, message.ballotNumber)
                 }
-                logger.info("Handling agree $message")
 
                 val entry = message.change.toHistoryEntry(peersetId)
                 val initVal = if (history.isEntryCompatible(entry)) Accept.COMMIT else Accept.ABORT
@@ -136,13 +138,14 @@ class GPACProtocolImpl(
                             TransactionAcquisition(ProtocolName.GPAC, message.change.id),
                         )
                     } catch (e: Exception) {
+                        logger.info("Failed to acquire lock", e)
                         return@withLock Agreed(
                             ballotNumber = message.ballotNumber,
                             acceptVal = Accept.ABORT,
                         )
                     }
                 }
-                logger.info("Lock aquired: ${message.ballotNumber}")
+                logger.info("Lock acquired for ballot ${message.ballotNumber}")
 
                 transaction =
                     Transaction(
@@ -153,7 +156,7 @@ class GPACProtocolImpl(
                         acceptNum = message.acceptNum ?: message.ballotNumber,
                     )
 
-                logger.info("State transaction state: ${this@GPACProtocolImpl.transaction}")
+                logger.info("Agreeing to transaction: ${this@GPACProtocolImpl.transaction}")
 
                 signal(Signal.OnHandlingAgreeEnd, transaction, message.change)
 
@@ -263,16 +266,15 @@ class GPACProtocolImpl(
     private fun changeWasAppliedBefore(change: Change) = Changes.fromHistory(history).any { it.id == change.id }
 
     private suspend fun leaderFailTimeoutStart(change: Change) {
-        logger.info("Start counting")
+        logger.debug("Start a timeout for detecting leader failure")
         leaderTimer.startCounting {
-            logger.info("Recovery leader starts")
-            logger.info("leaderFailTimeout releaseBlocker")
+            logger.info("Recovery leader starts after a timeout")
             if (!changeWasAppliedBefore(change)) performProtocolAsRecoveryLeader(change)
         }
     }
 
     private fun leaderFailTimeoutStop() {
-        logger.info("Stop counter")
+        logger.debug("Stop the timeout for detecting leader failure")
         leaderTimer.cancelCounting()
     }
 
@@ -456,7 +458,7 @@ class GPACProtocolImpl(
                 transaction ?: Transaction(ballotNumber = myBallotNumber, initVal = Accept.COMMIT, change = change)
 
             signal(Signal.BeforeSendingElect, this@GPACProtocolImpl.transaction, change)
-            logger.info("Sending ballot number: $myBallotNumber")
+            logger.info("Sending ballot ($myBallotNumber) and waiting for election result")
             val responses = getElectedYouResponses(change, getPeersFromChange(change), acceptNum)
 
             val (electResponses: Map<PeersetId, List<ElectedYou>>, success: Boolean) =
@@ -465,11 +467,12 @@ class GPACProtocolImpl(
                 }
 
             if (success) {
+                logger.info("Election successful")
                 return ElectMeResult(electResponses, true)
             }
 
             myBallotNumber++
-            logger.info("Bumped ballot number to: $myBallotNumber")
+            logger.info("Election unsuccessful, bumped ballot number to $myBallotNumber")
 
             return ElectMeResult(electResponses, false)
         }

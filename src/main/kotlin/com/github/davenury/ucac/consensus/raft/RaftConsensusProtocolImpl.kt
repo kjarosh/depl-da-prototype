@@ -190,7 +190,7 @@ class RaftConsensusProtocolImpl(
                 executorService = Executors.newCachedThreadPool().asCoroutineDispatcher()
             }
 
-            logger.info("I have been selected as a leader (in term $currentTerm)")
+            logger.info("Leader selected: me (in term $currentTerm)")
             subscribers?.notifyAboutConsensusLeaderChange(peerId, peersetId)
             signalPublisher.signal(
                 Signal.ConsensusLeaderIHaveBeenElected,
@@ -253,7 +253,7 @@ class RaftConsensusProtocolImpl(
         leaderId: PeerId,
         term: Int,
     ) = span("Raft.newLeaderElected") {
-        logger.info("A leader has been elected: $leaderId (in term $term)")
+        logger.info("Leader elected: $leaderId (in term $term)")
         votedFor = VotedFor(leaderId, true)
 //          DONE: Check if stop() function make sure if you need to wait to all job finish ->
 //          fixed by setting executor to null and adding null condition in if
