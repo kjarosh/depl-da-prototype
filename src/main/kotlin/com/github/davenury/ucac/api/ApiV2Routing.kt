@@ -123,7 +123,7 @@ fun Application.apiV2Routing(service: ApiV2Service) {
                 else -> ProtocolName.GPAC
             }
 
-        logger.info(
+        logger.debug(
             "Create ProcessorJob from parameters: (isOnePeersetChange=$isOnePeersetChange, enforceGPAC: $enforceGpac, 2PC: $useTwoPC), resultType: $protocolName",
         )
 
