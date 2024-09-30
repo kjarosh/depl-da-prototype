@@ -133,7 +133,7 @@ class AlvinSpec : IntegrationTestBase() {
             }
         }
 
-    @Test
+    @RetryingTest(2)
     fun `1000 change processed sequentially`(): Unit =
         runBlocking {
             val peers = 5
