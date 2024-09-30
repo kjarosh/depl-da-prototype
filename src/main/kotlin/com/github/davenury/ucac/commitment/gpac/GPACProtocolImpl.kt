@@ -127,9 +127,6 @@ class GPACProtocolImpl(
                     throw NotValidLeader(myBallotNumber, message.ballotNumber)
                 }
 
-                val entry = message.change.toHistoryEntry(peersetId)
-                val initVal = if (history.isEntryCompatible(entry)) Accept.COMMIT else Accept.ABORT
-
                 myBallotNumber = message.ballotNumber
 
                 if (!this@GPACProtocolImpl.transaction.decision) {
@@ -146,6 +143,9 @@ class GPACProtocolImpl(
                     }
                 }
                 logger.info("Lock acquired for ballot ${message.ballotNumber}")
+
+                val entry = message.change.toHistoryEntry(peersetId)
+                val initVal = if (history.isEntryCompatible(entry)) Accept.COMMIT else Accept.ABORT
 
                 transaction =
                     Transaction(
