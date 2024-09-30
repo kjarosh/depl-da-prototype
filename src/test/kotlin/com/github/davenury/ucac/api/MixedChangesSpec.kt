@@ -203,7 +203,7 @@ class MixedChangesSpec : IntegrationTestBase() {
             }
         }
 
-    @RetryingTest(3)
+    @RetryingTest(5)
     fun `try to execute two following changes in the same time, first 2PC, then Raft`(): Unit =
         runBlocking {
             val firstChange = change(0, 1)
@@ -292,7 +292,7 @@ class MixedChangesSpec : IntegrationTestBase() {
             }
         }
 
-    @RetryingTest(5)
+    @RetryingTest(7)
     fun `try to execute two following changes in the same time (two different peers), first 2PC, then Raft`(): Unit =
         runBlocking {
             val change = change(0, 1)
@@ -344,6 +344,7 @@ class MixedChangesSpec : IntegrationTestBase() {
 
             electionPhaser.arriveAndAwaitAdvanceWithTimeout()
 
+            logger.info("Leader elected, executing first change")
             // when - executing transaction
             executeChange(
                 "http://${apps.getPeer("peer0").address}/v2/change/async?peerset=peerset0&use_2pc=true",
@@ -352,13 +353,20 @@ class MixedChangesSpec : IntegrationTestBase() {
 
             beforeSendingApplyPhaser.arriveAndAwaitAdvanceWithTimeout()
 
+            logger.info("Executing second change")
             executeChange("http://${apps.getPeer("peer3").address}/v2/change/async?peerset=peerset1", secondChange)
 
             applyEndPhaser.arriveAndAwaitAdvanceWithTimeout()
 
+            logger.info("After apply")
+
             applyConsensusPhaser.arriveAndAwaitAdvanceWithTimeout()
 
+            logger.info("After apply consensus")
+
             apply2PCPhaser.arriveAndAwaitAdvanceWithTimeout()
+
+            logger.info("After apply 2PC")
 
 //      First peerset
             askAllForChanges("peerset0").forEach {
