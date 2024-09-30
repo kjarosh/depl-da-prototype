@@ -49,13 +49,12 @@ fun Application.gmmfGraphModificationRouting(multiplePeersetProtocols: MultipleP
         name: String,
         type: Vertex.Type,
     ) {
-        val parentId = call.history().getCurrentEntryId()
         val vertexId = VertexId(ZoneId(call.peersetId().peersetId), name)
         val tx = AddVertexTx(vertexId, type)
         val change =
             StandardChange(
                 tx.serialize(),
-                peersets = listOf(ChangePeersetInfo(call.peersetId(), parentId)),
+                peersets = listOf(ChangePeersetInfo(call.peersetId(), null)),
             )
         call.consensus().proposeChangeAsync(change).await()
     }
