@@ -12,6 +12,7 @@ import com.github.davenury.ucac.commitment.twopc.TwoPCProtocolClientImpl
 import com.github.davenury.ucac.common.structure.CodeSubscriber
 import com.github.davenury.ucac.common.structure.Subscribers
 import com.github.davenury.ucac.consensus.ConsensusProtocol
+import com.github.davenury.ucac.gmmf.model.GraphFromHistory
 import kotlinx.coroutines.ExecutorCoroutineDispatcher
 import kotlinx.coroutines.asCoroutineDispatcher
 import java.util.concurrent.Executors
@@ -37,6 +38,10 @@ class PeersetProtocols(
     val consensusProtocol: ConsensusProtocol
     val twoPC: TwoPC
     val gpacFactory: GPACFactory
+
+    val graphFromHistory: GraphFromHistory by lazy {
+        GraphFromHistory(history, peersetId)
+    }
 
     init {
         gpacFactory =

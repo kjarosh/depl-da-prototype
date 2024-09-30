@@ -10,7 +10,6 @@ import com.github.davenury.ucac.common.MultiplePeersetProtocols
 import com.github.davenury.ucac.consensus.ConsensusProtocol
 import com.github.davenury.ucac.gmmf.model.AddEdgeTx
 import com.github.davenury.ucac.gmmf.model.AddVertexTx
-import com.github.davenury.ucac.gmmf.model.GraphFromHistory
 import com.github.kjarosh.agh.pp.graph.model.EdgeId
 import com.github.kjarosh.agh.pp.graph.model.Graph
 import com.github.kjarosh.agh.pp.graph.model.Permissions
@@ -27,11 +26,8 @@ import io.ktor.routing.get
 import io.ktor.routing.post
 import io.ktor.routing.routing
 import kotlinx.coroutines.future.await
-import java.util.concurrent.ConcurrentHashMap
 
 fun Application.gmmfGraphModificationRouting(multiplePeersetProtocols: MultiplePeersetProtocols) {
-    val graphsPerPeerset: MutableMap<PeersetId, GraphFromHistory> = ConcurrentHashMap()
-
     fun ApplicationCall.consensus(): ConsensusProtocol {
         return multiplePeersetProtocols.forPeerset(this.peersetId()).consensusProtocol
     }
@@ -45,10 +41,7 @@ fun Application.gmmfGraphModificationRouting(multiplePeersetProtocols: MultipleP
     }
 
     fun ApplicationCall.graph(): Graph {
-        val history = this.history()
-        return graphsPerPeerset.computeIfAbsent(this.peersetId()) { pid: PeersetId ->
-            GraphFromHistory(history, pid)
-        }.getGraph()
+        return multiplePeersetProtocols.forPeerset(this.peersetId()).graphFromHistory.getGraph()
     }
 
     suspend fun addVertex(
