@@ -41,11 +41,11 @@ class GmmfNaiveSpec : IntegrationTestBase() {
             apps = TestApplicationSet(mapOf("peerset0" to listOf("peer0", "peer1")))
 
             logger.info("Adding v1")
-            addVertex("http://${apps.getPeer("peer0").address}/gmmf/graph/vertex?peerset=peerset0", "v1", Vertex.Type.GROUP)
+            addVertex("peer0", "peerset0", "v1", Vertex.Type.GROUP)
             logger.info("Adding v2")
-            addVertex("http://${apps.getPeer("peer1").address}/gmmf/graph/vertex?peerset=peerset0", "v2", Vertex.Type.GROUP)
+            addVertex("peer1", "peerset0", "v2", Vertex.Type.GROUP)
             logger.info("Adding v3")
-            addVertex("http://${apps.getPeer("peer0").address}/gmmf/graph/vertex?peerset=peerset0", "v3", Vertex.Type.GROUP)
+            addVertex("peer0", "peerset0", "v3", Vertex.Type.GROUP)
 
             logger.info("Adding v1->v2")
             addEdge(
@@ -97,10 +97,10 @@ class GmmfNaiveSpec : IntegrationTestBase() {
         runBlocking {
             apps = TestApplicationSet(mapOf("peerset0" to listOf("peer0", "peer1"), "peerset1" to listOf("peer2", "peer3")))
 
-            addVertex("http://${apps.getPeer("peer0").address}/gmmf/graph/vertex?peerset=peerset0", "v1", Vertex.Type.GROUP)
-            addVertex("http://${apps.getPeer("peer1").address}/gmmf/graph/vertex?peerset=peerset0", "v2", Vertex.Type.GROUP)
-            addVertex("http://${apps.getPeer("peer2").address}/gmmf/graph/vertex?peerset=peerset1", "v3", Vertex.Type.GROUP)
-            addVertex("http://${apps.getPeer("peer3").address}/gmmf/graph/vertex?peerset=peerset1", "v4", Vertex.Type.GROUP)
+            addVertex("peer0", "peerset0", "v1", Vertex.Type.GROUP)
+            addVertex("peer1", "peerset0", "v2", Vertex.Type.GROUP)
+            addVertex("peer2", "peerset1", "v3", Vertex.Type.GROUP)
+            addVertex("peer3", "peerset1", "v4", Vertex.Type.GROUP)
 
             var v2 = getVertex("http://${apps.getPeer("peer1").address}/gmmf/graph/vertex/v2?peerset=peerset0")
             expectThat(v2.name).isEqualTo("v2")
@@ -143,18 +143,6 @@ class GmmfNaiveSpec : IntegrationTestBase() {
                 )
             expectThat(reachesMessage2.reaches).isTrue()
         }
-
-    private suspend fun addVertex(
-        url: String,
-        name: String,
-        type: Vertex.Type,
-    ) {
-        testHttpClient.post<String>(url) {
-            contentType(ContentType.Application.Json)
-            accept(ContentType.Application.Json)
-            body = VertexMessage(name, type)
-        }
-    }
 
     private suspend fun getVertex(url: String): VertexMessage =
         testHttpClient.get<VertexMessage>(url) {

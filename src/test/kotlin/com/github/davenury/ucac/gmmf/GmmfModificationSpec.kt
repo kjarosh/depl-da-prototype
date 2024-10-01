@@ -39,11 +39,11 @@ class GmmfModificationSpec : IntegrationTestBase() {
             apps = TestApplicationSet(mapOf("peerset0" to listOf("peer0", "peer1")))
 
             expectCatching {
-                addVertex("http://${apps.getPeer("peer0").address}/gmmf/graph/vertex?peerset=peerset0", "user1", Vertex.Type.USER)
+                addVertex("peer0", "peerset0", "user1", Vertex.Type.USER)
             }.isSuccess()
 
             expectCatching {
-                addVertex("http://${apps.getPeer("peer1").address}/gmmf/graph/vertex?peerset=peerset0", "user2", Vertex.Type.USER)
+                addVertex("peer1", "peerset0", "user2", Vertex.Type.USER)
             }.isSuccess()
 
             val user1Peer0 = getVertex("http://${apps.getPeer("peer0").address}/gmmf/graph/vertex/user1?peerset=peerset0")
@@ -67,11 +67,11 @@ class GmmfModificationSpec : IntegrationTestBase() {
             apps = TestApplicationSet(mapOf("peerset0" to listOf("peer0", "peer1")))
 
             expectCatching {
-                addVertex("http://${apps.getPeer("peer0").address}/gmmf/graph/vertex?peerset=peerset0", "user1", Vertex.Type.USER)
+                addVertex("peer0", "peerset0", "user1", Vertex.Type.USER)
             }.isSuccess()
 
             expectCatching {
-                addVertex("http://${apps.getPeer("peer1").address}/gmmf/graph/vertex?peerset=peerset0", "user2", Vertex.Type.USER)
+                addVertex("peer1", "peerset0", "user2", Vertex.Type.USER)
             }.isSuccess()
 
             expectCatching {
@@ -102,11 +102,11 @@ class GmmfModificationSpec : IntegrationTestBase() {
                 )
 
             expectCatching {
-                addVertex("http://${apps.getPeer("peer0").address}/gmmf/graph/vertex?peerset=peerset0", "user1", Vertex.Type.USER)
+                addVertex("peer0", "peerset0", "user1", Vertex.Type.USER)
             }.isSuccess()
 
             expectCatching {
-                addVertex("http://${apps.getPeer("peer2").address}/gmmf/graph/vertex?peerset=peerset1", "user2", Vertex.Type.USER)
+                addVertex("peer2", "peerset1", "user2", Vertex.Type.USER)
             }.isSuccess()
 
             expectCatching {
@@ -118,18 +118,6 @@ class GmmfModificationSpec : IntegrationTestBase() {
                 )
             }.isSuccess()
         }
-
-    private suspend fun addVertex(
-        url: String,
-        name: String,
-        type: Vertex.Type,
-    ) {
-        testHttpClient.post<HttpResponse>(url) {
-            contentType(ContentType.Application.Json)
-            accept(ContentType.Application.Json)
-            body = VertexMessage(name, type)
-        }
-    }
 
     private suspend fun getVertex(url: String): VertexMessage {
         return testHttpClient.get<VertexMessage>(url) {
