@@ -1,7 +1,6 @@
 package com.github.davenury.ucac.gmmf
 
 import com.github.davenury.ucac.gmmf.routing.EdgeMessage
-import com.github.davenury.ucac.gmmf.routing.VertexMessage
 import com.github.davenury.ucac.testHttpClient
 import com.github.davenury.ucac.utils.IntegrationTestBase
 import com.github.davenury.ucac.utils.TestApplicationSet
@@ -46,10 +45,10 @@ class GmmfModificationSpec : IntegrationTestBase() {
                 addVertex("peer1", "peerset0", "user2", Vertex.Type.USER)
             }.isSuccess()
 
-            val user1Peer0 = getVertex("http://${apps.getPeer("peer0").address}/gmmf/graph/vertex/user1?peerset=peerset0")
-            val user2Peer0 = getVertex("http://${apps.getPeer("peer0").address}/gmmf/graph/vertex/user2?peerset=peerset0")
-            val user1Peer1 = getVertex("http://${apps.getPeer("peer1").address}/gmmf/graph/vertex/user1?peerset=peerset0")
-            val user2Peer1 = getVertex("http://${apps.getPeer("peer1").address}/gmmf/graph/vertex/user2?peerset=peerset0")
+            val user1Peer0 = getVertex("peer0", "peerset0", "user1")
+            val user2Peer0 = getVertex("peer0", "peerset0", "user2")
+            val user1Peer1 = getVertex("peer1", "peerset0", "user1")
+            val user2Peer1 = getVertex("peer1", "peerset0", "user2")
 
             expectThat(user1Peer0.name).isEqualTo("user1")
             expectThat(user1Peer0.type).isEqualTo(Vertex.Type.USER)
@@ -118,13 +117,6 @@ class GmmfModificationSpec : IntegrationTestBase() {
                 )
             }.isSuccess()
         }
-
-    private suspend fun getVertex(url: String): VertexMessage {
-        return testHttpClient.get<VertexMessage>(url) {
-            contentType(ContentType.Application.Json)
-            accept(ContentType.Application.Json)
-        }
-    }
 
     private suspend fun addEdge(
         url: String,

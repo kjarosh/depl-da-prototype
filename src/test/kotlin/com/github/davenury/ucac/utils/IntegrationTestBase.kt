@@ -4,6 +4,7 @@ import com.github.davenury.ucac.gmmf.routing.VertexMessage
 import com.github.davenury.ucac.testHttpClient
 import com.github.kjarosh.agh.pp.graph.model.Vertex
 import io.ktor.client.request.accept
+import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
@@ -35,6 +36,18 @@ abstract class IntegrationTestBase {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
             body = VertexMessage(name, type)
+        }
+    }
+
+    suspend fun getVertex(
+        peerName: String,
+        peerset: String,
+        name: String,
+    ): VertexMessage {
+        logger.info("Getting vertex $name from $peerset through $peerName")
+        return testHttpClient.get<VertexMessage>("http://${apps.getPeer(peerName).address}/gmmf/graph/vertex/$name?peerset=$peerset") {
+            contentType(ContentType.Application.Json)
+            accept(ContentType.Application.Json)
         }
     }
 
