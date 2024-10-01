@@ -102,11 +102,11 @@ class GmmfNaiveSpec : IntegrationTestBase() {
             addVertex("peer2", "peerset1", "v3", Vertex.Type.GROUP)
             addVertex("peer3", "peerset1", "v4", Vertex.Type.GROUP)
 
-            var v2 = getVertex("http://${apps.getPeer("peer1").address}/gmmf/graph/vertex/v2?peerset=peerset0")
+            var v2 = getVertex("peer1", "peerset0", "v2")
             expectThat(v2.name).isEqualTo("v2")
             expectThat(v2.type).isEqualTo(Vertex.Type.GROUP)
 
-            v2 = getVertex("http://${apps.getPeer("peer0").address}/gmmf/graph/vertex/v2?peerset=peerset0")
+            v2 = getVertex("peer0", "peerset0", "v2")
             expectThat(v2.name).isEqualTo("v2")
             expectThat(v2.type).isEqualTo(Vertex.Type.GROUP)
 
@@ -144,12 +144,6 @@ class GmmfNaiveSpec : IntegrationTestBase() {
             expectThat(reachesMessage2.reaches).isTrue()
         }
 
-    private suspend fun getVertex(url: String): VertexMessage =
-        testHttpClient.get<VertexMessage>(url) {
-            contentType(ContentType.Application.Json)
-            accept(ContentType.Application.Json)
-        }
-
     private suspend fun addEdge(
         url: String,
         from: VertexId,
@@ -162,12 +156,6 @@ class GmmfNaiveSpec : IntegrationTestBase() {
             body = EdgeMessage(from, to, permissions)
         }
     }
-
-    private suspend fun getEdge(url: String): EdgeMessage =
-        testHttpClient.get<EdgeMessage>(url) {
-            contentType(ContentType.Application.Json)
-            accept(ContentType.Application.Json)
-        }
 
     private suspend fun naiveReaches(url: String): ReachesMessage =
         testHttpClient.post<ReachesMessage>(url) {
