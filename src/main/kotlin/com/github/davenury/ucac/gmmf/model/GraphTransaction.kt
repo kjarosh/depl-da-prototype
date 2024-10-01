@@ -8,6 +8,10 @@ import com.github.kjarosh.agh.pp.graph.model.Graph
 import com.github.kjarosh.agh.pp.graph.model.Permissions
 import com.github.kjarosh.agh.pp.graph.model.Vertex
 import com.github.kjarosh.agh.pp.graph.model.VertexId
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
+val logger: Logger = LoggerFactory.getLogger("graph-tx")
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME)
 @JsonSubTypes(
@@ -33,11 +37,13 @@ sealed class GraphTransaction {
 data class AddVertexTx(val id: VertexId, val type: Vertex.Type) : GraphTransaction() {
     override fun apply(graph: Graph) {
         graph.addVertex(Vertex(id, type))
+        logger.info("Vertex {} added to the graph", id)
     }
 }
 
 data class AddEdgeTx(val from: VertexId, val to: VertexId, val permissions: Permissions) : GraphTransaction() {
     override fun apply(graph: Graph) {
         graph.addEdge(Edge(from, to, permissions))
+        logger.info("Edge {}->{} added to the graph", from, to)
     }
 }
