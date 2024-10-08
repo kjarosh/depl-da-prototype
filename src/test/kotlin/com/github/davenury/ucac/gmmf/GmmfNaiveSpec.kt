@@ -1,8 +1,6 @@
 package com.github.davenury.ucac.gmmf
 
-import com.github.davenury.ucac.gmmf.routing.EdgeMessage
 import com.github.davenury.ucac.gmmf.routing.ReachesMessage
-import com.github.davenury.ucac.gmmf.routing.VertexMessage
 import com.github.davenury.ucac.testHttpClient
 import com.github.davenury.ucac.utils.IntegrationTestBase
 import com.github.davenury.ucac.utils.TestApplicationSet
@@ -12,9 +10,7 @@ import com.github.kjarosh.agh.pp.graph.model.Vertex
 import com.github.kjarosh.agh.pp.graph.model.VertexId
 import com.github.kjarosh.agh.pp.graph.model.ZoneId
 import io.ktor.client.request.accept
-import io.ktor.client.request.get
 import io.ktor.client.request.post
-import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import kotlinx.coroutines.runBlocking
@@ -49,14 +45,16 @@ class GmmfNaiveSpec : IntegrationTestBase() {
 
             logger.info("Adding v1->v2")
             addEdge(
-                "http://${apps.getPeer("peer0").address}/gmmf/graph/edge?peerset=peerset0",
+                "peer0",
+                "peerset0",
                 VertexId(ZoneId("peerset0"), "v1"),
                 VertexId(ZoneId("peerset0"), "v2"),
                 Permissions("01010"),
             )
             logger.info("Adding v2->v3")
             addEdge(
-                "http://${apps.getPeer("peer0").address}/gmmf/graph/edge?peerset=peerset0",
+                "peer0",
+                "peerset0",
                 VertexId(ZoneId("peerset0"), "v2"),
                 VertexId(ZoneId("peerset0"), "v3"),
                 Permissions("01010"),
@@ -111,19 +109,22 @@ class GmmfNaiveSpec : IntegrationTestBase() {
             expectThat(v2.type).isEqualTo(Vertex.Type.GROUP)
 
             addEdge(
-                "http://${apps.getPeer("peer0").address}/gmmf/graph/edge?peerset=peerset0",
+                "peer0",
+                "peerset0",
                 VertexId(ZoneId("peerset0"), "v1"),
                 VertexId(ZoneId("peerset0"), "v2"),
                 Permissions("01010"),
             )
             addEdge(
-                "http://${apps.getPeer("peer0").address}/gmmf/graph/edge?peerset=peerset0",
+                "peer0",
+                "peerset0",
                 VertexId(ZoneId("peerset0"), "v2"),
                 VertexId(ZoneId("peerset1"), "v3"),
                 Permissions("01010"),
             )
             addEdge(
-                "http://${apps.getPeer("peer3").address}/gmmf/graph/edge?peerset=peerset1",
+                "peer3",
+                "peerset1",
                 VertexId(ZoneId("peerset1"), "v3"),
                 VertexId(ZoneId("peerset1"), "v4"),
                 Permissions("01010"),
@@ -143,19 +144,6 @@ class GmmfNaiveSpec : IntegrationTestBase() {
                 )
             expectThat(reachesMessage2.reaches).isTrue()
         }
-
-    private suspend fun addEdge(
-        url: String,
-        from: VertexId,
-        to: VertexId,
-        permissions: Permissions,
-    ) {
-        testHttpClient.post<HttpResponse>(url) {
-            contentType(ContentType.Application.Json)
-            accept(ContentType.Application.Json)
-            body = EdgeMessage(from, to, permissions)
-        }
-    }
 
     private suspend fun naiveReaches(url: String): ReachesMessage =
         testHttpClient.post<ReachesMessage>(url) {

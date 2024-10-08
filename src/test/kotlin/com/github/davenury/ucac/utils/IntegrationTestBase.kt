@@ -1,8 +1,11 @@
 package com.github.davenury.ucac.utils
 
+import com.github.davenury.ucac.gmmf.routing.EdgeMessage
 import com.github.davenury.ucac.gmmf.routing.VertexMessage
 import com.github.davenury.ucac.testHttpClient
+import com.github.kjarosh.agh.pp.graph.model.Permissions
 import com.github.kjarosh.agh.pp.graph.model.Vertex
+import com.github.kjarosh.agh.pp.graph.model.VertexId
 import io.ktor.client.request.accept
 import io.ktor.client.request.get
 import io.ktor.client.request.post
@@ -46,6 +49,32 @@ abstract class IntegrationTestBase {
     ): VertexMessage {
         logger.info("Getting vertex $name from $peerset through $peerName")
         return testHttpClient.get<VertexMessage>("http://${apps.getPeer(peerName).address}/gmmf/graph/vertex/$name?peerset=$peerset") {
+            contentType(ContentType.Application.Json)
+            accept(ContentType.Application.Json)
+        }
+    }
+
+    suspend fun addEdge(
+        peerName: String,
+        peerset: String,
+        from: VertexId,
+        to: VertexId,
+        permissions: Permissions,
+    ) {
+        testHttpClient.post<HttpResponse>("http://${apps.getPeer(peerName).address}/gmmf/graph/edge?peerset=$peerset") {
+            contentType(ContentType.Application.Json)
+            accept(ContentType.Application.Json)
+            body = EdgeMessage(from, to, permissions)
+        }
+    }
+
+    suspend fun getEdge(
+        peerName: String,
+        peerset: String,
+        from: VertexId,
+        to: VertexId,
+    ): EdgeMessage {
+        return testHttpClient.get<EdgeMessage>("http://${apps.getPeer(peerName).address}/gmmf/graph/edge/$from/$to?peerset=$peerset") {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
         }
