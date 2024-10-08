@@ -310,21 +310,19 @@ class MixedChangesSpec : IntegrationTestBase() {
             listOf(applyEndPhaser, electionPhaser, beforeSendingApplyPhaser, applyConsensusPhaser, apply2PCPhaser)
                 .forEach { it.register() }
 
-            val leaderElected =
-                SignalListener {
-                    electionPhaser.arrive()
-                }
-
             val signalListenersForCohort =
                 mapOf(
+                    Signal.TwoPCOnChangeAccepted to
+                        SignalListener {
+                            beforeSendingApplyPhaser.arrive()
+                        },
                     Signal.TwoPCOnChangeApplied to
                         SignalListener {
                             applyEndPhaser.arrive()
                         },
-                    Signal.ConsensusLeaderElected to leaderElected,
-                    Signal.TwoPCOnChangeAccepted to
+                    Signal.ConsensusLeaderElected to
                         SignalListener {
-                            beforeSendingApplyPhaser.arrive()
+                            electionPhaser.arrive()
                         },
                     Signal.ConsensusFollowerChangeAccepted to
                         SignalListener {
