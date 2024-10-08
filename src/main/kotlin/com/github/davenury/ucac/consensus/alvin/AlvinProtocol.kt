@@ -1,5 +1,6 @@
 package com.github.davenury.ucac.consensus.alvin
 
+import com.github.davenury.common.AlreadyLockedException
 import com.github.davenury.common.AlvinHistoryBlockedException
 import com.github.davenury.common.AlvinLeaderBecameOutdatedException
 import com.github.davenury.common.AlvinOutdatedPrepareException
@@ -355,12 +356,12 @@ class AlvinProtocol(
 
 //          FIXME: show up in 1000 Alvin changes
 
-            val isAcquiredTransactionBlocker =
-                transactionBlocker.tryAcquireReentrant(TransactionAcquisition(ProtocolName.CONSENSUS, change.id))
-
-            if (!isAcquiredTransactionBlocker) {
+            val acquisition = TransactionAcquisition(ProtocolName.CONSENSUS, change.id)
+            try {
+                transactionBlocker.acquireReentrant(acquisition)
+            } catch (e: AlreadyLockedException) {
                 logger.info(
-                    "Transaction is blocked on protocol ${transactionBlocker.getProtocolName()}, timeout transaction",
+                    "Transaction is blocked on protocol ${e.acquisition.protocol}, timeout transaction",
                 )
                 result.complete(ChangeResult(ChangeResult.Status.TIMEOUT))
                 return
@@ -387,7 +388,7 @@ class AlvinProtocol(
                         currentEntryId = history.getCurrentEntryId(),
                     ),
                 )
-                transactionBlocker.release(TransactionAcquisition(ProtocolName.CONSENSUS, change.id))
+                transactionBlocker.release(acquisition)
                 return
             }
         }
