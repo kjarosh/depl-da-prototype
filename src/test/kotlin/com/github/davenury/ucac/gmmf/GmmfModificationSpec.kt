@@ -1,7 +1,5 @@
 package com.github.davenury.ucac.gmmf
 
-import com.github.davenury.ucac.gmmf.routing.EdgeMessage
-import com.github.davenury.ucac.testHttpClient
 import com.github.davenury.ucac.utils.IntegrationTestBase
 import com.github.davenury.ucac.utils.TestApplicationSet
 import com.github.davenury.ucac.utils.TestLogExtension
@@ -9,12 +7,6 @@ import com.github.kjarosh.agh.pp.graph.model.Permissions
 import com.github.kjarosh.agh.pp.graph.model.Vertex
 import com.github.kjarosh.agh.pp.graph.model.VertexId
 import com.github.kjarosh.agh.pp.graph.model.ZoneId
-import io.ktor.client.request.accept
-import io.ktor.client.request.get
-import io.ktor.client.request.post
-import io.ktor.client.statement.HttpResponse
-import io.ktor.http.ContentType
-import io.ktor.http.contentType
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -73,17 +65,20 @@ class GmmfModificationSpec : IntegrationTestBase() {
                 addVertex("peer1", "peerset0", "user2", Vertex.Type.USER)
             }.isSuccess()
 
+            val vertexUser1 = VertexId(ZoneId("peerset0"), "user1")
+            val vertexUser2 = VertexId(ZoneId("peerset0"), "user2")
             expectCatching {
                 addEdge(
-                    "http://${apps.getPeer("peer0").address}/gmmf/graph/edge?peerset=peerset0",
-                    VertexId(ZoneId("peerset0"), "user1"),
-                    VertexId(ZoneId("peerset0"), "user2"),
+                    "peer0",
+                    "peerset0",
+                    vertexUser1,
+                    vertexUser2,
                     Permissions("01010"),
                 )
             }.isSuccess()
 
-            val edgePeer0 = getEdge("http://${apps.getPeer("peer0").address}/gmmf/graph/edge/user1/user2?peerset=peerset0")
-            val edgePeer1 = getEdge("http://${apps.getPeer("peer1").address}/gmmf/graph/edge/user1/user2?peerset=peerset0")
+            val edgePeer0 = getEdge("peer0", "peerset0", vertexUser1, vertexUser2)
+            val edgePeer1 = getEdge("peer1", "peerset0", vertexUser1, vertexUser2)
 
             expectThat(edgePeer0.permissions).isEqualTo(Permissions("01010"))
             expectThat(edgePeer1.permissions).isEqualTo(Permissions("01010"))
@@ -110,33 +105,14 @@ class GmmfModificationSpec : IntegrationTestBase() {
 
             expectCatching {
                 addEdge(
-                    "http://${apps.getPeer("peer0").address}/gmmf/graph/edge?peerset=peerset0",
+                    "peer0",
+                    "peerset0",
                     VertexId(ZoneId("peerset0"), "user1"),
                     VertexId(ZoneId("peerset1"), "user2"),
                     Permissions("01010"),
                 )
             }.isSuccess()
         }
-
-    private suspend fun addEdge(
-        url: String,
-        from: VertexId,
-        to: VertexId,
-        permissions: Permissions,
-    ) {
-        testHttpClient.post<HttpResponse>(url) {
-            contentType(ContentType.Application.Json)
-            accept(ContentType.Application.Json)
-            body = EdgeMessage(from, to, permissions)
-        }
-    }
-
-    private suspend fun getEdge(url: String): EdgeMessage {
-        return testHttpClient.get<EdgeMessage>(url) {
-            contentType(ContentType.Application.Json)
-            accept(ContentType.Application.Json)
-        }
-    }
 
     companion object {
         private val logger = LoggerFactory.getLogger(GmmfModificationSpec::class.java)
