@@ -848,19 +848,13 @@ class RaftConsensusProtocolImpl(
                 val updatedChange: Change = TwoPC.updateParentIdFor2PCCompatibility(change, history, peersetId)
 
                 val acquisition = TransactionAcquisition(ProtocolName.CONSENSUS, updatedChange.id)
-
                 try {
                     // TODO Why the hell are we blocking TX when proposing changes to the leader?
                     transactionBlocker.acquireReentrant(acquisition)
                 } catch (e: AlreadyLockedException) {
-                    logger.info("Transaction blocked")
-                    if (e.acquisition.protocol == ProtocolName.CONSENSUS) {
-                        logger.error("Already acquired by consensus, trying to recover TX")
-                        recoveryEntry(e.acquisition.changeId)
-                        return
-                    } else {
-                        logger.error("Already acquired: ${e.acquisition}, FIXME possibly buggy behavior")
-                    }
+                    logger.info("Another TX in progress, queueing the change")
+                    changesToBePropagatedToLeader.add(ChangeToBePropagatedToLeader(change, result))
+                    return
                 }
 
                 entry = updatedChange.toHistoryEntry(peersetId, history.getCurrentEntryId())
@@ -868,7 +862,7 @@ class RaftConsensusProtocolImpl(
                 if (isDuring2PAndChangeDoesntFinishIt(change)) {
                     logger.info("Queued change, because is during 2PC")
                     changesToBePropagatedToLeader.add(ChangeToBePropagatedToLeader(change, result))
-                    transactionBlocker.tryRelease(acquisition)
+                    transactionBlocker.release(acquisition)
                     return
                 }
 
