@@ -101,6 +101,7 @@ class TwoPC(
 
                 postDecisionOperations(mainChangeId, change, result, consensusResult)
             } catch (e: Exception) {
+                logger.error("Error during 2PC", e)
                 changeIdToCompletableFuture[mainChangeId]!!.complete(ChangeResult(ChangeResult.Status.CONFLICT))
                 this.setTag("result", "conflict")
                 this.finish()

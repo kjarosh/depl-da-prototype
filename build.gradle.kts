@@ -76,6 +76,14 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
     maxParallelForks = 16
+    systemProperty("kotlinx.coroutines.stacktrace.recovery", "true")
+}
+
+tasks.withType<Test> {
+    testLogging {
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+        showStandardStreams = true
+    }
 }
 
 tasks.withType<Jar> {
