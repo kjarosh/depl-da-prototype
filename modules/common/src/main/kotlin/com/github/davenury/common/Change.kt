@@ -31,7 +31,11 @@ class Changes : ArrayList<Change> {
 data class ChangePeersetInfo(
     val peersetId: PeersetId,
     val parentId: String?,
-)
+) {
+    override fun toString(): String {
+        return "$peersetId=$parentId"
+    }
+}
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME)
@@ -130,6 +134,10 @@ data class StandardChange(
     override fun getAppliedContent(): String {
         return content
     }
+
+    override fun toString(): String {
+        return "StandardChange($id, $peersets, $content)"
+    }
 }
 
 // TwoPC should always contain two changes:
@@ -174,5 +182,9 @@ data class TwoPCChange(
 
     override fun getAppliedContent(): String? {
         return null
+    }
+
+    override fun toString(): String {
+        return "2PCChange($id, $twoPCStatus, $peersets (leader $leaderPeerset), $change)"
     }
 }
