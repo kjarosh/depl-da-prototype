@@ -17,6 +17,10 @@ data class TransactionAcquisition(
         return objectMapper.writeValueAsString(this)
     }
 
+    override fun toString(): String {
+        return "lock($protocol, $changeId)"
+    }
+
     companion object {
         fun deserialize(value: String?): TransactionAcquisition? {
             return if (value != null && value != "") {
