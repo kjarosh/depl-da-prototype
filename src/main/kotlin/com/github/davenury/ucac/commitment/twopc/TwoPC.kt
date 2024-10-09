@@ -101,6 +101,7 @@ class TwoPC(
 
                 postDecisionOperations(mainChangeId, change, result)
             } catch (e: Exception) {
+                logger.error("Error during 2PC", e)
                 changeIdToCompletableFuture[mainChangeId]!!.complete(ChangeResult(ChangeResult.Status.CONFLICT))
                 this.setTag("result", "conflict")
                 this.finish()
@@ -457,29 +458,30 @@ class TwoPC(
             history: History,
             peersetId: PeersetId,
         ): Change {
-            val currentEntry = history.getCurrentEntry()
-
-            val grandParentChange: Change =
-                history.getEntryFromHistory(currentEntry.getParentId() ?: return change)
-                    ?.let { Change.fromHistoryEntry(it) }
-                    ?: return change
-
-            if (grandParentChange !is TwoPCChange) return change
-
-            val proposedChangeParentId =
-                change.toHistoryEntry(peersetId)
-                    .getParentId()
-
-            val grandParentChange2PCChangeId = grandParentChange.change.toHistoryEntry(peersetId).getId()
-
-            return if (grandParentChange2PCChangeId == proposedChangeParentId) {
-                change.copyWithNewParentId(
-                    peersetId,
-                    history.getCurrentEntryId(),
-                )
-            } else {
-                change
-            }
+            return change
+//            val currentEntry = history.getCurrentEntry()
+//
+//            val grandParentChange: Change =
+//                history.getEntryFromHistory(currentEntry.getParentId() ?: return change)
+//                    ?.let { Change.fromHistoryEntry(it) }
+//                    ?: return change
+//
+//            if (grandParentChange !is TwoPCChange) return change
+//
+//            val proposedChangeParentId =
+//                change.toHistoryEntry(peersetId)
+//                    .getParentId()
+//
+//            val grandParentChange2PCChangeId = grandParentChange.change.toHistoryEntry(peersetId).getId()
+//
+//            return if (grandParentChange2PCChangeId == proposedChangeParentId) {
+//                change.copyWithNewParentId(
+//                    peersetId,
+//                    history.getCurrentEntryId(),
+//                )
+//            } else {
+//                change
+//            }
         }
     }
 }

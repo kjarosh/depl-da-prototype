@@ -1138,6 +1138,6 @@ class TwoPCSpec : IntegrationTestBase() {
             "change",
             peersets =
                 (0..1).map { PeersetId("peerset$it") }
-                    .map { ChangePeersetInfo(it, change.toHistoryEntry(it).getId()) },
+                    .map { ChangePeersetInfo(it, null) },
         )
 }
