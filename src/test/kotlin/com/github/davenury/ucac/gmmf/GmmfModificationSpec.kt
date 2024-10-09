@@ -97,21 +97,42 @@ class GmmfModificationSpec : IntegrationTestBase() {
 
             expectCatching {
                 addVertex("peer0", "peerset0", "user1", Vertex.Type.USER)
+                addVertex("peer0", "peerset0", "user1b", Vertex.Type.USER)
+                addVertex("peer2", "peerset1", "user2", Vertex.Type.USER)
+                addVertex("peer2", "peerset1", "user2b", Vertex.Type.USER)
             }.isSuccess()
 
+            val user1 = VertexId(ZoneId("peerset0"), "user1")
+            val user2 = VertexId(ZoneId("peerset1"), "user2")
             expectCatching {
-                addVertex("peer2", "peerset1", "user2", Vertex.Type.USER)
+                addEdge(
+                    "peer0",
+                    "peerset0",
+                    user1,
+                    user2,
+                    Permissions("01010"),
+                )
             }.isSuccess()
 
             expectCatching {
                 addEdge(
                     "peer0",
                     "peerset0",
-                    VertexId(ZoneId("peerset0"), "user1"),
-                    VertexId(ZoneId("peerset1"), "user2"),
-                    Permissions("01010"),
+                    VertexId(ZoneId("peerset0"), "user1b"),
+                    VertexId(ZoneId("peerset1"), "user2b"),
+                    Permissions("11011"),
                 )
             }.isSuccess()
+
+            val edge1 = getEdge("peer0", "peerset0", user1, user2)
+            val edge2 = getEdge("peer1", "peerset0", user1, user2)
+            val edge3 = getEdge("peer2", "peerset1", user1, user2)
+            val edge4 = getEdge("peer3", "peerset1", user1, user2)
+
+            expectThat(edge1.permissions).isEqualTo(Permissions("01010"))
+            expectThat(edge2.permissions).isEqualTo(Permissions("01010"))
+            expectThat(edge3.permissions).isEqualTo(Permissions("01010"))
+            expectThat(edge4.permissions).isEqualTo(Permissions("01010"))
         }
 
     companion object {
