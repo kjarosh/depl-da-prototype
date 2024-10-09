@@ -1020,10 +1020,9 @@ class RaftConsensusProtocolImpl(
                         logger.info("Forwarding change to the leader(${votedFor!!}): $change")
                         sendRequestToLeader(result, change)
                     }
-//              TODO: Change after queue
                     else -> {
                         logger.info("Queueing a change to be propagated when leader is elected")
-                        changesToBePropagatedToLeader.push(ChangeToBePropagatedToLeader(change, result))
+                        changesToBePropagatedToLeader.add(ChangeToBePropagatedToLeader(change, result))
                     }
                 }
             }.also { logger.debug("ProposeChangeAsync took $it ms") }
