@@ -61,6 +61,7 @@ abstract class IntegrationTestBase {
         to: VertexId,
         permissions: Permissions,
     ) {
+        logger.info("Adding edge $from->$to ($permissions) to $peerset through $peerName")
         testHttpClient.post<HttpResponse>("http://${apps.getPeer(peerName).address}/gmmf/graph/edge?peerset=$peerset") {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
@@ -74,6 +75,7 @@ abstract class IntegrationTestBase {
         from: VertexId,
         to: VertexId,
     ): EdgeMessage {
+        logger.info("Getting edge $from->$to from $peerset through $peerName")
         return testHttpClient.get<EdgeMessage>("http://${apps.getPeer(peerName).address}/gmmf/graph/edge/$from/$to?peerset=$peerset") {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
