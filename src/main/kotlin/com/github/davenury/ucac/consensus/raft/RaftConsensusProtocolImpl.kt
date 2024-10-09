@@ -689,12 +689,8 @@ class RaftConsensusProtocolImpl(
 
     //  TODO: Useless function
     private suspend fun checkIfQueuedChanges() {
-        if (changesToBePropagatedToLeader.isEmpty()) return
-        val change = changesToBePropagatedToLeader.pop().change
-        mutex.withLock {
-            changeIdToCompletableFuture.putIfAbsent(change.id, CompletableFuture())
-        }
-        proposeChangeToLedger(changeIdToCompletableFuture[change.id]!!, change)
+        val change = changesToBePropagatedToLeader.poll() ?: return
+        proposeChangeToLedger(change.cf, change.change)
     }
 
     private suspend fun handleSuccessHeartbeatResponseFromPeer(
