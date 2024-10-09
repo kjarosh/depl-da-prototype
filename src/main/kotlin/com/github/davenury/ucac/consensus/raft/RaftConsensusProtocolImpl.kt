@@ -979,7 +979,7 @@ class RaftConsensusProtocolImpl(
                         } else {
                             address = peerResolver.resolve(votedFor!!.id).address
                         }
-                        logger.info("Send request to leader ${votedFor?.id} again")
+                        logger.info("Propagating change ${change.id} to the leader ${votedFor?.id}")
 
                         result =
                             try {
