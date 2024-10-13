@@ -1,5 +1,5 @@
 val logbackVersion: String by project
-val ktorVersion = "1.6.8"
+val ktorVersion = "3.0.1-eap-1114"
 val slf4jVersion = "2.0.13"
 
 plugins {
