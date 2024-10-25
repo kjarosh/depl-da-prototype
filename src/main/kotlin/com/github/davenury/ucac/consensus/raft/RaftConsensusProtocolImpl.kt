@@ -939,11 +939,8 @@ class RaftConsensusProtocolImpl(
             change is TwoPCChange && change.twoPCStatus == TwoPCStatus.ABORTED
 
         val changeIsApplyingOf2PC: Boolean =
-            currentHistoryChange is TwoPCChange && change ==
-                currentHistoryChange.change.copyWithNewParentId(
-                    peersetId,
-                    history.getCurrentEntryId(),
-                )
+            currentHistoryChange is TwoPCChange && change.id ==
+                currentHistoryChange.change.id
 
         return isDuring2PC && !(changeIsAbortingOf2PC || changeIsApplyingOf2PC)
     }
