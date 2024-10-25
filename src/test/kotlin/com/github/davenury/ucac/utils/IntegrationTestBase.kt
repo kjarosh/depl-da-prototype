@@ -1,5 +1,6 @@
 package com.github.davenury.ucac.utils
 
+import com.github.davenury.common.Change
 import com.github.davenury.ucac.gmmf.routing.EdgeMessage
 import com.github.davenury.ucac.gmmf.routing.VertexMessage
 import com.github.davenury.ucac.testHttpClient
@@ -79,6 +80,21 @@ abstract class IntegrationTestBase {
         return testHttpClient.get<EdgeMessage>("http://${apps.getPeer(peerName).address}/gmmf/graph/edge/$from/$to?peerset=$peerset") {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
+        }
+    }
+
+    suspend fun executeChangeSync(
+        peerName: String,
+        peerset: String,
+        use2pc: Boolean,
+        change: Change,
+    ) {
+        val url = "http://${apps.getPeer(peerName).address}/v2/change/sync?peerset=$peerset&use_2pc=$use2pc"
+        logger.info("Executing sync change $change from $peerset through $peerName")
+        testHttpClient.post<HttpResponse>(url) {
+            contentType(ContentType.Application.Json)
+            accept(ContentType.Application.Json)
+            body = change
         }
     }
 
