@@ -75,7 +75,7 @@ class TwoPC(
                     otherPeersets.associateWith { currentConsensusLeaders[it] ?: peerResolver.getPeersFromPeerset(it)[0] }
 
                 signal(Signal.TwoPCBeforeProposePhase, change)
-                val decision = proposePhase(acceptChange, mainChangeId, otherPeers)
+                val (decision, parentId) = proposePhase(acceptChange, mainChangeId, otherPeers)
 
                 if (isMetricTest) {
                     Metrics.bumpChangeMetric(
@@ -92,7 +92,7 @@ class TwoPC(
                     otherPeersets.associateWith {
                         currentConsensusLeaders[it] ?: peerResolver.getPeersFromPeerset(it)[0]
                     }
-                decisionPhase(acceptChange, decision, decisionPhaseOtherPeers)
+                decisionPhase(acceptChange, decision, decisionPhaseOtherPeers, parentId)
 
                 val result = if (decision) ChangeResult.Status.SUCCESS else ChangeResult.Status.ABORTED
 
@@ -293,6 +293,8 @@ class TwoPC(
                     false,
                     currentChange.peersets.filterNot { it.peersetId == peersetId }
                         .associate { it.peersetId to peerResolver.getPeersFromPeerset(it.peersetId)[0] },
+                    // TODO We should get the parentId somehow here
+                    null,
                 )
 
                 postDecisionOperations(
@@ -316,7 +318,7 @@ class TwoPC(
         acceptChange: TwoPCChange,
         mainChangeId: String,
         otherPeers: Map<PeersetId, PeerAddress>,
-    ): Boolean =
+    ): Pair<Boolean, String?> =
         span("TwoPc.proposePhase") {
             val acceptResult = checkChangeAndProposeToConsensus(acceptChange, mainChangeId).await()
 
@@ -330,7 +332,7 @@ class TwoPC(
 
             logger.info("Decision $decision from other peerset for ${acceptChange.change}")
 
-            return decision
+            return Pair(decision, acceptResult.currentEntryId)
         }
 
     suspend fun getProposePhaseResponses(
@@ -368,10 +370,10 @@ class TwoPC(
         acceptChange: TwoPCChange,
         decision: Boolean,
         otherPeers: Map<PeersetId, PeerAddress>,
+        parentId: String?,
     ): Unit =
         span("TwoPc.decisionPhase") {
             val change = acceptChange.change
-            val acceptChangeId = acceptChange.toHistoryEntry(peersetId).getId()
 
             val commitChange =
                 if (decision) {
@@ -391,7 +393,7 @@ class TwoPC(
                 checkChangeAndProposeToConsensus(
                     commitChange.copyWithNewParentId(
                         peersetId,
-                        acceptChangeId,
+                        parentId,
                     ),
                     acceptChange.change.id,
                 ).await()
