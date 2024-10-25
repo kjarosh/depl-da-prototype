@@ -420,7 +420,7 @@ class TwoPC(
         change: Change,
         originalChangeId: String,
     ) {
-        if (!history.isEntryCompatible(change.toHistoryEntry(peersetId))) {
+        if (!history.isEntryCompatible(change.toHistoryEntry(peersetId, history.getCurrentEntryId()))) {
             logger.info(
                 "Change $originalChangeId is not compatible with history expected: ${
                     change.toHistoryEntry(peersetId).getParentId()
