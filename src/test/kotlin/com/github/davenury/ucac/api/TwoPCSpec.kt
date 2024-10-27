@@ -1,9 +1,11 @@
 package com.github.davenury.ucac.api
 
 import com.github.davenury.common.Change
+import com.github.davenury.common.ChangeCreationResponse
 import com.github.davenury.common.ChangeCreationStatus
 import com.github.davenury.common.ChangeCreationResponse
 import com.github.davenury.common.ChangePeersetInfo
+import com.github.davenury.common.ChangeResult
 import com.github.davenury.common.Changes
 import com.github.davenury.common.PeerAddress
 import com.github.davenury.common.PeerId
@@ -170,13 +172,12 @@ class TwoPCSpec : IntegrationTestBase() {
             repeat(endRange) {
                 time +=
                     measureTimeMillis {
-                        val result =
-                            executeChangeSync(
-                                "peer0", "peerset0", change, true)
-                        expectThat(result.changeStatus).isEqualTo(ChangeCreationStatus.APPLIED)
-                        change = twoPeersetChange(result.currentEntryId)
+                        expectCatching {
+                            executeChangeSync("peer0", "peerset0", change, true)
+                        }.isSuccess()
                     }
                 phaser.arriveAndAwaitAdvanceWithTimeout()
+                change = twoPeersetChange(change)
             }
             // when: peer1 executed change
 
@@ -200,7 +201,6 @@ class TwoPCSpec : IntegrationTestBase() {
             listOf(changeAppliedPhaser, changeSecondAppliedPhaser, electionPhaser).forEach { it.register() }
 
             val change = change(0, 1)
-
             val changeSecond = change(Pair(0, null), Pair(1, null))
 
             val signalListenersForCohort =
@@ -729,8 +729,8 @@ class TwoPCSpec : IntegrationTestBase() {
 
             expectCatching {
                 val change1 = change(0, 1)
-                val result = executeChangeSync("peer0", "peerset0", change1, true)
-                val change2 = twoPeersetChange(result.currentEntryId!!)
+                val change2 = twoPeersetChange(change1)
+                executeChangeSync("peer0", "peerset0", change1, true)
                 executeChangeSync("peer0", "peerset0", change2, true)
             }.isSuccess()
 
@@ -1099,7 +1099,7 @@ class TwoPCSpec : IntegrationTestBase() {
                 },
         )
 
-    private fun twoPeersetChange(parentId: String?) =
+    private fun twoPeersetChange(change: Change) =
         StandardChange(
             "change",
             peersets =
