@@ -36,6 +36,7 @@ fun Application.apiV2Routing(service: ApiV2Service) {
                         "Change applied",
                         detailedMessage = result.detailedMessage,
                         changeStatus = ChangeCreationStatus.APPLIED,
+                        entryId = result.entryId,
                     ),
                 )
             }
@@ -47,6 +48,7 @@ fun Application.apiV2Routing(service: ApiV2Service) {
                         "Change conflicted",
                         detailedMessage = result.detailedMessage,
                         changeStatus = ChangeCreationStatus.NOT_APPLIED,
+                        entryId = result.entryId,
                     ),
                 )
             }
@@ -58,6 +60,7 @@ fun Application.apiV2Routing(service: ApiV2Service) {
                         "Change not applied due to timeout",
                         detailedMessage = result.detailedMessage,
                         changeStatus = ChangeCreationStatus.NOT_APPLIED,
+                        entryId = result.entryId,
                     ),
                 )
             }
@@ -69,6 +72,7 @@ fun Application.apiV2Routing(service: ApiV2Service) {
                         "Change was rejected",
                         detailedMessage = result.detailedMessage,
                         changeStatus = ChangeCreationStatus.NOT_APPLIED,
+                        entryId = result.entryId,
                     ),
                 )
             }
@@ -80,6 +84,7 @@ fun Application.apiV2Routing(service: ApiV2Service) {
                         "Change was applied with ABORT result (???)",
                         detailedMessage = null,
                         changeStatus = ChangeCreationStatus.UNKNOWN,
+                        entryId = result.entryId,
                     ),
                 )
             }
@@ -91,6 +96,7 @@ fun Application.apiV2Routing(service: ApiV2Service) {
                         "Timed out while waiting for change (changeResult is null)",
                         detailedMessage = null,
                         changeStatus = ChangeCreationStatus.UNKNOWN,
+                        entryId = null,
                     ),
                 )
             }
