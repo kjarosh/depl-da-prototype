@@ -87,10 +87,13 @@ abstract class IntegrationTestBase {
     suspend fun executeChangeSync(
         peerName: String,
         peerset: String,
-        use2pc: Boolean,
         change: Change,
+        use2pc: Boolean = false,
     ): ChangeCreationResponse {
-        val url = "http://${apps.getPeer(peerName).address}/v2/change/sync?peerset=$peerset&use_2pc=$use2pc"
+        var url = "http://${apps.getPeer(peerName).address}/v2/change/sync?peerset=$peerset"
+        if (use2pc) {
+            url += "&use_2pc=true"
+        }
         logger.info("Executing sync change $change from $peerset through $peerName")
         return testHttpClient.post<ChangeCreationResponse>(url) {
             contentType(ContentType.Application.Json)
