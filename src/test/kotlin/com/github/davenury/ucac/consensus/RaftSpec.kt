@@ -141,7 +141,7 @@ class RaftSpec : IntegrationTestBase() {
 
             // when: peer1 executed change
             expectCatching {
-                executeChange("${apps.getPeer("peer0").address}/v2/change/sync?peerset=peerset0", change1)
+                executeChangeSync("peer0", "peerset0", change1)
             }.isSuccess()
 
             phaser.arriveAndAwaitAdvanceWithTimeout()
@@ -157,7 +157,7 @@ class RaftSpec : IntegrationTestBase() {
 
             // when: peer2 executes change
             expectCatching {
-                executeChange("${apps.getPeer("peer1").address}/v2/change/sync?peerset=peerset0", change2)
+                executeChangeSync("peer1", "peerset0", change2)
             }.isSuccess()
 
             phaser.arriveAndAwaitAdvanceWithTimeout()
@@ -228,7 +228,7 @@ class RaftSpec : IntegrationTestBase() {
                 time +=
                     measureTimeMillis {
                         expectCatching {
-                            executeChange("${apps.getPeer("peer0").address}/v2/change/sync?peerset=peerset0", change)
+                            executeChangeSync("peer0", "peerset0", change)
                         }.isSuccess()
                     }
                 phaser.arriveAndAwaitAdvanceWithTimeout()
@@ -331,7 +331,7 @@ class RaftSpec : IntegrationTestBase() {
 
             repeat(firstPart) {
                 expectCatching {
-                    executeChange("${apps.getPeer("peer0").address}/v2/change/sync?peerset=peerset0", change)
+                    executeChangeSync("peer0", "peerset0", change)
                 }.isSuccess()
                 allPeerChangePhaser.arriveAndAwaitAdvanceWithTimeout()
                 iter += 1
@@ -343,7 +343,7 @@ class RaftSpec : IntegrationTestBase() {
 
             repeat(secondPart) {
                 expectCatching {
-                    executeChange("${apps.getPeer("peer0").address}/v2/change/sync?peerset=peerset0", change)
+                    executeChangeSync("peer0", "peerset0", change)
                 }.isSuccess()
                 changePhaser.arriveAndAwaitAdvanceWithTimeout()
                 iter += 1
@@ -394,7 +394,7 @@ class RaftSpec : IntegrationTestBase() {
 
             val change = createChange()
             expectCatching {
-                executeChange("${apps.getPeer("peer0").address}/v2/change/sync?peerset=peerset0", change)
+                executeChangeSync("peer0", "peerset0", change)
             }.isSuccess()
 
             phaser.arriveAndAwaitAdvanceWithTimeout()
@@ -1353,10 +1353,9 @@ class RaftSpec : IntegrationTestBase() {
 
             expectCatching {
                 val change1 = createChange()
-                val peerAddress = apps.getPeer("peer0").address
                 val change2 = createChange(parentId = change1.toHistoryEntry(PeersetId("peerset0")).getId())
-                executeChange("$peerAddress/v2/change/sync?peerset=peerset0", change1)
-                executeChange("$peerAddress/v2/change/sync?peerset=peerset0", change2)
+                executeChangeSync("peer0", "peerset0", change1)
+                executeChangeSync("peer0", "peerset0", change2)
             }.isSuccess()
 
             askAllForChanges(apps.getPeerAddresses("peerset0").values).forEach { changes ->

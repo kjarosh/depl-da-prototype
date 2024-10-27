@@ -102,7 +102,7 @@ class MultiplePeersetSpec : IntegrationTestBase() {
             electionPhaser.arriveAndAwaitAdvanceWithTimeout()
 
             // when - executing transaction
-            executeChange("http://${apps.getPeer("peer0").address}/v2/change/sync?peerset=peerset0", change)
+            executeChangeSync("peer0", "peerset0", change)
 
             phaser.arriveAndAwaitAdvanceWithTimeout()
 
@@ -161,7 +161,7 @@ class MultiplePeersetSpec : IntegrationTestBase() {
                 time +=
                     measureTimeMillis {
                         expectCatching {
-                            executeChange("http://${apps.getPeer("peer0").address}/v2/change/sync?peerset=peerset0", change)
+                            executeChangeSync("peer0", "peerset0", change)
                         }.isSuccess()
                     }
                 phaser.arriveAndAwaitAdvanceWithTimeout()
@@ -260,7 +260,7 @@ class MultiplePeersetSpec : IntegrationTestBase() {
 
             // when - executing transaction
             try {
-                executeChange("http://${apps.getPeer("peer0").address}/v2/change/sync?peerset=peerset0", change)
+                executeChangeSync("peer0", "peerset0", change)
                 fail("Exception not thrown")
             } catch (e: Exception) {
                 expectThat(e).isA<ServerResponseException>()
@@ -316,7 +316,7 @@ class MultiplePeersetSpec : IntegrationTestBase() {
             electionPhaser.arriveAndAwaitAdvanceWithTimeout()
 
             // when - executing transaction
-            executeChange("http://${apps.getPeer("peer0").address}/v2/change/sync?peerset=peerset0", change)
+            executeChangeSync("peer0", "peerset0", change)
 
             phaser.arriveAndAwaitAdvanceWithTimeout()
 
@@ -436,7 +436,7 @@ class MultiplePeersetSpec : IntegrationTestBase() {
 
             // when - executing transaction something should go wrong after ft-agree
             expectThrows<ServerResponseException> {
-                executeChange("http://${apps.getPeer("peer0").address}/v2/change/sync?peerset=peerset0", change)
+                executeChangeSync("peer0", "peerset0", change)
             }.subject.let { e ->
                 // TODO rewrite — we cannot model leader failure as part of API
                 expect {
@@ -545,7 +545,7 @@ class MultiplePeersetSpec : IntegrationTestBase() {
 
             // when - executing transaction something should go wrong after ft-agree
             expectThrows<ServerResponseException> {
-                executeChange("http://${apps.getPeer("peer0").address}/v2/change/sync?peerset=peerset0", change)
+                executeChangeSync("peer0", "peerset0", change)
             }
 
             changePhaser.arriveAndAwaitAdvanceWithTimeout()
@@ -628,8 +628,9 @@ class MultiplePeersetSpec : IntegrationTestBase() {
 
             // given - change in first peerset
             expectCatching {
-                executeChange(
-                    "http://${apps.getPeer("peer0").address}/v2/change/sync?peerset=peerset0",
+                executeChangeSync(
+                    "peer0",
+                    "peerset0",
                     StandardChange(
                         "first",
                         peersets =
@@ -644,8 +645,9 @@ class MultiplePeersetSpec : IntegrationTestBase() {
 
             // and - change in second peerset
             expectCatching {
-                executeChange(
-                    "http://${apps.getPeer("peer3").address}/v2/change/sync?peerset=peerset1",
+                executeChangeSync(
+                    "peer3",
+                    "peerset1",
                     StandardChange(
                         "second",
                         peersets =
@@ -679,10 +681,7 @@ class MultiplePeersetSpec : IntegrationTestBase() {
                 )
 
             expectCatching {
-                executeChange(
-                    "http://${apps.getPeer("peer0").address}/v2/change/sync?peerset=peerset0",
-                    change,
-                )
+                executeChangeSync("peer0", "peerset0", change)
             }.isSuccess()
 
             finalChangePhaser.arriveAndAwaitAdvanceWithTimeout()
@@ -732,7 +731,7 @@ class MultiplePeersetSpec : IntegrationTestBase() {
             val change: Change = change(0, 1)
 
             expectCatching {
-                executeChange("http://${apps.getPeer("peer0").address}/v2/change/sync?peerset=peerset0", change)
+                executeChangeSync("peer0", "peerset0", change)
             }.isSuccess()
 
             phaser.arriveAndAwaitAdvanceWithTimeout()
@@ -769,7 +768,7 @@ class MultiplePeersetSpec : IntegrationTestBase() {
             val change: Change = change(0, 1)
 
             expectCatching {
-                executeChange("http://${apps.getPeer("peer0").address}/v2/change/sync?peerset=peerset0", change)
+                executeChangeSync("peer0", "peerset0", change)
             }.isSuccess()
 
             phaser.arriveAndAwaitAdvanceWithTimeout()
@@ -923,8 +922,8 @@ class MultiplePeersetSpec : IntegrationTestBase() {
             expectCatching {
                 val change1 = change(0, 1)
                 val change2 = twoPeersetChange(change1)
-                executeChange("http://${apps.getPeer("peer0").address}/v2/change/sync?peerset=peerset0", change1)
-                executeChange("http://${apps.getPeer("peer1").address}/v2/change/sync?peerset=peerset1", change2)
+                executeChangeSync("peer0", "peerset0", change1)
+                executeChangeSync("peer1", "peerset1", change2)
             }.isSuccess()
 
             askAllForChanges("peerset0").forEach { changes ->
@@ -965,22 +964,22 @@ class MultiplePeersetSpec : IntegrationTestBase() {
 
             logger.info("Sending change between 0 and 1")
             expectCatching {
-                executeChange("http://$peer0Address/v2/change/sync?peerset=peerset0", change01)
+                executeChangeSync("peer0", "peerset0", change01)
             }.isSuccess()
 
             logger.info("Sending change between 2 and 3")
             expectCatching {
-                executeChange("http://$peer0Address/v2/change/sync?peerset=peerset2", change23)
+                executeChangeSync("peer0", "peerset2", change23)
             }.isSuccess()
 
             logger.info("Sending change between 1 and 2")
             expectCatching {
-                executeChange("http://$peer4Address/v2/change/sync?peerset=peerset1", change12)
+                executeChangeSync("peer4", "peerset1", change12)
             }.isSuccess()
 
             logger.info("Sending change between 0 and 3")
             expectCatching {
-                executeChange("http://$peer3Address/v2/change/sync?peerset=peerset3", change03)
+                executeChangeSync("peer3", "peerset3", change03)
             }.isSuccess()
 
             eventually(5) {

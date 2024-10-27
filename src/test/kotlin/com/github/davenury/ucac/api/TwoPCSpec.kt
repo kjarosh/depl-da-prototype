@@ -643,7 +643,7 @@ class TwoPCSpec : IntegrationTestBase() {
                     peersets = listOf(ChangePeersetInfo(PeersetId("peerset0"), InitialHistoryEntry.getId())),
                 )
             expectCatching {
-                executeChange("http://${apps.getPeer("peer0").address}/v2/change/sync?peerset=peerset0", firstChange)
+                executeChangeSync("peer0", "peerset0", firstChange)
             }.isSuccess()
 
             firstChangePhaser.arriveAndAwaitAdvanceWithTimeout()
@@ -655,10 +655,7 @@ class TwoPCSpec : IntegrationTestBase() {
                     peersets = listOf(ChangePeersetInfo(PeersetId("peerset1"), InitialHistoryEntry.getId())),
                 )
             expectCatching {
-                executeChange(
-                    "http://${apps.getPeer("peer3").address}/v2/change/sync?peerset=peerset1",
-                    secondChange,
-                )
+                executeChangeSync("peer3", "peerset1", secondChange)
             }.isSuccess()
 
             secondChangePhaser.arriveAndAwaitAdvanceWithTimeout()

@@ -122,7 +122,7 @@ class PaxosSpec : IntegrationTestBase() {
 
             // when: peer1 executed change
             val change1 = createChange()
-            executeChange("${apps.getPeer(peer(0)).address}/v2/change/sync?peerset=peerset0", change1)
+            executeChangeSync(peer(0), "peerset0", change1)
 
             changePhaser.arriveAndAwaitAdvanceWithTimeout()
             logger.info("Change 1 applied")
@@ -137,7 +137,7 @@ class PaxosSpec : IntegrationTestBase() {
 
             // when: peer2 executes change
             val change2 = createChange(content = "change2", parentId = change1.toHistoryEntry(peerset()).getId())
-            executeChange("${apps.getPeer(peer(1)).address}/v2/change/sync?peerset=peerset0", change2)
+            executeChangeSync(peer(1), "peerset0", change2)
 
             changePhaser.arriveAndAwaitAdvanceWithTimeout()
             logger.info("Change 2 applied")
@@ -203,7 +203,7 @@ class PaxosSpec : IntegrationTestBase() {
             (0 until endRange).forEach {
                 val newTime =
                     measureTimeMillis {
-                        executeChange("${apps.getPeer(peer(0)).address}/v2/change/sync?peerset=peerset0", change)
+                        executeChangeSync(peer(0), "peerset0", change)
                         phaser.arriveAndAwaitAdvanceWithTimeout(Duration.ofSeconds(30))
                     }
                 logger.info("Change $it is processed $newTime ms")
@@ -252,7 +252,7 @@ class PaxosSpec : IntegrationTestBase() {
             logger.info("Sending change")
 
             val change = createChange()
-            executeChange("${apps.getPeer(peer(0)).address}/v2/change/sync?peerset=peerset0", change)
+            executeChangeSync(peer(0), "peerset0", change)
 
             phaser.arriveAndAwaitAdvanceWithTimeout()
             logger.info("Change 1 applied")
@@ -918,10 +918,7 @@ class PaxosSpec : IntegrationTestBase() {
                 that((change as StandardChange).content).isEqualTo(change1.content)
             }
 
-            executeChange(
-                "${apps.getPeer(peer(1)).address}/v2/change/sync?peerset=peerset0",
-                change2,
-            )
+            executeChangeSync(peer(1), "peerset0", change2)
 
             phaserPigPaxosPeers.arriveAndAwaitAdvanceWithTimeout()
 
@@ -1031,7 +1028,7 @@ class PaxosSpec : IntegrationTestBase() {
             logger.info("Leader elected")
 
             repeat(firstPart) {
-                executeChange("${apps.getPeer("peer0").address}/v2/change/sync?peerset=peerset0", change)
+                executeChangeSync("peer0", "peerset0", change)
                 allPeerChangePhaser.arriveAndAwaitAdvanceWithTimeout(Duration.ofSeconds(30))
                 iter += 1
                 change = createChange(content = "change$it", parentId = change.toHistoryEntry(PeersetId("peerset0")).getId())
@@ -1041,7 +1038,7 @@ class PaxosSpec : IntegrationTestBase() {
             isFirstPartCommitted.set(true)
 
             repeat(secondPart) {
-                executeChange("${apps.getPeer("peer0").address}/v2/change/sync?peerset=peerset0", change)
+                executeChangeSync("peer0", "peerset0", change)
                 changePhaser.arriveAndAwaitAdvanceWithTimeout(Duration.ofSeconds(30))
                 iter += 1
                 logger.info("Change second part moved $it")
