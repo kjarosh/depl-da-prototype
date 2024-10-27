@@ -92,14 +92,14 @@ class TwoPC(
                     otherPeersets.associateWith {
                         currentConsensusLeaders[it] ?: peerResolver.getPeersFromPeerset(it)[0]
                     }
-                decisionPhase(acceptChange, decision, decisionPhaseOtherPeers, parentId)
+                val consensusResult = decisionPhase(acceptChange, decision, decisionPhaseOtherPeers, parentId)
 
                 val result = if (decision) ChangeResult.Status.SUCCESS else ChangeResult.Status.ABORTED
 
                 this.setTag("result", result.name.lowercase())
                 this.finish()
 
-                postDecisionOperations(mainChangeId, change, result)
+                postDecisionOperations(mainChangeId, change, result, consensusResult)
             } catch (e: Exception) {
                 changeIdToCompletableFuture[mainChangeId]!!.complete(ChangeResult(ChangeResult.Status.CONFLICT))
                 this.setTag("result", "conflict")
@@ -111,6 +111,7 @@ class TwoPC(
         mainChangeId: String,
         change: Change,
         result: ChangeResult.Status,
+        consensusResult: ChangeResult,
     ) {
         if (isMetricTest) {
             Metrics.bumpChangeMetric(
@@ -123,7 +124,12 @@ class TwoPC(
         }
 
         changeIdToCompletableFuture.putIfAbsent(change.id, CompletableFuture())
-        changeIdToCompletableFuture[change.id]!!.complete(ChangeResult(result))
+        changeIdToCompletableFuture[change.id]!!.complete(
+            ChangeResult(
+                result,
+                entryId = consensusResult.entryId,
+            ),
+        )
         signal(Signal.TwoPCOnChangeApplied, change)
     }
 
@@ -193,6 +199,7 @@ class TwoPC(
 
             val currentProcessedChange = Change.fromHistoryEntry(history.getCurrentEntry())
 
+            val consensusResult: ChangeResult
             try {
                 val cf: CompletableFuture<ChangeResult> =
                     when {
@@ -227,17 +234,21 @@ class TwoPC(
                                 "currentProcessedChange: $currentProcessedChange",
                         )
                     }
-                cf.await()
+                consensusResult = cf.await()
                 signal(Signal.TwoPCOnHandleDecisionEnd, change)
             } catch (e: Exception) {
                 changeConflict(mainChangeId, "Change conflicted in decision phase, ${e.message}")
                 throw e
             }
 
-            changeNotifier.notify(change, ChangeResult(ChangeResult.Status.SUCCESS))
+            val result =
+                ChangeResult(
+                    ChangeResult.Status.SUCCESS,
+                    entryId = consensusResult.entryId,
+                )
+            changeNotifier.notify(change, result)
             changeIdToCompletableFuture.putIfAbsent(change.id, CompletableFuture())
-            changeIdToCompletableFuture[change.id]!!
-                .complete(ChangeResult(ChangeResult.Status.SUCCESS))
+            changeIdToCompletableFuture[change.id]!!.complete(result)
         }
 
     fun getChange(changeId: String): Change {
@@ -288,19 +299,21 @@ class TwoPC(
             // it was my change, so it's better to finish it
             runBlocking {
                 // TODO - it does not have to be false - it was a fault so it's safer to abort the transaction
-                decisionPhase(
-                    currentChange,
-                    false,
-                    currentChange.peersets.filterNot { it.peersetId == peersetId }
-                        .associate { it.peersetId to peerResolver.getPeersFromPeerset(it.peersetId)[0] },
-                    // TODO We should get the parentId somehow here
-                    null,
-                )
+                val consensusResult =
+                    decisionPhase(
+                        currentChange,
+                        false,
+                        currentChange.peersets.filterNot { it.peersetId == peersetId }
+                            .associate { it.peersetId to peerResolver.getPeersFromPeerset(it.peersetId)[0] },
+                        // TODO We should get the parentId somehow here
+                        null,
+                    )
 
                 postDecisionOperations(
                     updateParentIdFor2PCCompatibility(currentChange.change, history, peersetId).id,
                     currentChange.change,
                     ChangeResult.Status.ABORTED,
+                    consensusResult,
                 )
             }
         } else {
@@ -371,7 +384,7 @@ class TwoPC(
         decision: Boolean,
         otherPeers: Map<PeersetId, PeerAddress>,
         parentId: String?,
-    ): Unit =
+    ): ChangeResult =
         span("TwoPc.decisionPhase") {
             val change = acceptChange.change
 
@@ -403,6 +416,8 @@ class TwoPC(
             }
 
             logger.info("Decision $decision committed in all peersets $commitChange")
+
+            return changeResult
         }
 
     private fun signal(
