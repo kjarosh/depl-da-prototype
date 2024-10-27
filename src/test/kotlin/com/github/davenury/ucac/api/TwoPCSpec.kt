@@ -1,6 +1,7 @@
 package com.github.davenury.ucac.api
 
 import com.github.davenury.common.Change
+import com.github.davenury.common.ChangeCreationResponse
 import com.github.davenury.common.ChangePeersetInfo
 import com.github.davenury.common.Changes
 import com.github.davenury.common.PeerAddress
@@ -196,12 +197,7 @@ class TwoPCSpec : IntegrationTestBase() {
             listOf(changeAppliedPhaser, changeSecondAppliedPhaser, electionPhaser).forEach { it.register() }
 
             val change = change(0, 1)
-
-            val historyEntryId = { peersetNum: Int ->
-                change.toHistoryEntry(PeersetId("peerset$peersetNum")).getId()
-            }
-
-            val changeSecond = change(Pair(0, historyEntryId(0)), Pair(1, historyEntryId(1)))
+            val changeSecond = change(Pair(0, null), Pair(1, null))
 
             val signalListenersForCohort =
                 mapOf(
@@ -781,27 +777,29 @@ class TwoPCSpec : IntegrationTestBase() {
             val change01 = change(0, 1)
             val change23 = change(2, 3)
 
+            logger.info("Sending change between 0 and 1")
+
+            var change01Result: ChangeCreationResponse? = null
+            expectCatching {
+                change01Result = executeChangeSync("peer0", "peerset0", change01, true)
+            }.isSuccess()
+
+            var change23Result: ChangeCreationResponse? = null
+            logger.info("Sending change between 2 and 3")
+            expectCatching {
+                change23Result = executeChangeSync("peer0", "peerset2", change23, true)
+            }.isSuccess()
+
             val change12 =
                 change(
-                    1 to change01.toHistoryEntry(PeersetId("peerset1")).getId(),
-                    2 to change23.toHistoryEntry(PeersetId("peerset2")).getId(),
+                    1 to null,
+                    2 to change23Result!!.entryId,
                 )
             val change03 =
                 change(
-                    0 to change01.toHistoryEntry(PeersetId("peerset0")).getId(),
-                    3 to change23.toHistoryEntry(PeersetId("peerset3")).getId(),
+                    0 to change01Result!!.entryId,
+                    3 to null,
                 )
-
-            logger.info("Sending change between 0 and 1")
-
-            expectCatching {
-                executeChangeSync("peer0", "peerset0", change01, true)
-            }.isSuccess()
-
-            logger.info("Sending change between 2 and 3")
-            expectCatching {
-                executeChangeSync("peer0", "peerset2", change23, true)
-            }.isSuccess()
 
             logger.info("Sending change between 1 and 2")
             expectCatching {
@@ -1087,7 +1085,7 @@ class TwoPCSpec : IntegrationTestBase() {
                 },
         )
 
-    private fun change(vararg peersetToChangeId: Pair<Int, String>) =
+    private fun change(vararg peersetToChangeId: Pair<Int, String?>) =
         StandardChange(
             "change",
             peersets =
@@ -1101,6 +1099,6 @@ class TwoPCSpec : IntegrationTestBase() {
             "change",
             peersets =
                 (0..1).map { PeersetId("peerset$it") }
-                    .map { ChangePeersetInfo(it, change.toHistoryEntry(it).getId()) },
+                    .map { ChangePeersetInfo(it, null) },
         )
 }
