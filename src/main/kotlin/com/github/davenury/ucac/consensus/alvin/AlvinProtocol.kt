@@ -385,7 +385,7 @@ class AlvinProtocol(
                 result.complete(
                     ChangeResult(
                         ChangeResult.Status.CONFLICT,
-                        currentEntryId = history.getCurrentEntryId(),
+                        entryId = history.getCurrentEntryId(),
                     ),
                 )
                 transactionBlocker.release(acquisition)
@@ -1067,7 +1067,7 @@ class AlvinProtocol(
         changeIdToCompletableFuture[change.id]!!.complete(
             ChangeResult(
                 ChangeResult.Status.CONFLICT,
-                currentEntryId = history.getCurrentEntryId(),
+                entryId = history.getCurrentEntryId(),
             ),
         )
         signalPublisher.signal(
