@@ -65,4 +65,5 @@ data class ChangeCreationResponse(
     val message: String,
     val detailedMessage: String?,
     val changeStatus: ChangeCreationStatus,
+    val entryId: String?,
 )
