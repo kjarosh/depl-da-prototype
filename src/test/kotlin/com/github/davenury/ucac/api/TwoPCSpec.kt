@@ -168,7 +168,7 @@ class TwoPCSpec : IntegrationTestBase() {
                 time +=
                     measureTimeMillis {
                         expectCatching {
-                            executeChangeSync("peer0", "peerset0", true, change)
+                            executeChangeSync("peer0", "peerset0", change, true)
                         }.isSuccess()
                     }
                 phaser.arriveAndAwaitAdvanceWithTimeout()
@@ -365,7 +365,7 @@ class TwoPCSpec : IntegrationTestBase() {
 
             // when - executing transaction
             try {
-                executeChangeSync("peer0", "peerset0", true, change)
+                executeChangeSync("peer0", "peerset0", change, true)
                 fail("Exception not thrown")
             } catch (e: Exception) {
                 expectThat(e).isA<ServerResponseException>()
@@ -420,7 +420,7 @@ class TwoPCSpec : IntegrationTestBase() {
             electionPhaser.arriveAndAwaitAdvanceWithTimeout()
 
             // when - executing transaction
-            executeChangeSync("peer0", "peerset0", true, change)
+            executeChangeSync("peer0", "peerset0", change, true)
 
             changeAppliedPhaser.arriveAndAwaitAdvanceWithTimeout()
 
@@ -492,7 +492,7 @@ class TwoPCSpec : IntegrationTestBase() {
 
             electionPhaser.arriveAndAwaitAdvanceWithTimeout()
 
-            executeChangeSync("peer0", "peerset0", true, change)
+            executeChangeSync("peer0", "peerset0", change, true)
 
             firstPeersetChangeAppliedPhaser.arriveAndAwaitAdvanceWithTimeout()
 
@@ -566,7 +566,7 @@ class TwoPCSpec : IntegrationTestBase() {
 
             // when - executing transaction something should go wrong after ft-agree
             expectThrows<ServerResponseException> {
-                executeChangeSync("peer0", "peerset0", true, change)
+                executeChangeSync("peer0", "peerset0", change, true)
             }
 
             applyCommittedPhaser.arriveAndAwaitAdvanceWithTimeout()
@@ -681,7 +681,7 @@ class TwoPCSpec : IntegrationTestBase() {
                 )
 
             expectCatching {
-                executeChangeSync("peer0", "peerset0", true, lastChange)
+                executeChangeSync("peer0", "peerset0", lastChange, true)
             }.isSuccess()
 
             finalChangePhaser.arriveAndAwaitAdvanceWithTimeout()
@@ -733,8 +733,8 @@ class TwoPCSpec : IntegrationTestBase() {
             expectCatching {
                 val change1 = change(0, 1)
                 val change2 = twoPeersetChange(change1)
-                executeChangeSync("peer0", "peerset0", true, change1)
-                executeChangeSync("peer0", "peerset0", true, change2)
+                executeChangeSync("peer0", "peerset0", change1, true)
+                executeChangeSync("peer0", "peerset0", change2, true)
             }.isSuccess()
 
             askAllForChanges("peerset0").forEach { changes ->
@@ -798,22 +798,22 @@ class TwoPCSpec : IntegrationTestBase() {
             logger.info("Sending change between 0 and 1")
 
             expectCatching {
-                executeChangeSync("peer0", "peerset0", true, change01)
+                executeChangeSync("peer0", "peerset0", change01, true)
             }.isSuccess()
 
             logger.info("Sending change between 2 and 3")
             expectCatching {
-                executeChangeSync("peer0", "peerset2", true, change23)
+                executeChangeSync("peer0", "peerset2", change23, true)
             }.isSuccess()
 
             logger.info("Sending change between 1 and 2")
             expectCatching {
-                executeChangeSync("peer4", "peerset1", true, change12)
+                executeChangeSync("peer4", "peerset1", change12, true)
             }.isSuccess()
 
             logger.info("Sending change between 0 and 3")
             expectCatching {
-                executeChangeSync("peer3", "peerset3", true, change03)
+                executeChangeSync("peer3", "peerset3", change03, true)
             }.isSuccess()
 
             val changes =
@@ -897,7 +897,7 @@ class TwoPCSpec : IntegrationTestBase() {
             // execute change that will stop at TwoPCChange(Accepted)
             expectCatching {
                 val change1 = change(0, 1)
-                executeChangeSync(firstConsensusLeader.toString(), "peerset0", true, change1)
+                executeChangeSync(firstConsensusLeader.toString(), "peerset0", change1, true)
             }.isFailure()
 
             twoPcChangePhaser.arriveAndAwaitAdvanceWithTimeout()
@@ -1036,7 +1036,7 @@ class TwoPCSpec : IntegrationTestBase() {
 
             expectCatching {
                 val change1 = change(0, 1)
-                executeChangeSync(firstConsensusLeader.toString(), "peerset0", true, change1)
+                executeChangeSync(firstConsensusLeader.toString(), "peerset0", change1, true)
             }.isSuccess()
 
             finalPhaser.arriveAndAwaitAdvanceWithTimeout()
