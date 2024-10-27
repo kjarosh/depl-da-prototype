@@ -99,7 +99,7 @@ class AlvinSpec : IntegrationTestBase() {
             // when: peer1 executed change
             val change1 = createChange()
             expectCatching {
-                executeChange("${apps.getPeer(peer(0)).address}/v2/change/sync?peerset=peerset0", change1)
+                executeChangeSync(peer(0), "peerset0", change1)
             }.isSuccess()
 
             phaser.arriveAndAwaitAdvanceWithTimeout()
@@ -116,7 +116,7 @@ class AlvinSpec : IntegrationTestBase() {
             // when: peer2 executes change
             val change2 = createChange(content = "change2", parentId = change1.toHistoryEntry(peerset()).getId())
             expectCatching {
-                executeChange("${apps.getPeer(peer(0)).address}/v2/change/sync?peerset=peerset0", change2)
+                executeChangeSync(peer(0), "peerset0", change2)
             }.isSuccess()
 
             phaser.arriveAndAwaitAdvanceWithTimeout()
@@ -172,7 +172,7 @@ class AlvinSpec : IntegrationTestBase() {
                 val newTime =
                     measureTimeMillis {
                         expectCatching {
-                            executeChange("${apps.getPeer(peer(0)).address}/v2/change/sync?peerset=peerset0", change)
+                            executeChangeSync(peer(0), "peerset0", change)
                         }.isSuccess()
                     }
                 logger.info("Change $it is processed $newTime ms")
@@ -814,10 +814,7 @@ class AlvinSpec : IntegrationTestBase() {
                 that((change as StandardChange).content).isEqualTo(change1.content)
             }
 
-            executeChange(
-                "${apps.getPeer(peer(1)).address}/v2/change/sync?peerset=peerset0",
-                change2,
-            )
+            executeChangeSync(peer(1), "peerset0", change2)
 
             phaserAlvinPeers.arriveAndAwaitAdvanceWithTimeout()
 
@@ -946,7 +943,7 @@ class AlvinSpec : IntegrationTestBase() {
 
             repeat(firstPart) {
                 expectCatching {
-                    executeChange("${apps.getPeer("peer0").address}/v2/change/sync?peerset=peerset0", change)
+                    executeChangeSync("peer0", "peerset0", change)
                 }.isSuccess()
                 allPeerChangePhaser.arriveAndAwaitAdvanceWithTimeout()
                 iter += 1
@@ -958,7 +955,7 @@ class AlvinSpec : IntegrationTestBase() {
 
             repeat(secondPart) {
                 expectCatching {
-                    executeChange("${apps.getPeer("peer0").address}/v2/change/sync?peerset=peerset0", change)
+                    executeChangeSync("peer0", "peerset0", change)
                 }.isSuccess()
                 changePhaser.arriveAndAwaitAdvanceWithTimeout()
                 iter += 1
