@@ -49,7 +49,7 @@ data class Ledger(
             }
         }
 
-    private suspend fun updateCommitIndex(commitHistoryEntryId: String): List<LedgerItem> {
+    private fun updateCommitIndex(commitHistoryEntryId: String): List<LedgerItem> {
         this.commitIndex = commitHistoryEntryId
         if (lastApplied == commitIndex) return listOf()
 
