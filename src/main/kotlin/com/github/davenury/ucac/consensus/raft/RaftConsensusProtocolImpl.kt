@@ -466,7 +466,12 @@ class RaftConsensusProtocolImpl(
                         state = "accepted",
                     )
                 }
-                changeIdToCompletableFuture[it.changeId]?.complete(ChangeResult(ChangeResult.Status.SUCCESS))
+                changeIdToCompletableFuture[it.changeId]?.complete(
+                    ChangeResult(
+                        ChangeResult.Status.SUCCESS,
+                        currentEntryId = it.entry.getId(),
+                    ),
+                )
             }
 
             updateResult.acceptedItems.find { it.changeId == transactionBlocker.getChangeId() }?.let {
@@ -670,11 +675,14 @@ class RaftConsensusProtocolImpl(
                 changeIdToCompletableFuture.putIfAbsent(it.changeId, CompletableFuture())
             }
 
-            acceptedItems
-                .map { changeIdToCompletableFuture[it.changeId] }
-                .forEach {
-                    it!!.complete(ChangeResult(ChangeResult.Status.SUCCESS))
-                }
+            acceptedItems.forEach {
+                changeIdToCompletableFuture[it.changeId]!!.complete(
+                    ChangeResult(
+                        ChangeResult.Status.SUCCESS,
+                        currentEntryId = it.entry.getId(),
+                    ),
+                )
+            }
 
             if (acceptedItems.isNotEmpty()) scheduleHeartbeatToPeers(false)
         }
@@ -955,7 +963,12 @@ class RaftConsensusProtocolImpl(
             logger.info("Released blocker for changes from previous term")
 
             changeIdToCompletableFuture[state.proposedEntries.last().changeId]
-                ?.complete(ChangeResult(ChangeResult.Status.TIMEOUT))
+                ?.complete(
+                    ChangeResult(
+                        ChangeResult.Status.TIMEOUT,
+                        currentEntryId = null,
+                    ),
+                )
         }
     }
 
