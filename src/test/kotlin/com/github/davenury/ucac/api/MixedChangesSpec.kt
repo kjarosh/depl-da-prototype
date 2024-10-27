@@ -47,7 +47,7 @@ class MixedChangesSpec : IntegrationTestBase() {
     fun `try to execute two following changes in the same time, first GPAC, then Raft`(): Unit =
         runBlocking {
             val change = change(0, 1)
-            val secondChange = change(mapOf(0 to change.toHistoryEntry(PeersetId("peerset0")).getId()))
+            val secondChange = change(mapOf(0 to null))
 
             val applyEndPhaser = Phaser(6)
             val beforeSendingApplyPhaser = Phaser(1)
@@ -127,7 +127,7 @@ class MixedChangesSpec : IntegrationTestBase() {
     fun `try to execute two following changes in the same time (two different peers), first GPAC, then Raft`(): Unit =
         runBlocking {
             val change = change(0, 1)
-            val secondChange = change(mapOf(1 to change.toHistoryEntry(PeersetId("peerset0")).getId()))
+            val secondChange = change(mapOf(1 to null))
 
             val applyEndPhaser = Phaser(6)
             val beforeSendingApplyPhaser = Phaser(1)
@@ -211,8 +211,8 @@ class MixedChangesSpec : IntegrationTestBase() {
     fun `try to execute two following changes in the same time, first 2PC, then Raft`(): Unit =
         runBlocking {
             val firstChange = change(0, 1)
-            val secondChange = change(mapOf(0 to firstChange.toHistoryEntry(PeersetId("peerset0")).getId()))
-            val thirdChange = change(mapOf(1 to firstChange.toHistoryEntry(PeersetId("peerset1")).getId()))
+            val secondChange = change(mapOf(0 to null))
+            val thirdChange = change(mapOf(1 to null))
 
             val applyEndPhaser = Phaser(1)
             val beforeSendingApplyPhaser = Phaser(1)
@@ -300,7 +300,7 @@ class MixedChangesSpec : IntegrationTestBase() {
     fun `try to execute two following changes in the same time (two different peers), first 2PC, then Raft`(): Unit =
         runBlocking {
             val change = change(0, 1)
-            val secondChange = change(mapOf(1 to change.toHistoryEntry(PeersetId("peerset0")).getId()))
+            val secondChange = change(mapOf(1 to null))
 
             val beforeSendingApplyPhaser = Phaser(1)
             val applyEndPhaser = Phaser(1)
@@ -389,8 +389,8 @@ class MixedChangesSpec : IntegrationTestBase() {
     fun `try to execute two following changes, first 2PC, then Raft`(): Unit =
         runBlocking {
             val firstChange = change(0, 1)
-            val secondChange = change(mapOf(1 to firstChange.toHistoryEntry(PeersetId("peerset1")).getId()))
-            val thirdChange = change(mapOf(0 to firstChange.toHistoryEntry(PeersetId("peerset0")).getId()))
+            val secondChange = change(mapOf(1 to null))
+            val thirdChange = change(mapOf(0 to null))
 
             val applyEndPhaser = Phaser(1)
             val electionPhaser = Phaser(4)
@@ -491,7 +491,7 @@ class MixedChangesSpec : IntegrationTestBase() {
                 },
         )
 
-    private fun change(peerSetIdToId: Map<Int, String>) =
+    private fun change(peerSetIdToId: Map<Int, String?>) =
         StandardChange(
             "change",
             peersets =

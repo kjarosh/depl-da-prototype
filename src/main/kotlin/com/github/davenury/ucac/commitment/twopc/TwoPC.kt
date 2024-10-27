@@ -57,11 +57,11 @@ class TwoPC(
             val updatedChange =
                 updateParentIdFor2PCCompatibility(change, history, peersetId)
 
-            val mainChangeId = updatedChange.id
+            val mainChangeId = change.id
             try {
                 val acceptChange =
                     TwoPCChange(
-                        peersets = updatedChange.peersets,
+                        peersets = change.peersets,
                         twoPCStatus = TwoPCStatus.ACCEPTED,
                         change = change,
                         leaderPeerset = peersetId,
@@ -473,30 +473,6 @@ class TwoPC(
             change: Change,
             history: History,
             peersetId: PeersetId,
-        ): Change {
-            val currentEntry = history.getCurrentEntry()
-
-            val grandParentChange: Change =
-                history.getEntryFromHistory(currentEntry.getParentId() ?: return change)
-                    ?.let { Change.fromHistoryEntry(it) }
-                    ?: return change
-
-            if (grandParentChange !is TwoPCChange) return change
-
-            val proposedChangeParentId =
-                change.toHistoryEntry(peersetId)
-                    .getParentId()
-
-            val grandParentChange2PCChangeId = grandParentChange.change.toHistoryEntry(peersetId).getId()
-
-            return if (grandParentChange2PCChangeId == proposedChangeParentId) {
-                change.copyWithNewParentId(
-                    peersetId,
-                    history.getCurrentEntryId(),
-                )
-            } else {
-                change
-            }
-        }
+        ): Change = change
     }
 }
