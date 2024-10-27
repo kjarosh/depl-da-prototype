@@ -3,7 +3,12 @@ package com.github.davenury.common
 data class ChangeResult(
     val status: Status,
     val detailedMessage: String? = null,
-    val currentEntryId: String? = null,
+    /**
+     * For successful results, it's the ID of the newly added entry.
+     * For unsuccessful results, it's the current entry ID,
+     * e.g. the one that conflicted with the change.
+     */
+    val entryId: String? = null,
     val currentConsensusLeader: PeerId? = null,
 ) {
     enum class Status {

@@ -469,7 +469,7 @@ class RaftConsensusProtocolImpl(
                 changeIdToCompletableFuture[it.changeId]?.complete(
                     ChangeResult(
                         ChangeResult.Status.SUCCESS,
-                        currentEntryId = it.entry.getId(),
+                        entryId = it.entry.getId(),
                     ),
                 )
             }
@@ -584,7 +584,7 @@ class RaftConsensusProtocolImpl(
                         ChangeResult(
                             ChangeResult.Status.CONFLICT,
                             detailedMessage = "Change incompatible",
-                            currentEntryId = history.getCurrentEntryId(),
+                            entryId = history.getCurrentEntryId(),
                         ),
                     )
                 }
@@ -679,7 +679,7 @@ class RaftConsensusProtocolImpl(
                 changeIdToCompletableFuture[it.changeId]!!.complete(
                     ChangeResult(
                         ChangeResult.Status.SUCCESS,
-                        currentEntryId = it.entry.getId(),
+                        entryId = it.entry.getId(),
                     ),
                 )
             }
@@ -882,7 +882,7 @@ class RaftConsensusProtocolImpl(
                         ChangeResult(
                             ChangeResult.Status.CONFLICT,
                             detailedMessage = "Change incompatible",
-                            currentEntryId = history.getCurrentEntryId(),
+                            entryId = history.getCurrentEntryId(),
                         ),
                     )
                     transactionBlocker.release(acquisition)
@@ -966,7 +966,7 @@ class RaftConsensusProtocolImpl(
                 ?.complete(
                     ChangeResult(
                         ChangeResult.Status.TIMEOUT,
-                        currentEntryId = null,
+                        entryId = null,
                     ),
                 )
         }

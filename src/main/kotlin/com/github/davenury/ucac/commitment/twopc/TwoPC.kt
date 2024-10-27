@@ -332,7 +332,7 @@ class TwoPC(
 
             logger.info("Decision $decision from other peerset for ${acceptChange.change}")
 
-            return Pair(decision, acceptResult.currentEntryId)
+            return Pair(decision, acceptResult.entryId)
         }
 
     suspend fun getProposePhaseResponses(
@@ -429,7 +429,7 @@ class TwoPC(
                 } is ${history.getCurrentEntryId()}",
             )
             changeIdToCompletableFuture[originalChangeId]!!.complete(
-                ChangeResult(ChangeResult.Status.REJECTED, currentEntryId = history.getCurrentEntryId()),
+                ChangeResult(ChangeResult.Status.REJECTED, entryId = history.getCurrentEntryId()),
             )
             throw HistoryCannotBeBuildException()
         }

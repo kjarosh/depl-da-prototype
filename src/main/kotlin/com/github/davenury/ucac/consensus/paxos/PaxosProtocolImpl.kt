@@ -359,7 +359,7 @@ class PaxosProtocolImpl(
                     change.toHistoryEntry(peersetId).getParentId()
                 }",
             )
-            result.complete(ChangeResult(ChangeResult.Status.CONFLICT, currentEntryId = history.getCurrentEntryId()))
+            result.complete(ChangeResult(ChangeResult.Status.CONFLICT, entryId = history.getCurrentEntryId()))
             transactionBlocker.tryRelease(transactionAcquisition)
             return
         }
@@ -745,7 +745,7 @@ class PaxosProtocolImpl(
                     changeIdToCompletableFuture[change.id]?.complete(
                         ChangeResult(
                             ChangeResult.Status.CONFLICT,
-                            currentEntryId = history.getCurrentEntryId(),
+                            entryId = history.getCurrentEntryId(),
                         ),
                     )
                     signalPublisher.signal(
