@@ -1,6 +1,7 @@
 package com.github.davenury.ucac.utils
 
 import com.github.davenury.common.Change
+import com.github.davenury.common.ChangeCreationResponse
 import com.github.davenury.ucac.gmmf.routing.EdgeMessage
 import com.github.davenury.ucac.gmmf.routing.VertexMessage
 import com.github.davenury.ucac.testHttpClient
@@ -88,10 +89,10 @@ abstract class IntegrationTestBase {
         peerset: String,
         use2pc: Boolean,
         change: Change,
-    ) {
+    ): ChangeCreationResponse {
         val url = "http://${apps.getPeer(peerName).address}/v2/change/sync?peerset=$peerset&use_2pc=$use2pc"
         logger.info("Executing sync change $change from $peerset through $peerName")
-        testHttpClient.post<HttpResponse>(url) {
+        return testHttpClient.post<ChangeCreationResponse>(url) {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
             body = change
