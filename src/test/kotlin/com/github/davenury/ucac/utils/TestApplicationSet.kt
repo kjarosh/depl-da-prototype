@@ -60,6 +60,8 @@ class TestApplicationSet(
 
         // start and address discovery
         apps.filter { (peerId, _) -> !appsToExclude.contains(peerId.toString()) }
+            .toList()
+            .parallelStream()
             .forEach { (_, app) -> app.startNonblocking() }
 
         peerAddresses =
