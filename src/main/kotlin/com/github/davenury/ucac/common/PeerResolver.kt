@@ -38,6 +38,11 @@ class PeerResolver(
             .map { resolve(it) }
     }
 
+    fun getPeerFromPeerset(peersetId: PeersetId): PeerAddress {
+        // TODO multiple strategies of choosing a peer?
+        return getPeersFromPeerset(peersetId).random()
+    }
+
     fun setPeerAddress(
         peerId: PeerId,
         address: PeerAddress,
