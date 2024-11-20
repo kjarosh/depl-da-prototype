@@ -15,7 +15,6 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.slf4j.LoggerFactory
@@ -90,7 +89,6 @@ class GmmfNaiveSpec : IntegrationTestBase() {
         }
 
     @Test
-    @Disabled("TODO make parentId optional for 2PC")
     fun `naive reaches two peersets`(): Unit =
         runBlocking {
             apps = TestApplicationSet(mapOf("peerset0" to listOf("peer0", "peer1"), "peerset1" to listOf("peer2", "peer3")))
@@ -139,7 +137,7 @@ class GmmfNaiveSpec : IntegrationTestBase() {
 
             val reachesMessage2 =
                 naiveReaches(
-                    "http://${apps.getPeer("peer4").address}/gmmf/naive/reaches?" +
+                    "http://${apps.getPeer("peer3").address}/gmmf/naive/reaches?" +
                         "from=peerset0:v1&to=peerset1:v4",
                 )
             expectThat(reachesMessage2.reaches).isTrue()
