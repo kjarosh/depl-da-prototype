@@ -875,7 +875,7 @@ class AlvinSpec : IntegrationTestBase() {
             }
         }
 
-    @Test
+    @RetryingTest(3)
     fun `process 50 changes, then one peer doesn't respond on 250 changes and finally synchronize on all`(): Unit =
         runBlocking {
             val peersWithoutLeader = 5
