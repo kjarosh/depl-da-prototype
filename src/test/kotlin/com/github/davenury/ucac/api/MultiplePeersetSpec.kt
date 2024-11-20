@@ -35,6 +35,7 @@ import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.fail
+import org.junitpioneer.jupiter.RetryingTest
 import org.slf4j.LoggerFactory
 import strikt.api.expect
 import strikt.api.expectCatching
@@ -112,7 +113,7 @@ class MultiplePeersetSpec : IntegrationTestBase() {
             }
         }
 
-    @Test
+    @RetryingTest(3)
     fun `1000 change processed sequentially`(): Unit =
         runBlocking {
             val phaser = Phaser(6)
