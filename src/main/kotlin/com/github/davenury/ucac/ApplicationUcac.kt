@@ -345,7 +345,7 @@ class ApplicationUcac(
             historyRouting(multiplePeersetProtocols)
             apiV2Routing(service)
             gpacProtocolRouting(multiplePeersetProtocols)
-            gmmfRouting(multiplePeersetProtocols)
+            gmmfRouting(multiplePeersetProtocols, peerResolver)
             when (config.consensus.name) {
                 "raft" -> raftProtocolRouting(multiplePeersetProtocols)
                 "alvin" -> alvinProtocolRouting(multiplePeersetProtocols)
