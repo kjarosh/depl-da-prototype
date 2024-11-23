@@ -1,5 +1,6 @@
 package com.github.davenury.ucac.gmmf
 
+import com.github.davenury.ucac.gmmf.routing.MembersMessage
 import com.github.davenury.ucac.gmmf.routing.ReachesMessage
 import com.github.davenury.ucac.testHttpClient
 import com.github.davenury.ucac.utils.IntegrationTestBase
@@ -143,8 +144,70 @@ class GmmfNaiveSpec : IntegrationTestBase() {
             expectThat(reachesMessage2.reaches).isTrue()
         }
 
+    @Test
+    fun `naive members basic`(): Unit =
+        runBlocking {
+            apps = TestApplicationSet(mapOf("peerset0" to listOf("peer0", "peer1")))
+
+            logger.info("Adding v1")
+            addVertex("peer0", "peerset0", "v1", Vertex.Type.GROUP)
+            logger.info("Adding v2")
+            addVertex("peer1", "peerset0", "v2", Vertex.Type.GROUP)
+            logger.info("Adding v3")
+            addVertex("peer0", "peerset0", "v3", Vertex.Type.GROUP)
+
+            logger.info("Adding v1->v2")
+            addEdge(
+                "peer0",
+                "peerset0",
+                VertexId(ZoneId("peerset0"), "v1"),
+                VertexId(ZoneId("peerset0"), "v2"),
+                Permissions("01010"),
+            )
+            logger.info("Adding v2->v3")
+            addEdge(
+                "peer0",
+                "peerset0",
+                VertexId(ZoneId("peerset0"), "v2"),
+                VertexId(ZoneId("peerset0"), "v3"),
+                Permissions("01010"),
+            )
+
+            val membersMessage1 =
+                naiveMembers(
+                    "http://${apps.getPeer("peer0").address}/gmmf/naive/members?" +
+                        "of=peerset0:v1",
+                )
+            expectThat(membersMessage1.members).isEqualTo(setOf())
+
+            val membersMessage2 =
+                naiveMembers(
+                    "http://${apps.getPeer("peer0").address}/gmmf/naive/members?" +
+                        "of=peerset0:v2",
+                )
+            expectThat(membersMessage2.members).isEqualTo(setOf(VertexId("peerset0:v1")))
+
+            val membersMessage3 =
+                naiveMembers(
+                    "http://${apps.getPeer("peer0").address}/gmmf/naive/members?" +
+                        "of=peerset0:v3",
+                )
+            expectThat(membersMessage3.members).isEqualTo(
+                setOf(
+                    VertexId("peerset0:v1"),
+                    VertexId("peerset0:v2"),
+                ),
+            )
+        }
+
     private suspend fun naiveReaches(url: String): ReachesMessage =
         testHttpClient.post<ReachesMessage>(url) {
+            contentType(ContentType.Application.Json)
+            accept(ContentType.Application.Json)
+        }
+
+    private suspend fun naiveMembers(url: String): MembersMessage =
+        testHttpClient.post<MembersMessage>(url) {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
         }
