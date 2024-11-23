@@ -200,6 +200,67 @@ class GmmfNaiveSpec : IntegrationTestBase() {
             )
         }
 
+    @Test
+    fun `naive members two peersets`(): Unit =
+        runBlocking {
+            apps = TestApplicationSet(mapOf("peerset0" to listOf("peer0", "peer1"), "peerset1" to listOf("peer2", "peer3")))
+
+            addVertex("peer0", "peerset0", "v1", Vertex.Type.GROUP)
+            addVertex("peer1", "peerset0", "v2", Vertex.Type.GROUP)
+            addVertex("peer2", "peerset1", "v3", Vertex.Type.GROUP)
+            addVertex("peer3", "peerset1", "v4", Vertex.Type.GROUP)
+
+            var v2 = getVertex("peer1", "peerset0", "v2")
+            expectThat(v2.name).isEqualTo("v2")
+            expectThat(v2.type).isEqualTo(Vertex.Type.GROUP)
+
+            v2 = getVertex("peer0", "peerset0", "v2")
+            expectThat(v2.name).isEqualTo("v2")
+            expectThat(v2.type).isEqualTo(Vertex.Type.GROUP)
+
+            addEdge(
+                "peer0",
+                "peerset0",
+                VertexId(ZoneId("peerset0"), "v1"),
+                VertexId(ZoneId("peerset0"), "v2"),
+                Permissions("01010"),
+            )
+            addEdge(
+                "peer0",
+                "peerset0",
+                VertexId(ZoneId("peerset0"), "v2"),
+                VertexId(ZoneId("peerset1"), "v3"),
+                Permissions("01010"),
+            )
+            addEdge(
+                "peer3",
+                "peerset1",
+                VertexId(ZoneId("peerset1"), "v3"),
+                VertexId(ZoneId("peerset1"), "v4"),
+                Permissions("01010"),
+            )
+
+            val membersMessage1 =
+                naiveMembers(
+                    "http://${apps.getPeer("peer0").address}/gmmf/naive/members?" +
+                        "of=peerset0:v1",
+                )
+            expectThat(membersMessage1.members).isEqualTo(setOf())
+
+            val membersMessage2 =
+                naiveMembers(
+                    "http://${apps.getPeer("peer3").address}/gmmf/naive/members?" +
+                        "of=peerset1:v4",
+                )
+            expectThat(membersMessage2.members).isEqualTo(
+                setOf(
+                    VertexId("peerset0:v1"),
+                    VertexId("peerset0:v2"),
+                    VertexId("peerset1:v3"),
+                ),
+            )
+        }
+
     private suspend fun naiveReaches(url: String): ReachesMessage =
         testHttpClient.post<ReachesMessage>(url) {
             contentType(ContentType.Application.Json)
