@@ -71,15 +71,15 @@ fun Application.gmmfNaiveRouting(
     fun members(
         call: ApplicationCall,
         of: String,
-    ): Collection<String> {
+    ): Set<VertexId> {
         val ofId = VertexId(of)
         val peersetId = PeersetId.create(ofId.owner().id)
         val graph = graph(peersetId)
 
-        val result: MutableSet<String> = HashSet()
+        val result: MutableSet<VertexId> = HashSet()
 
         for (edge in graph.getEdgesByDestination(ofId)) {
-            result.add(edge.src().toString())
+            result.add(edge.src())
             try {
                 result.addAll(members(call, edge.src().toString()))
             } catch (e: StackOverflowError) {
@@ -137,7 +137,7 @@ fun Application.gmmfNaiveRouting(
 
         post("/gmmf/naive/members") {
             val ofId = call.parameters["of"]!!
-            call.respond(members(call, ofId))
+            call.respond(MembersMessage(members(call, ofId)))
         }
 
         post("/gmmf/naive/effective_permissions") {
