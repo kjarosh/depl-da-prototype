@@ -68,23 +68,30 @@ fun Application.gmmfNaiveRouting(
         return false
     }
 
-    fun members(
+    suspend fun members(
         call: ApplicationCall,
         of: String,
+        ttl: Int,
     ): Set<VertexId> {
+        if (ttl <= 0) {
+            throw RuntimeException("TTL is zero")
+        }
+        val newTtl = ttl - 1
+
         val ofId = VertexId(of)
         val peersetId = PeersetId.create(ofId.owner().id)
-        val graph = graph(peersetId)
+        val graph =
+            try {
+                graph(peersetId)
+            } catch (e: UnknownPeersetException) {
+                return client(peersetId).members(ofId, newTtl).members
+            }
 
         val result: MutableSet<VertexId> = HashSet()
 
         for (edge in graph.getEdgesByDestination(ofId)) {
             result.add(edge.src())
-            try {
-                result.addAll(members(call, edge.src().toString()))
-            } catch (e: StackOverflowError) {
-                throw RuntimeException("Found a cycle")
-            }
+            result.addAll(members(call, edge.src().toString(), newTtl))
         }
 
         return result
@@ -137,7 +144,8 @@ fun Application.gmmfNaiveRouting(
 
         post("/gmmf/naive/members") {
             val ofId = call.parameters["of"]!!
-            call.respond(MembersMessage(members(call, ofId)))
+            val ttl = (call.parameters["ttl"] ?: "128").toInt()
+            call.respond(MembersMessage(members(call, ofId, ttl)))
         }
 
         post("/gmmf/naive/effective_permissions") {
