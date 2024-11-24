@@ -11,3 +11,5 @@ data class EdgeMessage(val from: VertexId, val to: VertexId, val permissions: Pe
 data class ReachesMessage(val reaches: Boolean)
 
 data class MembersMessage(val members: Set<VertexId>)
+
+data class EffectivePermissionsMessage(val effectivePermissions: Permissions?)

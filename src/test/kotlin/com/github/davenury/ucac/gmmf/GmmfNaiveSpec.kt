@@ -1,5 +1,6 @@
 package com.github.davenury.ucac.gmmf
 
+import com.github.davenury.ucac.gmmf.routing.EffectivePermissionsMessage
 import com.github.davenury.ucac.gmmf.routing.MembersMessage
 import com.github.davenury.ucac.gmmf.routing.ReachesMessage
 import com.github.davenury.ucac.testHttpClient
@@ -22,6 +23,7 @@ import org.slf4j.LoggerFactory
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
 import strikt.assertions.isFalse
+import strikt.assertions.isNull
 import strikt.assertions.isTrue
 
 @ExtendWith(TestLogExtension::class)
@@ -261,6 +263,151 @@ class GmmfNaiveSpec : IntegrationTestBase() {
             )
         }
 
+    /**
+     *    v1
+     *   ↙  ↘
+     * v2a  v2b
+     *   ↘  ↙
+     *    v3
+     */
+    @Test
+    fun `naive effective permissions basic`(): Unit =
+        runBlocking {
+            apps = TestApplicationSet(mapOf("peerset0" to listOf("peer0", "peer1")))
+
+            logger.info("Adding v1")
+            addVertex("peer0", "peerset0", "v1", Vertex.Type.GROUP)
+            logger.info("Adding v2a")
+            addVertex("peer1", "peerset0", "v2a", Vertex.Type.GROUP)
+            logger.info("Adding v2b")
+            addVertex("peer1", "peerset0", "v2b", Vertex.Type.GROUP)
+            logger.info("Adding v3")
+            addVertex("peer0", "peerset0", "v3", Vertex.Type.GROUP)
+
+            logger.info("Adding v1->v2a")
+            addEdge(
+                "peer0",
+                "peerset0",
+                VertexId(ZoneId("peerset0"), "v1"),
+                VertexId(ZoneId("peerset0"), "v2a"),
+                Permissions("10000"),
+            )
+            logger.info("Adding v1->v2b")
+            addEdge(
+                "peer0",
+                "peerset0",
+                VertexId(ZoneId("peerset0"), "v1"),
+                VertexId(ZoneId("peerset0"), "v2b"),
+                Permissions("01000"),
+            )
+            logger.info("Adding v2a->v3")
+            addEdge(
+                "peer0",
+                "peerset0",
+                VertexId(ZoneId("peerset0"), "v2a"),
+                VertexId(ZoneId("peerset0"), "v3"),
+                Permissions("00100"),
+            )
+            logger.info("Adding v2b->v3")
+            addEdge(
+                "peer0",
+                "peerset0",
+                VertexId(ZoneId("peerset0"), "v2b"),
+                VertexId(ZoneId("peerset0"), "v3"),
+                Permissions("00010"),
+            )
+
+            val epMessage1 =
+                naiveEffectivePermissions(
+                    "http://${apps.getPeer("peer0").address}/gmmf/naive/effective_permissions?" +
+                        "from=peerset0:v1&to=peerset0:v3",
+                )
+            expectThat(epMessage1.effectivePermissions).isEqualTo(Permissions("00110"))
+
+            val epMessage2 =
+                naiveEffectivePermissions(
+                    "http://${apps.getPeer("peer0").address}/gmmf/naive/effective_permissions?" +
+                        "from=peerset0:v3&to=peerset0:v1",
+                )
+            expectThat(epMessage2.effectivePermissions).isNull()
+        }
+
+    /**
+     *    v1
+     *   ↙  ↘
+     * v2a  v2b
+     *   ↘  ↙
+     *    v3
+     */
+    @Test
+    fun `naive effective permissions multiple peersets`(): Unit =
+        runBlocking {
+            apps =
+                TestApplicationSet(
+                    mapOf(
+                        "peerset0" to listOf("peer0", "peer1", "peer2"),
+                        "peerset1" to listOf("peer3", "peer4"),
+                        "peerset2" to listOf("peer5", "peer6", "peer7"),
+                    ),
+                )
+
+            logger.info("Adding v1")
+            addVertex("peer0", "peerset0", "v1", Vertex.Type.GROUP)
+            logger.info("Adding v2a")
+            addVertex("peer3", "peerset1", "v2a", Vertex.Type.GROUP)
+            logger.info("Adding v2b")
+            addVertex("peer3", "peerset1", "v2b", Vertex.Type.GROUP)
+            logger.info("Adding v3")
+            addVertex("peer7", "peerset2", "v3", Vertex.Type.GROUP)
+
+            logger.info("Adding v1->v2a")
+            addEdge(
+                "peer3",
+                "peerset1",
+                VertexId(ZoneId("peerset0"), "v1"),
+                VertexId(ZoneId("peerset1"), "v2a"),
+                Permissions("10000"),
+            )
+            logger.info("Adding v1->v2b")
+            addEdge(
+                "peer3",
+                "peerset1",
+                VertexId(ZoneId("peerset0"), "v1"),
+                VertexId(ZoneId("peerset1"), "v2b"),
+                Permissions("01000"),
+            )
+            logger.info("Adding v2a->v3")
+            addEdge(
+                "peer5",
+                "peerset2",
+                VertexId(ZoneId("peerset1"), "v2a"),
+                VertexId(ZoneId("peerset2"), "v3"),
+                Permissions("00100"),
+            )
+            logger.info("Adding v2b->v3")
+            addEdge(
+                "peer5",
+                "peerset2",
+                VertexId(ZoneId("peerset1"), "v2b"),
+                VertexId(ZoneId("peerset2"), "v3"),
+                Permissions("00010"),
+            )
+
+            val epMessage1 =
+                naiveEffectivePermissions(
+                    "http://${apps.getPeer("peer0").address}/gmmf/naive/effective_permissions?" +
+                        "from=peerset0:v1&to=peerset2:v3",
+                )
+            expectThat(epMessage1.effectivePermissions).isEqualTo(Permissions("00110"))
+
+            val epMessage2 =
+                naiveEffectivePermissions(
+                    "http://${apps.getPeer("peer0").address}/gmmf/naive/effective_permissions?" +
+                        "from=peerset2:v3&to=peerset0:v1",
+                )
+            expectThat(epMessage2.effectivePermissions).isNull()
+        }
+
     private suspend fun naiveReaches(url: String): ReachesMessage =
         testHttpClient.post<ReachesMessage>(url) {
             contentType(ContentType.Application.Json)
@@ -269,6 +416,12 @@ class GmmfNaiveSpec : IntegrationTestBase() {
 
     private suspend fun naiveMembers(url: String): MembersMessage =
         testHttpClient.post<MembersMessage>(url) {
+            contentType(ContentType.Application.Json)
+            accept(ContentType.Application.Json)
+        }
+
+    private suspend fun naiveEffectivePermissions(url: String): EffectivePermissionsMessage =
+        testHttpClient.post<EffectivePermissionsMessage>(url) {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
         }
