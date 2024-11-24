@@ -31,16 +31,20 @@ fun Application.gmmfNaiveRouting(
         return GmmfClient(peer)
     }
 
+    fun newTtl(ttl: Int): Int {
+        if (ttl <= 0) {
+            throw RuntimeException("TTL is zero")
+        }
+        return ttl - 1
+    }
+
     suspend fun reaches(
         call: ApplicationCall,
         from: String,
         to: String,
         ttl: Int,
     ): Boolean {
-        if (ttl <= 0) {
-            throw RuntimeException("TTL is zero")
-        }
-        val newTtl = ttl - 1
+        val newTtl = newTtl(ttl)
 
         val fromId = VertexId(from)
         val toId = VertexId(to)
@@ -73,10 +77,7 @@ fun Application.gmmfNaiveRouting(
         of: String,
         ttl: Int,
     ): Set<VertexId> {
-        if (ttl <= 0) {
-            throw RuntimeException("TTL is zero")
-        }
-        val newTtl = ttl - 1
+        val newTtl = newTtl(ttl)
 
         val ofId = VertexId(of)
         val peersetId = PeersetId.create(ofId.owner().id)
@@ -97,15 +98,23 @@ fun Application.gmmfNaiveRouting(
         return result
     }
 
-    fun effectivePermissions(
+    suspend fun effectivePermissions(
         call: ApplicationCall,
         from: String,
         to: String,
-    ): String? {
+        ttl: Int,
+    ): Permissions? {
+        val newTtl = newTtl(ttl)
+
         val fromId = VertexId(from)
         val toId = VertexId(to)
         val peersetId = PeersetId.create(fromId.owner().id)
-        val graph = graph(peersetId)
+        val graph =
+            try {
+                graph(peersetId)
+            } catch (e: UnknownPeersetException) {
+                return client(peersetId).effectivePermissions(fromId, toId, newTtl).effectivePermissions
+            }
         val edgeId: EdgeId = EdgeId.of(fromId, toId)
 
         var permissions: Permissions? = null
@@ -118,20 +127,16 @@ fun Application.gmmfNaiveRouting(
                         edge.permissions(),
                     )
             } else {
-                try {
-                    val other: String? = effectivePermissions(call, edge.dst().toString(), to)
-                    permissions =
-                        Permissions.combine(
-                            permissions,
-                            if (other != null) Permissions(other) else null,
-                        )
-                } catch (e: StackOverflowError) {
-                    throw RuntimeException("Found a cycle")
-                }
+                val other: Permissions? = effectivePermissions(call, edge.dst().toString(), to, newTtl)
+                permissions =
+                    Permissions.combine(
+                        permissions,
+                        other,
+                    )
             }
         }
 
-        return permissions?.toString()
+        return permissions
     }
 
     routing {
@@ -151,7 +156,8 @@ fun Application.gmmfNaiveRouting(
         post("/gmmf/naive/effective_permissions") {
             val fromId = call.parameters["from"]!!
             val toId = call.parameters["to"]!!
-            call.respond(effectivePermissions(call, fromId, toId) ?: "NONE")
+            val ttl = (call.parameters["ttl"] ?: "128").toInt()
+            call.respond(EffectivePermissionsMessage(effectivePermissions(call, fromId, toId, ttl)))
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.github.davenury.ucac.gmmf.client
 
 import com.github.davenury.common.PeerAddress
+import com.github.davenury.ucac.gmmf.routing.EffectivePermissionsMessage
 import com.github.davenury.ucac.gmmf.routing.MembersMessage
 import com.github.davenury.ucac.gmmf.routing.ReachesMessage
 import com.github.davenury.ucac.httpClient
@@ -29,6 +30,17 @@ class GmmfClient(peer: PeerAddress) {
         ttl: Int,
     ): MembersMessage {
         return httpClient.post<MembersMessage>("$urlBase/gmmf/naive/members?of=$of&ttl=$ttl") {
+            contentType(ContentType.Application.Json)
+            accept(ContentType.Application.Json)
+        }
+    }
+
+    suspend fun effectivePermissions(
+        from: VertexId,
+        to: VertexId,
+        ttl: Int,
+    ): EffectivePermissionsMessage {
+        return httpClient.post<EffectivePermissionsMessage>("$urlBase/gmmf/naive/effective_permissions?from=$from&to=$to&ttl=$ttl") {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
         }
