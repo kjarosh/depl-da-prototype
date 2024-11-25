@@ -9,5 +9,6 @@ fun Application.gmmfRouting(
     peerResolver: PeerResolver,
 ) {
     gmmfNaiveRouting(multiplePeersetProtocols, peerResolver)
+    gmmfIndexedRouting(multiplePeersetProtocols, peerResolver)
     gmmfGraphModificationRouting(multiplePeersetProtocols)
 }
