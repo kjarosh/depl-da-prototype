@@ -53,7 +53,7 @@ fun Application.gmmfNaiveRouting(
             try {
                 graph(peersetId)
             } catch (e: UnknownPeersetException) {
-                return client(peersetId).reaches(fromId, toId, newTtl).reaches
+                return client(peersetId).naiveReaches(fromId, toId, newTtl).reaches
             }
         val edgeId: EdgeId = EdgeId.of(fromId, toId)
 
@@ -85,7 +85,7 @@ fun Application.gmmfNaiveRouting(
             try {
                 graph(peersetId)
             } catch (e: UnknownPeersetException) {
-                return client(peersetId).members(ofId, newTtl).members
+                return client(peersetId).naiveMembers(ofId, newTtl).members
             }
 
         val result: MutableSet<VertexId> = HashSet()
@@ -113,7 +113,7 @@ fun Application.gmmfNaiveRouting(
             try {
                 graph(peersetId)
             } catch (e: UnknownPeersetException) {
-                return client(peersetId).effectivePermissions(fromId, toId, newTtl).effectivePermissions
+                return client(peersetId).naiveEffectivePermissions(fromId, toId, newTtl).effectivePermissions
             }
         val edgeId: EdgeId = EdgeId.of(fromId, toId)
 
