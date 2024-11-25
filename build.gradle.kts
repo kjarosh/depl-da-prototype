@@ -59,6 +59,11 @@ dependencies {
     implementation("io.jaegertracing:jaeger-client:1.8.1")
     implementation("com.zopa:ktor-opentracing:0.3.6")
 
+    // k8s
+    implementation("io.kubernetes:client-java:12.0.2")
+    implementation("commons-cli:commons-cli:1.5.0")
+    implementation("com.google.guava:guava:31.1-jre")
+
     implementation("com.github.loki4j:loki-logback-appender:1.5.1")
     testImplementation(platform("org.junit:junit-bom:5.10.3"))
     testImplementation("org.junit.jupiter:junit-jupiter")
