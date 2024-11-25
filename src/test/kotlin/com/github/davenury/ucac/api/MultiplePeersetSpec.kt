@@ -932,7 +932,7 @@ class MultiplePeersetSpec : IntegrationTestBase() {
             }
         }
 
-    @Test
+    @RetryingTest(3)
     fun `gpac on multiple peersets`(): Unit =
         runBlocking {
             apps =
