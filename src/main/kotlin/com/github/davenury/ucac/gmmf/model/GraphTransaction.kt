@@ -11,8 +11,6 @@ import com.github.kjarosh.agh.pp.graph.model.VertexId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-val logger: Logger = LoggerFactory.getLogger("graph-tx")
-
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME)
 @JsonSubTypes(
     *arrayOf(
@@ -28,6 +26,8 @@ sealed class GraphTransaction {
     abstract fun apply(graph: Graph)
 
     companion object {
+        val logger: Logger = LoggerFactory.getLogger("graph-tx")
+
         fun deserialize(content: String): GraphTransaction? {
             return objectMapper.readValue(content, GraphTransaction::class.java)
         }
