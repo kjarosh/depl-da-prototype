@@ -13,6 +13,7 @@ import com.github.davenury.ucac.common.structure.CodeSubscriber
 import com.github.davenury.ucac.common.structure.Subscribers
 import com.github.davenury.ucac.consensus.ConsensusProtocol
 import com.github.davenury.ucac.gmmf.model.GraphFromHistory
+import com.github.davenury.ucac.gmmf.model.IndexFromHistory
 import kotlinx.coroutines.ExecutorCoroutineDispatcher
 import kotlinx.coroutines.asCoroutineDispatcher
 import java.util.concurrent.Executors
@@ -41,6 +42,10 @@ class PeersetProtocols(
 
     val graphFromHistory: GraphFromHistory by lazy {
         GraphFromHistory(history, peersetId)
+    }
+
+    val indexFromHistory: IndexFromHistory by lazy {
+        IndexFromHistory(history)
     }
 
     init {
