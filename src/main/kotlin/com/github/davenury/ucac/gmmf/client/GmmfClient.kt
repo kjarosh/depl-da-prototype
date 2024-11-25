@@ -45,4 +45,31 @@ class GmmfClient(peer: PeerAddress) {
             accept(ContentType.Application.Json)
         }
     }
+
+    suspend fun indexedReaches(
+        from: VertexId,
+        to: VertexId,
+    ): ReachesMessage {
+        return httpClient.post<ReachesMessage>("$urlBase/gmmf/indexed/reaches?from=$from&to=$to") {
+            contentType(ContentType.Application.Json)
+            accept(ContentType.Application.Json)
+        }
+    }
+
+    suspend fun indexedMembers(of: VertexId): MembersMessage {
+        return httpClient.post<MembersMessage>("$urlBase/gmmf/indexed/members?of=$of") {
+            contentType(ContentType.Application.Json)
+            accept(ContentType.Application.Json)
+        }
+    }
+
+    suspend fun indexedEffectivePermissions(
+        from: VertexId,
+        to: VertexId,
+    ): EffectivePermissionsMessage {
+        return httpClient.post<EffectivePermissionsMessage>("$urlBase/gmmf/indexed/effective_permissions?from=$from&to=$to") {
+            contentType(ContentType.Application.Json)
+            accept(ContentType.Application.Json)
+        }
+    }
 }
