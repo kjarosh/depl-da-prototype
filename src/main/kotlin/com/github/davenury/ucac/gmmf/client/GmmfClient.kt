@@ -14,7 +14,7 @@ import io.ktor.http.contentType
 class GmmfClient(peer: PeerAddress) {
     private val urlBase: String = "http://${peer.address}"
 
-    suspend fun reaches(
+    suspend fun naiveReaches(
         from: VertexId,
         to: VertexId,
         ttl: Int,
@@ -25,7 +25,7 @@ class GmmfClient(peer: PeerAddress) {
         }
     }
 
-    suspend fun members(
+    suspend fun naiveMembers(
         of: VertexId,
         ttl: Int,
     ): MembersMessage {
@@ -35,7 +35,7 @@ class GmmfClient(peer: PeerAddress) {
         }
     }
 
-    suspend fun effectivePermissions(
+    suspend fun naiveEffectivePermissions(
         from: VertexId,
         to: VertexId,
         ttl: Int,
