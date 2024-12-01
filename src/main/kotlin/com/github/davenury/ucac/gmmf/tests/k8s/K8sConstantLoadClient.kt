@@ -14,7 +14,14 @@ import org.slf4j.LoggerFactory
 /**
  * @author Kamil Jarosz
  */
-class K8sConstantLoadClient(namespace: String, graph: ByteArray, private val constantLoadOpts: String, resourceCpu: String, resourceMemory: String) {
+class K8sConstantLoadClient(
+    private val image: String?,
+    namespace: String,
+    graph: ByteArray,
+    private val constantLoadOpts: String,
+    resourceCpu: String,
+    resourceMemory: String,
+) {
     private val configMap: K8sGraphConfigMap
     private val namespace: String
     private val graphName = "constant-client-graph"
@@ -51,9 +58,9 @@ class K8sConstantLoadClient(namespace: String, graph: ByteArray, private val con
     private fun buildContainer(): V1Container {
         return V1ContainerBuilder()
             .withName("constant-load-client")
-            .withImage(K8sPeer.DEFAULT_IMAGE)
-            .withCommand("tests", "com.github.davenury.ucac.gmmf.tests.cli.ConstantLoadClientMain")
-            .withArgs("-g", "/graph/graph.json")
+            .withImage(image ?: K8sPeer.DEFAULT_IMAGE)
+            .withImagePullPolicy("Always")
+            .withArgs("constant-load", "-g", "/graph/graph.json")
             .addToArgs(*constantLoadOpts.split("\\s+".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray())
             .addNewVolumeMount()
             .withName(volumeName)

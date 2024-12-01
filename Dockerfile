@@ -4,8 +4,8 @@ RUN apk add --no-cache openjdk11 jattach --repository http://dl-cdn.alpinelinux.
 
 WORKDIR /application
 
-ADD build/distributions/depl-da-prototype-*.tar /application
+ADD build/distributions/depl-da-prototype-0.1.0.tar /application
 
 EXPOSE 8080
 
-ENTRYPOINT ["sh", "-c", "/application/depl-da-prototype-*/bin/depl-da-prototype"]
+ENTRYPOINT ["/application/depl-da-prototype-0.1.0/bin/depl-da-prototype"]

@@ -27,6 +27,7 @@ import com.github.davenury.ucac.common.ChangeNotifier
 import com.github.davenury.ucac.common.MultiplePeersetProtocols
 import com.github.davenury.ucac.common.structure.Subscribers
 import com.github.davenury.ucac.gmmf.routing.gmmfRouting
+import com.github.davenury.ucac.gmmf.tests.cli.ConstantLoadClientMain
 import com.github.davenury.ucac.history.historyRouting
 import com.github.davenury.ucac.routing.alvinProtocolRouting
 import com.github.davenury.ucac.routing.gpacProtocolRouting
@@ -71,6 +72,14 @@ import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.jvm.isAccessible
 
 fun main(args: Array<String>) {
+    println("Args: " + args.contentToString())
+    if (args.isNotEmpty()) {
+        if (args[0] == "constant-load") {
+            ConstantLoadClientMain.main(args)
+            return
+        }
+    }
+
     val configPrefix = "config_"
     val configOverrides = HashMap<String, String>()
     configOverrides.putAll(
