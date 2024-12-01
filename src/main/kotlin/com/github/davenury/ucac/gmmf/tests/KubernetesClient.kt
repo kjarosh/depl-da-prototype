@@ -53,15 +53,16 @@ object KubernetesClient {
         resourceMemory = cmd.getOptionValue("require-memory", "2Gi")
 
         try {
+            val image = cmd.getOptionValue("i", K8sPeer.DEFAULT_IMAGE)
             if (cmd.hasOption("p")) {
                 val peersets = cmd.getOptionValue("p").split(",").map { it.toInt() }
-                setupPeers(cmd.getOptionValue("i", K8sPeer.DEFAULT_IMAGE), peersets)
+                setupPeers(image, peersets)
             }
 
             if (cmd.hasOption("g") && cmd.hasOption("constant-load-opts")) {
                 val constantLoadOpts = cmd.getOptionValue("constant-load-opts")
                 val graphPath = Paths.get(cmd.getOptionValue("g"))
-                setupConstantLoad(constantLoadOpts, graphPath)
+                setupConstantLoad(image, constantLoadOpts, graphPath)
             }
         } catch (e: ApiException) {
             processApiException(e)
@@ -98,13 +99,14 @@ object KubernetesClient {
 
     @Throws(ApiException::class)
     private fun setupConstantLoad(
+        image: String,
         constantLoadOpts: String,
         graphPath: Path,
     ) {
         try {
             Files.newInputStream(graphPath).use { `is` ->
                 val contents: ByteArray = ByteStreams.toByteArray(`is`)
-                K8sConstantLoadClient(namespace!!, contents, constantLoadOpts, resourceCpu!!, resourceMemory!!)
+                K8sConstantLoadClient(image, namespace!!, contents, constantLoadOpts, resourceCpu!!, resourceMemory!!)
                     .apply()
             }
         } catch (e: IOException) {
