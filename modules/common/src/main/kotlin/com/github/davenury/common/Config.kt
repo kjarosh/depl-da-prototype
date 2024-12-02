@@ -4,8 +4,13 @@ import com.sksamuel.hoplite.ConfigLoaderBuilder
 import com.sksamuel.hoplite.addResourceSource
 import com.sksamuel.hoplite.decoder.Decoder
 import com.sksamuel.hoplite.sources.MapPropertySource
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
+val logger: Logger = LoggerFactory.getLogger("config")
 
 fun parsePeersets(peersets: String): Map<PeersetId, List<PeerId>> {
+    if (peersets.isEmpty()) return mapOf()
     return peersets.split(";").associate { parsePeerset(it) }
 }
 
@@ -15,6 +20,7 @@ fun parsePeerset(peerset: String): Pair<PeersetId, List<PeerId>> {
 }
 
 fun parsePeers(peers: String): Map<PeerId, PeerAddress> {
+    if (peers.isEmpty()) return mapOf()
     return peers.split(";").associate { parsePeer(it) }
 }
 
@@ -32,6 +38,7 @@ inline fun <reified T> loadConfig(
         System.getProperty("configFile")
             ?: System.getenv("CONFIG_FILE")
             ?: "application.conf"
+    logger.info("Using config file: $configFile")
     return loadConfig(configFile, overrides, decoders = decoders)
 }
 

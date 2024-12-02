@@ -27,7 +27,7 @@ fun Application.gmmfIndexedRouting(
 
     fun client(peersetId: PeersetId): GmmfClient {
         val peer = peerResolver.getPeerFromPeerset(peersetId)
-        return GmmfClient(peer)
+        return GmmfClient(peerResolver, peer)
     }
 
     suspend fun members(of: String): Set<VertexId> {

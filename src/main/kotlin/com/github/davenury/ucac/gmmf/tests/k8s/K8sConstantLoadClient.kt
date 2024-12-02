@@ -3,8 +3,10 @@ package com.github.davenury.ucac.gmmf.tests.k8s
 import io.kubernetes.client.custom.Quantity
 import io.kubernetes.client.openapi.ApiException
 import io.kubernetes.client.openapi.apis.BatchV1Api
+import io.kubernetes.client.openapi.models.V1ConfigMapEnvSource
 import io.kubernetes.client.openapi.models.V1Container
 import io.kubernetes.client.openapi.models.V1ContainerBuilder
+import io.kubernetes.client.openapi.models.V1EnvFromSource
 import io.kubernetes.client.openapi.models.V1Job
 import io.kubernetes.client.openapi.models.V1JobBuilder
 import io.kubernetes.client.openapi.models.V1Volume
@@ -15,6 +17,7 @@ import org.slf4j.LoggerFactory
  * @author Kamil Jarosz
  */
 class K8sConstantLoadClient(
+    private val configMapName: String,
     private val image: String?,
     namespace: String,
     graph: ByteArray,
@@ -66,6 +69,17 @@ class K8sConstantLoadClient(
             .withName(volumeName)
             .withNewMountPath("/graph")
             .endVolumeMount()
+            .addNewEnv()
+            .withName("CONFIG_FILE")
+            .withValue("application-kubernetes-test-client.conf")
+            .endEnv()
+            .withEnvFrom(
+                V1EnvFromSource()
+                    .configMapRef(
+                        V1ConfigMapEnvSource()
+                            .name(configMapName),
+                    ),
+            )
             .editOrNewResources()
             .addToRequests("cpu", Quantity.fromString(resourceCpu))
             .addToRequests("memory", Quantity.fromString(resourceMemory))

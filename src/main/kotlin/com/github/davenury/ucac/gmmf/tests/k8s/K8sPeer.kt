@@ -4,11 +4,13 @@ import io.kubernetes.client.custom.Quantity
 import io.kubernetes.client.openapi.ApiException
 import io.kubernetes.client.openapi.apis.AppsV1Api
 import io.kubernetes.client.openapi.apis.CoreV1Api
+import io.kubernetes.client.openapi.models.V1ConfigMapEnvSource
 import io.kubernetes.client.openapi.models.V1Container
 import io.kubernetes.client.openapi.models.V1ContainerBuilder
 import io.kubernetes.client.openapi.models.V1Deployment
 import io.kubernetes.client.openapi.models.V1DeploymentBuilder
 import io.kubernetes.client.openapi.models.V1DeploymentSpec
+import io.kubernetes.client.openapi.models.V1EnvFromSource
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimBuilder
 import io.kubernetes.client.openapi.models.V1PodSpec
@@ -26,10 +28,10 @@ import java.util.Optional
  * @author Kamil Jarosz
  */
 class K8sPeer(
+    private val configMapName: String,
     image: String?,
     private val namespace: String,
     private val peerId: String,
-    private val peersets: List<Int>,
     resourceCpu: String,
     resourceMemory: String,
 ) {
@@ -51,35 +53,6 @@ class K8sPeer(
         this.pvcName = "$peerId-pvc"
         this.resourceCpu = resourceCpu
         this.resourceMemory = resourceMemory
-    }
-
-    private fun getPeers(): String {
-        var peers = ""
-        val totalPeers = peersets.sum()
-        for (i in 0..<totalPeers) {
-            peers += "peer$i=peer$i;"
-        }
-        return peers.substring(0, peers.length - 1)
-    }
-
-    private fun getPeersets(): String {
-        var peers = ""
-        var peerId = 0
-        for ((i, p) in peersets.withIndex()) {
-            peers += "peerset$i="
-            for (j in 0..<p) {
-                peers += "peer$peerId,"
-                peerId += 1
-            }
-            if (peers.endsWith(",")) {
-                peers = peers.substring(0, peers.length - 1)
-            }
-            peers += ";"
-        }
-        if (peers.endsWith(";")) {
-            peers = peers.substring(0, peers.length - 1)
-        }
-        return peers
     }
 
     private fun buildDeployment(old: V1Deployment): V1Deployment {
@@ -150,30 +123,16 @@ class K8sPeer(
         return V1ContainerBuilder(old)
             .withName("zone")
             .withImage(image)
-            .withArgs("server")
-            .addNewEnv()
-            .withName("CONFIG_FILE")
-            .withValue("application-kubernetes.conf")
-            .endEnv()
-            .addNewEnv()
-            .withName("config_port")
-            .withValue("80")
-            .endEnv()
+            .withEnvFrom(
+                V1EnvFromSource()
+                    .configMapRef(
+                        V1ConfigMapEnvSource()
+                            .name(configMapName),
+                    ),
+            )
             .addNewEnv()
             .withName("config_peerId")
             .withValue(peerId)
-            .endEnv()
-            .addNewEnv()
-            .withName("config_peers")
-            .withValue(getPeers())
-            .endEnv()
-            .addNewEnv()
-            .withName("config_peersets")
-            .withValue(getPeersets())
-            .endEnv()
-            .addNewEnv()
-            .withName("config_metricTest")
-            .withValue("false")
             .endEnv()
             .addNewPort()
             .withContainerPort(80)
@@ -181,7 +140,7 @@ class K8sPeer(
             .editOrNewReadinessProbe()
             .editOrNewHttpGet()
             .withNewPort(80)
-            .withPath("/healthcheck")
+            .withPath("/_meta/health")
             .endHttpGet()
             .endReadinessProbe()
             .withImagePullPolicy("Always")
@@ -259,15 +218,34 @@ class K8sPeer(
 
     @Throws(ApiException::class)
     private fun applyDeployment() {
+        if (existsDeployment()) {
+            logger.info("  Deleting old deployment...")
+            appsApi.deleteNamespacedDeployment(deploymentName, namespace, null, null, 0, null, null, null)
+
+            while (existsDeployment()) {
+                try {
+                    Thread.sleep(200)
+                } catch (e: InterruptedException) {
+                    Thread.currentThread().interrupt()
+                    throw RuntimeException(e)
+                }
+            }
+        }
+
+        createDeployment()
+    }
+
+    @Throws(ApiException::class)
+    fun existsDeployment(): Boolean {
         try {
-            val oldDeployment = appsApi.readNamespacedDeploymentStatus(deploymentName, namespace, null)
-            replaceDeployment(oldDeployment)
+            appsApi.readNamespacedDeploymentStatus(deploymentName, namespace, null)
+            return true
         } catch (e: ApiException) {
-            if (e.code != 404) {
-                throw e
+            if (e.code == 404) {
+                return false
             }
 
-            createDeployment()
+            throw e
         }
     }
 

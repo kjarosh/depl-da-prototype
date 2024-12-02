@@ -2,6 +2,7 @@ package com.github.davenury.ucac.gmmf.tests
 
 import com.github.davenury.ucac.gmmf.tests.k8s.K8sConstantLoadClient
 import com.github.davenury.ucac.gmmf.tests.k8s.K8sPeer
+import com.github.davenury.ucac.gmmf.tests.k8s.K8sPeerConfigMap
 import com.google.common.io.ByteStreams
 import io.kubernetes.client.openapi.ApiException
 import io.kubernetes.client.openapi.Configuration
@@ -30,10 +31,12 @@ object KubernetesClient {
     @Throws(ParseException::class)
     @JvmStatic
     fun main(args: Array<String>) {
+        println(args.contentToString())
         val options = Options()
         options.addOption("c", "config", true, "path to kubectl config")
         options.addOption("n", "namespace", true, "k8s namespace")
         options.addOption("p", "peersets", true, "peersets configuration, e.g. 3,2,6,7")
+        options.addOption("P", "setup-peers", false, "whether to set up peers")
         options.addOption("g", "graph", true, "path to the graph to use")
         options.addOption("i", "image", true, "desired docker image")
         options.addOption(null, "require-cpu", true, "cpu requirement for k8s")
@@ -52,17 +55,23 @@ object KubernetesClient {
         resourceCpu = cmd.getOptionValue("require-cpu", "1")
         resourceMemory = cmd.getOptionValue("require-memory", "2Gi")
 
+        val peersets =
+            if (cmd.hasOption("p")) {
+                cmd.getOptionValue("p").split(",").map { it.toInt() }
+            } else {
+                return
+            }
+
         try {
             val image = cmd.getOptionValue("i", K8sPeer.DEFAULT_IMAGE)
-            if (cmd.hasOption("p")) {
-                val peersets = cmd.getOptionValue("p").split(",").map { it.toInt() }
+            if (cmd.hasOption("P")) {
                 setupPeers(image, peersets)
             }
 
             if (cmd.hasOption("g") && cmd.hasOption("constant-load-opts")) {
                 val constantLoadOpts = cmd.getOptionValue("constant-load-opts")
                 val graphPath = Paths.get(cmd.getOptionValue("g"))
-                setupConstantLoad(image, constantLoadOpts, graphPath)
+                setupConstantLoad(image, peersets, constantLoadOpts, graphPath)
             }
         } catch (e: ApiException) {
             processApiException(e)
@@ -91,22 +100,36 @@ object KubernetesClient {
         image: String,
         peersets: List<Int>,
     ) {
+        val configMapName = "peer-config"
+        setupPeerConfigMap(configMapName, peersets)
         val peers = peersets.sum()
         for (p in 0 until peers) {
-            K8sPeer(image, namespace!!, "peer$p", peersets, resourceCpu!!, resourceMemory!!).apply()
+            K8sPeer(configMapName, image, namespace!!, "peer$p", resourceCpu!!, resourceMemory!!).apply()
         }
+    }
+
+    @Throws(ApiException::class)
+    private fun setupPeerConfigMap(
+        configMapName: String,
+        peersets: List<Int>,
+    ) {
+        K8sPeerConfigMap(configMapName, namespace!!, peersets).apply()
     }
 
     @Throws(ApiException::class)
     private fun setupConstantLoad(
         image: String,
+        peersets: List<Int>,
         constantLoadOpts: String,
         graphPath: Path,
     ) {
         try {
+            val configMapName = "constant-load-config"
+            setupPeerConfigMap(configMapName, peersets)
+
             Files.newInputStream(graphPath).use { `is` ->
                 val contents: ByteArray = ByteStreams.toByteArray(`is`)
-                K8sConstantLoadClient(image, namespace!!, contents, constantLoadOpts, resourceCpu!!, resourceMemory!!)
+                K8sConstantLoadClient(configMapName, image, namespace!!, contents, constantLoadOpts, resourceCpu!!, resourceMemory!!)
                     .apply()
             }
         } catch (e: IOException) {
