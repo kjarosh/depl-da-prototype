@@ -28,7 +28,7 @@ fun Application.gmmfNaiveRouting(
 
     fun client(peersetId: PeersetId): GmmfClient {
         val peer = peerResolver.getPeerFromPeerset(peersetId)
-        return GmmfClient(peer)
+        return GmmfClient(peerResolver, peer)
     }
 
     fun newTtl(ttl: Int): Int {

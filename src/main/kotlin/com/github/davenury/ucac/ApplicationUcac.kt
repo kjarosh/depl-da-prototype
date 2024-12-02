@@ -73,12 +73,6 @@ import kotlin.reflect.jvm.isAccessible
 
 fun main(args: Array<String>) {
     println("Args: " + args.contentToString())
-    if (args.isNotEmpty()) {
-        if (args[0] == "constant-load") {
-            ConstantLoadClientMain.main(args)
-            return
-        }
-    }
 
     val configPrefix = "config_"
     val configOverrides = HashMap<String, String>()
@@ -90,6 +84,18 @@ fun main(args: Array<String>) {
     )
 
     ApplicationUcac.logger.info("Using overrides: $configOverrides")
+
+    if (args.isNotEmpty()) {
+        configOverrides["port"] = "0"
+        configOverrides["peerId"] = ""
+        val config = loadConfig<Config>(configOverrides)
+        if (args[0] == "constant-load") {
+            ConstantLoadClientMain.main(config, args)
+            return
+        }
+
+        throw RuntimeException("Unknown args: $args")
+    }
 
     val application = createApplication(configOverrides = configOverrides)
     application.startNonblocking()
@@ -162,6 +168,7 @@ class ApplicationUcac(
         embeddedServer(Netty, port = config.port, host = "0.0.0.0") {
             val peersetIds = config.peersetIds()
 
+            logger.info("Using port: ${config.port}")
             logger.info("My peersets: $peersetIds")
             val changeNotifier = ChangeNotifier(peerResolver)
 

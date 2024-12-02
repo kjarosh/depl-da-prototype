@@ -11,6 +11,7 @@ class PeerResolver(
     private val currentPeer: PeerId,
     peers: Map<PeerId, PeerAddress>,
     peersets: Map<PeersetId, List<PeerId>>,
+    private val peerIdIsAddress: Boolean = false,
 ) {
     private val peers: MutableMap<PeerId, PeerAddress>
     private val peersets: MutableMap<PeersetId, MutableList<PeerId>>
@@ -25,6 +26,9 @@ class PeerResolver(
     }
 
     fun resolve(peerId: PeerId): PeerAddress {
+        if (peerIdIsAddress) {
+            return PeerAddress(peerId, peerId.toString())
+        }
         return peers[peerId]!!
     }
 

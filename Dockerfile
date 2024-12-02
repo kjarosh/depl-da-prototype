@@ -1,6 +1,6 @@
 FROM alpine:3.20.2
 
-RUN apk add --no-cache openjdk11 jattach --repository http://dl-cdn.alpinelinux.org/alpine/edge/community/
+RUN apk add --no-cache openjdk11 jattach bash curl --repository http://dl-cdn.alpinelinux.org/alpine/edge/community/
 
 WORKDIR /application
 

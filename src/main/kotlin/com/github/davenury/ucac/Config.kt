@@ -23,6 +23,7 @@ data class Config(
     val experimentId: String?,
     val workerPoolSize: Int = 1,
     val configureTraces: Boolean = false,
+    val peerIdIsAddress: Boolean = false,
 ) {
     fun peerId() = PeerId(peerId)
 
@@ -31,7 +32,7 @@ data class Config(
             .filterValues { peers -> peers.contains(PeerId(peerId)) }
             .keys
 
-    fun newPeerResolver() = PeerResolver(peerId(), parsePeers(peers), parsePeersets(peersets))
+    fun newPeerResolver() = PeerResolver(peerId(), parsePeers(peers), parsePeersets(peersets), peerIdIsAddress)
 }
 
 data class TwoPCConfig(val changeDelay: Duration = Duration.ofSeconds(120))
