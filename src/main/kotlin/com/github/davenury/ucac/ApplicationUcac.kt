@@ -109,15 +109,17 @@ fun createApplication(
     signalListeners: Map<Signal, SignalListener> = emptyMap(),
     configOverrides: Map<String, Any> = emptyMap(),
     subscribers: Map<PeersetId, Subscribers> = emptyMap(),
+    disableMetrics: Boolean = false,
 ): ApplicationUcac {
     val config = loadConfig<Config>(configOverrides)
-    return ApplicationUcac(signalListeners, config, subscribers)
+    return ApplicationUcac(signalListeners, config, subscribers, disableMetrics)
 }
 
 class ApplicationUcac(
     private val signalListeners: Map<Signal, SignalListener> = emptyMap(),
     private val config: Config,
     private val subscribers: Map<PeersetId, Subscribers>,
+    private val disableMetrics: Boolean,
 ) {
     private val mdc: MutableMap<String, String> = HashMap(mapOf("peer" to config.peerId().toString()))
     private val peerResolver = config.newPeerResolver()
@@ -200,12 +202,14 @@ class ApplicationUcac(
 
             service = ApiV2Service(config, multiplePeersetProtocols, changeNotifier, peerResolver)
 
-            install(OpenTracingServer) {
-                addTag("threadName") { Thread.currentThread().name }
-                config.experimentId?.let { addTag("experiment") { it } }
-                filter {
-                        call ->
-                    call.request.path().startsWith("/_meta") || call.request.path().startsWith("/consensus/heartbeat")
+            if (!disableMetrics) {
+                install(OpenTracingServer) {
+                    addTag("threadName") { Thread.currentThread().name }
+                    config.experimentId?.let { addTag("experiment") { it } }
+                    filter {
+                            call ->
+                        call.request.path().startsWith("/_meta") || call.request.path().startsWith("/consensus/heartbeat")
+                    }
                 }
             }
 
@@ -228,14 +232,16 @@ class ApplicationUcac(
                 register(ContentType.Application.Json, JacksonConverter(objectMapper))
             }
 
-            install(MicrometerMetrics) {
-                registry = meterRegistry
-                meterBinders =
-                    listOf(
-                        JvmMemoryMetrics(),
-                        JvmGcMetrics(),
-                        ProcessorMetrics(),
-                    )
+            if (!disableMetrics) {
+                install(MicrometerMetrics) {
+                    registry = meterRegistry
+                    meterBinders =
+                        listOf(
+                            JvmMemoryMetrics(),
+                            JvmGcMetrics(),
+                            ProcessorMetrics(),
+                        )
+                }
             }
 
             install(StatusPages) {
@@ -350,7 +356,9 @@ class ApplicationUcac(
                 }
             }
 
-            metaRouting()
+            if (!disableMetrics) {
+                metaRouting()
+            }
             historyRouting(multiplePeersetProtocols)
             apiV2Routing(service)
             gpacProtocolRouting(multiplePeersetProtocols)
