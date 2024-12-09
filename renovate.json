@@ -5,5 +5,13 @@
   ],
   "ignorePaths": [
     "misc/**/*"
+  ],
+  "packageRules": [
+    {
+      "groupName": "hoplite",
+      "matchPackageNames": [
+        "com.sksamuel.hoplite:hoplite-*"
+      ]
+    }
   ]
 }
