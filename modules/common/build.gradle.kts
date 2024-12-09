@@ -29,8 +29,8 @@ dependencies {
     implementation("io.ktor:ktor-metrics-micrometer:$ktorVersion")
 
     // config reading
-    implementation("com.sksamuel.hoplite:hoplite-core:2.7.5")
-    implementation("com.sksamuel.hoplite:hoplite-hocon:2.7.5")
+    implementation("com.sksamuel.hoplite:hoplite-core:2.9.0")
+    implementation("com.sksamuel.hoplite:hoplite-hocon:2.9.0")
 
     implementation(kotlin("stdlib-jdk8"))
 
