@@ -37,7 +37,7 @@ dependencies {
     implementation("io.ktor:ktor-metrics-micrometer:$ktorVersion")
     implementation("io.prometheus:simpleclient_pushgateway:0.16.0")
 
-    implementation("com.sksamuel.hoplite:hoplite-core:2.7.5")
+    implementation("com.sksamuel.hoplite:hoplite-core:2.9.0")
 
     implementation(project(":modules:common"))
 
