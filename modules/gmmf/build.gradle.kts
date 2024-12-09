@@ -15,7 +15,7 @@ dependencies {
     testCompileOnly("org.projectlombok:lombok:1.18.34")
     testAnnotationProcessor("org.projectlombok:lombok:1.18.34")
     implementation("com.github.javafaker:javafaker:1.0.2")
-    implementation("com.google.guava:guava:31.1-jre")
+    implementation("com.google.guava:guava:33.3.1-jre")
     implementation(platform("org.springframework.boot:spring-boot-dependencies:2.7.4"))
     implementation("org.springframework.boot:spring-boot-starter:2.7.4")
     implementation("org.springframework.boot:spring-boot-starter-web:2.7.4")
