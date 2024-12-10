@@ -21,7 +21,7 @@ dependencies {
     implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
     implementation("io.ktor:ktor-client-jackson:$ktorVersion")
 
-    implementation("io.micrometer:micrometer-registry-prometheus:1.9.2")
+    implementation("io.micrometer:micrometer-registry-prometheus:1.14.2")
     // traces
     implementation("io.jaegertracing:jaeger-client:1.8.1")
     implementation("com.zopa:ktor-opentracing:0.3.6")
