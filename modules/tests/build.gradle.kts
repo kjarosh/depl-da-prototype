@@ -33,7 +33,7 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
     implementation("com.github.loki4j:loki-logback-appender:1.4.0")
 
-    implementation("io.micrometer:micrometer-registry-prometheus:1.9.2")
+    implementation("io.micrometer:micrometer-registry-prometheus:1.14.2")
     implementation("io.ktor:ktor-metrics-micrometer:$ktorVersion")
     implementation("io.prometheus:simpleclient_pushgateway:0.16.0")
 
