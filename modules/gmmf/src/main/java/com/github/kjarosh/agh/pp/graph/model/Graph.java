@@ -38,6 +38,8 @@ public interface Graph {
 
     Collection<ZoneId> allZones();
 
+    ZoneId getCurrentZoneId();
+
     void serialize(OutputStream os);
 
     default Set<VertexId> getDestinationsBySource(VertexId source) {

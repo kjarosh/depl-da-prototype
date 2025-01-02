@@ -28,8 +28,8 @@ import java.util.UUID;
 @EqualsAndHashCode
 @ToString
 public class Event {
-    @JsonIgnore
-    private final String id = UUID.randomUUID().toString();
+    @JsonProperty("id")
+    private String id;
 
     @JsonProperty("type")
     private EventType type;
@@ -47,11 +47,13 @@ public class Event {
     private Set<VertexId> effectiveVertices;
 
     public Event(
+            String id,
             EventType type,
             String trace,
             VertexId sender,
             VertexId originalSender,
             Set<VertexId> effectiveVertices) {
+        this.id = id;
         this.type = type;
         this.trace = trace;
         this.sender = sender;

@@ -45,7 +45,7 @@ class PeersetProtocols(
     }
 
     val indexFromHistory: IndexFromHistory by lazy {
-        IndexFromHistory(history)
+        IndexFromHistory(history, graphFromHistory)
     }
 
     init {
