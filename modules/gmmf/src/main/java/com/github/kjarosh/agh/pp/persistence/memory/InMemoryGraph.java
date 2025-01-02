@@ -148,6 +148,11 @@ public class InMemoryGraph implements Graph {
     }
 
     @Override
+    public ZoneId getCurrentZoneId() {
+        return currentZoneId;
+    }
+
+    @Override
     @SneakyThrows
     public void serialize(OutputStream os) {
         Json json = new Json();

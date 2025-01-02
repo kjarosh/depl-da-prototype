@@ -27,6 +27,7 @@ import io.ktor.routing.get
 import io.ktor.routing.post
 import io.ktor.routing.routing
 import kotlinx.coroutines.future.await
+import java.util.UUID
 
 fun Application.gmmfGraphModificationRouting(multiplePeersetProtocols: MultiplePeersetProtocols) {
     fun ApplicationCall.consensus(): ConsensusProtocol {
@@ -95,8 +96,8 @@ fun Application.gmmfGraphModificationRouting(multiplePeersetProtocols: MultipleP
                 null
             }
 
+        val tx = AddEdgeTx(from, to, permissions, UUID.randomUUID().toString(), UUID.randomUUID().toString())
         if (fromLocal && toLocal) {
-            val tx = AddEdgeTx(from, to, permissions)
             val change =
                 StandardChange(
                     tx.serialize(),
@@ -104,7 +105,6 @@ fun Application.gmmfGraphModificationRouting(multiplePeersetProtocols: MultipleP
                 )
             call.consensus().proposeChangeAsync(change).await().assertSuccess()
         } else if (fromLocal || toLocal) {
-            val tx = AddEdgeTx(from, to, permissions)
             val change =
                 StandardChange(
                     tx.serialize(),

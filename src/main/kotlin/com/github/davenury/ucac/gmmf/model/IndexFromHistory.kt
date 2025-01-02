@@ -8,8 +8,10 @@ import com.github.kjarosh.agh.pp.index.VertexIndices
 
 class IndexFromHistory(
     history: History,
+    private val graphFromHistory: GraphFromHistory,
 ) {
     private val indices = VertexIndices()
+    private val eventDatabase = EventDatabase(graphFromHistory.getGraph().currentZoneId)
 
     init {
         history.addListener(
@@ -37,7 +39,8 @@ class IndexFromHistory(
 
     private fun applyNewEntry(entry: HistoryEntry) {
         Change.fromHistoryEntry(entry)?.getAppliedContent()?.let {
-            IndexTransaction.deserialize(it)?.apply(indices)
+            IndexTransaction.deserialize(it)?.apply(indices, eventDatabase)
+            GraphTransaction.deserialize(it)?.applyEvents(graphFromHistory.getGraph(), indices, eventDatabase)
         }
     }
 
