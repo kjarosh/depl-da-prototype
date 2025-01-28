@@ -2,11 +2,13 @@ package com.github.davenury.ucac.gmmf.tests
 
 import com.github.davenury.common.PeerId
 import com.github.davenury.common.PeersetId
+import com.github.davenury.ucac.common.PeerResolver
 import com.github.davenury.ucac.gmmf.client.GmmfClient
 import com.github.kjarosh.agh.pp.graph.model.Edge
 import com.github.kjarosh.agh.pp.graph.model.Graph
 import com.github.kjarosh.agh.pp.graph.model.Vertex
 import com.github.kjarosh.agh.pp.graph.model.ZoneId
+import com.github.kjarosh.agh.pp.rest.dto.BulkVertexCreationRequestDto
 import com.github.kjarosh.agh.pp.rest.dto.EdgeCreationRequestDto
 import com.github.kjarosh.agh.pp.rest.dto.VertexCreationRequestDto
 import com.google.common.collect.Lists
@@ -24,9 +26,28 @@ import java.util.stream.Collectors.toSet
 /**
  * @author Kamil Jarosz
  */
-class RemoteGraphBuilder(private val graph: Graph, private val client: GmmfClient) {
+class RemoteGraphBuilder(private val graph: Graph, private val peerResolver: PeerResolver) {
     private val verticesBuilt = AtomicInteger(0)
     private val edgesBuilt = AtomicInteger(0)
+
+    private val clients: MutableMap<PeerId, GmmfClient> = mutableMapOf()
+
+    private fun getClient(zoneId: ZoneId): GmmfClient {
+        return getClient(PeersetId(zoneId.id))
+    }
+
+    private fun getClient(peersetId: PeersetId): GmmfClient {
+        val peer = peerResolver.getPeerFromPeerset(peersetId)
+        return clients.computeIfAbsent(peer.peerId) {
+            GmmfClient(peerResolver, peer)
+        }
+    }
+
+    private fun getClient(peerId: PeerId): GmmfClient {
+        return clients.computeIfAbsent(peerId) {
+            GmmfClient(peerResolver, peerResolver.resolve(peerId))
+        }
+    }
 
     fun build(vararg options: BulkOption?) {
         val optionsSet = if (options.isEmpty()) EnumSet.noneOf(BulkOption::class.java) else EnumSet.copyOf(listOf(*options))
@@ -38,7 +59,7 @@ class RemoteGraphBuilder(private val graph: Graph, private val client: GmmfClien
                 .stream()
                 .filter { z -> z != null }
                 .map { zone: ZoneId -> PeersetId(zone.toString()) }
-                .flatMap { peersetId -> client.peerResolver.getPeersFromPeerset(peersetId).stream() }
+                .flatMap { peersetId -> peerResolver.getPeersFromPeerset(peersetId).stream() }
                 .map { address -> address.peerId }
                 .collect(toSet())
 
@@ -54,15 +75,19 @@ class RemoteGraphBuilder(private val graph: Graph, private val client: GmmfClien
             )
         supervisor.start()
         try {
-            if (false && !optionsSet.contains(BulkOption.NO_BULK_VERTICES)) {
+            if (!optionsSet.contains(BulkOption.NO_BULK_VERTICES)) {
+                logger.info("Building vertices in bulk")
                 buildVerticesBulk()
             } else {
+                logger.info("Building vertices")
                 buildVertices()
             }
 
-            if (false && !optionsSet.contains(BulkOption.NO_BULK_EDGES)) {
+            if (!optionsSet.contains(BulkOption.NO_BULK_EDGES)) {
+                logger.info("Building edges in bulk")
                 buildEdgesBulk()
             } else {
+                logger.info("Building edges")
                 buildEdges()
             }
 
@@ -92,8 +117,9 @@ class RemoteGraphBuilder(private val graph: Graph, private val client: GmmfClien
     }
 
     private fun healthy(allPeers: Collection<PeerId>): Boolean {
-        val notHealthy = allPeers.filter { peerId -> runBlocking { !client.healthcheck(peerId) } }
+        val notHealthy = allPeers.filter { peerId -> runBlocking { !getClient(peerId).healthcheck(peerId) } }
         if (notHealthy.isEmpty()) {
+            logger.info("All peers healthy")
             return true
         } else {
             logger.info("Peers not healthy: {}", notHealthy)
@@ -110,6 +136,7 @@ class RemoteGraphBuilder(private val graph: Graph, private val client: GmmfClien
                 )
 
         for (owner in groupedByOwner.keys) {
+            val client = getClient(owner)
             logger.debug("Sending batches of vertices to {}", owner)
             val vertices = groupedByOwner[owner]!!
             for (bulk in Lists.partition<Vertex>(vertices, BULK_SIZE)) {
@@ -123,7 +150,9 @@ class RemoteGraphBuilder(private val graph: Graph, private val client: GmmfClien
                         }
                         .collect(Collectors.toList())
                 logger.debug("Sending a batch of {} vertices to {}", requests.size, owner)
-                // TODO client.addVertices(owner, BulkVertexCreationRequestDto(requests))
+                runBlocking {
+                    client.addVertices(PeersetId(owner.id), BulkVertexCreationRequestDto(requests))
+                }
                 verticesBuilt.addAndGet(requests.size)
             }
             logger.debug("Finished sending batches of vertices to {}", owner)
@@ -136,7 +165,7 @@ class RemoteGraphBuilder(private val graph: Graph, private val client: GmmfClien
             .parallel()
             .forEach { v: Vertex ->
                 runBlocking {
-                    client.addVertex(v.id(), v.type())
+                    getClient(v.id().owner()).addVertex(v.id(), v.type())
                     verticesBuilt.incrementAndGet()
                 }
             }
@@ -198,7 +227,7 @@ class RemoteGraphBuilder(private val graph: Graph, private val client: GmmfClien
             .forEach { e: Edge ->
                 runBlocking {
                     edgesBuilt.getAndIncrement()
-                    client.addEdge(e.id(), e.permissions())
+                    getClient(e.id().from.owner()).addEdge(e.id(), e.permissions())
                 }
             }
     }

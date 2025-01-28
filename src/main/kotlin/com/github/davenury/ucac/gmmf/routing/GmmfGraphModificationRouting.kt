@@ -16,6 +16,7 @@ import com.github.kjarosh.agh.pp.graph.model.Permissions
 import com.github.kjarosh.agh.pp.graph.model.Vertex
 import com.github.kjarosh.agh.pp.graph.model.VertexId
 import com.github.kjarosh.agh.pp.graph.model.ZoneId
+import com.github.kjarosh.agh.pp.rest.dto.BulkVertexCreationRequestDto
 import io.ktor.application.Application
 import io.ktor.application.ApplicationCall
 import io.ktor.application.call
@@ -138,6 +139,14 @@ fun Application.gmmfGraphModificationRouting(multiplePeersetProtocols: MultipleP
         post("/gmmf/graph/vertex") {
             val request = call.receive<VertexMessage>()
             addVertex(call, request.name, request.type)
+            call.respond("")
+        }
+
+        post("/gmmf/graph/vertex/bulk") {
+            val request = call.receive<BulkVertexCreationRequestDto>()
+            for (vertex in request.vertices) {
+                addVertex(call, vertex.name, vertex.type)
+            }
             call.respond("")
         }
 

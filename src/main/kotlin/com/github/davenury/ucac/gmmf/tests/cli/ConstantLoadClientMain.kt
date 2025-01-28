@@ -1,7 +1,6 @@
 package com.github.davenury.ucac.gmmf.tests.cli
 
 import com.github.davenury.ucac.Config
-import com.github.davenury.ucac.gmmf.client.GmmfClient
 import com.github.davenury.ucac.gmmf.tests.RemoteGraphBuilder
 import com.github.kjarosh.agh.pp.graph.GraphLoader
 import com.zopa.ktor.opentracing.span
@@ -27,13 +26,12 @@ object ConstantLoadClientMain {
         val cmd = parser.parse(options, args)
 
         val peerResolver = config.newPeerResolver()
-        val client = GmmfClient(peerResolver, peerResolver.resolve("peer0"))
 
         if (cmd.hasOption("l")) {
             val graphPath = cmd.getOptionValue("g")
             logger.info("Loading graph {}", graphPath)
             val graph = GraphLoader.loadGraph(graphPath)
-            RemoteGraphBuilder(graph, client).build()
+            RemoteGraphBuilder(graph, peerResolver).build()
         }
     }
 }
