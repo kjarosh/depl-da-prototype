@@ -2,6 +2,7 @@ package com.github.davenury.ucac.gmmf.client
 
 import com.github.davenury.common.PeerAddress
 import com.github.davenury.common.PeerId
+import com.github.davenury.common.PeersetId
 import com.github.davenury.ucac.common.PeerResolver
 import com.github.davenury.ucac.gmmf.routing.EdgeMessage
 import com.github.davenury.ucac.gmmf.routing.EffectivePermissionsMessage
@@ -13,6 +14,7 @@ import com.github.kjarosh.agh.pp.graph.model.EdgeId
 import com.github.kjarosh.agh.pp.graph.model.Permissions
 import com.github.kjarosh.agh.pp.graph.model.Vertex
 import com.github.kjarosh.agh.pp.graph.model.VertexId
+import com.github.kjarosh.agh.pp.rest.dto.BulkVertexCreationRequestDto
 import io.ktor.client.request.accept
 import io.ktor.client.request.get
 import io.ktor.client.request.post
@@ -54,6 +56,17 @@ class GmmfClient(val peerResolver: PeerResolver, peer: PeerAddress) {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
             body = VertexMessage(id.name(), type)
+        }
+    }
+
+    suspend fun addVertices(
+        peersetId: PeersetId,
+        request: BulkVertexCreationRequestDto,
+    ) {
+        httpClient.post<HttpResponse>("$urlBase/gmmf/graph/vertex/bulk?peerset=$peersetId") {
+            contentType(ContentType.Application.Json)
+            accept(ContentType.Application.Json)
+            body = request
         }
     }
 
