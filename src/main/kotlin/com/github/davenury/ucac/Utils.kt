@@ -14,7 +14,8 @@ val httpClient =
             serializer = JacksonSerializer(objectMapper)
         }
         install(HttpTimeout) {
-            requestTimeoutMillis = 5_000
+            requestTimeoutMillis = 5 * 60 * 1_000
+            socketTimeoutMillis = 5 * 60 * 1_000
         }
         install(OpenTracingClient)
     }

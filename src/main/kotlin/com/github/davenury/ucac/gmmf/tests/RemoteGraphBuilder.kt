@@ -239,6 +239,6 @@ class RemoteGraphBuilder(private val graph: Graph, private val peerResolver: Pee
 
     companion object {
         private val logger = LoggerFactory.getLogger("remote-graph-builder")
-        private const val BULK_SIZE = 1000
+        private const val BULK_SIZE = 200
     }
 }
