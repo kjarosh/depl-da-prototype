@@ -8,6 +8,7 @@ import com.github.davenury.ucac.testHttpClient
 import com.github.kjarosh.agh.pp.graph.model.Permissions
 import com.github.kjarosh.agh.pp.graph.model.Vertex
 import com.github.kjarosh.agh.pp.graph.model.VertexId
+import com.github.kjarosh.agh.pp.rest.dto.BulkVertexCreationRequestDto
 import io.ktor.client.request.accept
 import io.ktor.client.request.get
 import io.ktor.client.request.post
@@ -41,6 +42,19 @@ abstract class IntegrationTestBase {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
             body = VertexMessage(name, type)
+        }
+    }
+
+    suspend fun addVertices(
+        peerName: String,
+        peerset: String,
+        vertices: BulkVertexCreationRequestDto,
+    ) {
+        logger.info("Adding ${vertices.vertices.size} vertices to $peerset through $peerName")
+        testHttpClient.post<HttpResponse>("http://${apps.getPeer(peerName).address}/gmmf/graph/vertex/bulk?peerset=$peerset") {
+            contentType(ContentType.Application.Json)
+            accept(ContentType.Application.Json)
+            body = vertices
         }
     }
 
