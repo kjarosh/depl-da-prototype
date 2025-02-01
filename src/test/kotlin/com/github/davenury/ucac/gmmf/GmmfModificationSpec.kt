@@ -7,6 +7,8 @@ import com.github.kjarosh.agh.pp.graph.model.Permissions
 import com.github.kjarosh.agh.pp.graph.model.Vertex
 import com.github.kjarosh.agh.pp.graph.model.VertexId
 import com.github.kjarosh.agh.pp.graph.model.ZoneId
+import com.github.kjarosh.agh.pp.rest.dto.BulkVertexCreationRequestDto
+import com.github.kjarosh.agh.pp.rest.dto.VertexCreationRequestDto
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -35,6 +37,39 @@ class GmmfModificationSpec : IntegrationTestBase() {
 
             expectCatching {
                 addVertex("peer1", "peerset0", "user2", Vertex.Type.USER)
+            }.isSuccess()
+
+            val user1Peer0 = getVertex("peer0", "peerset0", "user1")
+            val user2Peer0 = getVertex("peer0", "peerset0", "user2")
+            val user1Peer1 = getVertex("peer1", "peerset0", "user1")
+            val user2Peer1 = getVertex("peer1", "peerset0", "user2")
+
+            expectThat(user1Peer0.name).isEqualTo("user1")
+            expectThat(user1Peer0.type).isEqualTo(Vertex.Type.USER)
+            expectThat(user2Peer0.name).isEqualTo("user2")
+            expectThat(user2Peer0.type).isEqualTo(Vertex.Type.USER)
+            expectThat(user1Peer1.name).isEqualTo("user1")
+            expectThat(user1Peer1.type).isEqualTo(Vertex.Type.USER)
+            expectThat(user2Peer1.name).isEqualTo("user2")
+            expectThat(user2Peer1.type).isEqualTo(Vertex.Type.USER)
+        }
+
+    @Test
+    fun `add vertices`(): Unit =
+        runBlocking {
+            apps = TestApplicationSet(mapOf("peerset0" to listOf("peer0", "peer1")))
+
+            expectCatching {
+                addVertices(
+                    "peer0",
+                    "peerset0",
+                    BulkVertexCreationRequestDto(
+                        listOf(
+                            VertexCreationRequestDto("user1", Vertex.Type.USER),
+                            VertexCreationRequestDto("user2", Vertex.Type.USER),
+                        ),
+                    ),
+                )
             }.isSuccess()
 
             val user1Peer0 = getVertex("peer0", "peerset0", "user1")
