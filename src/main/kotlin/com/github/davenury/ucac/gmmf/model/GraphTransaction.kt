@@ -2,6 +2,7 @@ package com.github.davenury.ucac.gmmf.model
 
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
+import com.fasterxml.jackson.core.JacksonException
 import com.github.davenury.common.objectMapper
 import com.github.kjarosh.agh.pp.graph.model.Edge
 import com.github.kjarosh.agh.pp.graph.model.EdgeId
@@ -39,7 +40,11 @@ sealed class GraphTransaction {
         val logger: Logger = LoggerFactory.getLogger("graph-tx")
 
         fun deserialize(content: String): GraphTransaction? {
-            return objectMapper.readValue(content, GraphTransaction::class.java)
+            try {
+                return objectMapper.readValue(content, GraphTransaction::class.java)
+            } catch (e: JacksonException) {
+                return null
+            }
         }
     }
 }
