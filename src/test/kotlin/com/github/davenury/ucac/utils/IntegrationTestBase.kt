@@ -31,6 +31,18 @@ abstract class IntegrationTestBase {
         }
     }
 
+    suspend fun sync(
+        peerName: String,
+        peerset: String,
+    ) {
+        logger.info("Syncing $peerset through $peerName")
+        testHttpClient.post<HttpResponse>("http://${apps.getPeer(peerName).address}/gmmf/graph/sync?peerset=$peerset") {
+            contentType(ContentType.Application.Json)
+            accept(ContentType.Application.Json)
+            body = "test"
+        }
+    }
+
     suspend fun addVertex(
         peerName: String,
         peerset: String,

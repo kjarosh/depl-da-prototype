@@ -39,6 +39,8 @@ class GmmfModificationSpec : IntegrationTestBase() {
                 addVertex("peer1", "peerset0", "user2", Vertex.Type.USER)
             }.isSuccess()
 
+            sync("peer0", "peerset0")
+
             val user1Peer0 = getVertex("peer0", "peerset0", "user1")
             val user2Peer0 = getVertex("peer0", "peerset0", "user2")
             val user1Peer1 = getVertex("peer1", "peerset0", "user1")
@@ -72,6 +74,8 @@ class GmmfModificationSpec : IntegrationTestBase() {
                 )
             }.isSuccess()
 
+            sync("peer1", "peerset0")
+
             val user1Peer0 = getVertex("peer0", "peerset0", "user1")
             val user2Peer0 = getVertex("peer0", "peerset0", "user2")
             val user1Peer1 = getVertex("peer1", "peerset0", "user1")
@@ -99,6 +103,8 @@ class GmmfModificationSpec : IntegrationTestBase() {
             expectCatching {
                 addVertex("peer1", "peerset0", "user2", Vertex.Type.USER)
             }.isSuccess()
+
+            sync("peer0", "peerset0")
 
             val vertexUser1 = VertexId(ZoneId("peerset0"), "user1")
             val vertexUser2 = VertexId(ZoneId("peerset0"), "user2")
@@ -149,6 +155,10 @@ class GmmfModificationSpec : IntegrationTestBase() {
                 )
             }.isSuccess()
 
+            sync("peer0", "peerset0")
+            sync("peer1", "peerset0")
+            sync("peer3", "peerset1")
+
             expectCatching {
                 addEdge(
                     "peer0",
@@ -158,6 +168,10 @@ class GmmfModificationSpec : IntegrationTestBase() {
                     Permissions("11011"),
                 )
             }.isSuccess()
+
+            sync("peer1", "peerset0")
+            sync("peer2", "peerset1")
+            sync("peer3", "peerset1")
 
             val edge1 = getEdge("peer0", "peerset0", user1, user2)
             val edge2 = getEdge("peer1", "peerset0", user1, user2)

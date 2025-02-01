@@ -172,5 +172,15 @@ fun Application.gmmfGraphModificationRouting(multiplePeersetProtocols: MultipleP
                 call.respond(it)
             } ?: call.respond(HttpStatusCode.NotFound, "")
         }
+
+        post("/gmmf/graph/sync") {
+            val change =
+                StandardChange(
+                    "sync",
+                    peersets = listOf(ChangePeersetInfo(call.peersetId(), null)),
+                )
+            call.consensus().proposeChangeAsync(change).await().assertSuccess()
+            call.respond(HttpStatusCode.OK, "")
+        }
     }
 }
