@@ -47,4 +47,8 @@ class IndexFromHistory(
     fun getIndices(): VertexIndices {
         return indices
     }
+
+    fun isReady(): Boolean {
+        return eventDatabase.isEmpty()
+    }
 }

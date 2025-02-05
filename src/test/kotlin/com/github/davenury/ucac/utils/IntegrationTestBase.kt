@@ -15,8 +15,11 @@ import io.ktor.client.request.post
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
+import kotlinx.coroutines.delay
 import org.junit.jupiter.api.AfterEach
 import org.slf4j.LoggerFactory
+import java.time.Duration
+import java.time.Instant
 
 /**
  * @author Kamil Jarosz
@@ -40,6 +43,35 @@ abstract class IntegrationTestBase {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
             body = "test"
+        }
+    }
+
+    suspend fun waitForIndex(
+        peerName: String,
+        peerset: String,
+    ) {
+        logger.info("Waiting for index of $peerset through $peerName")
+        val start = Instant.now()
+        val deadline = start.plus(Duration.ofSeconds(60))
+        while (Instant.now() < deadline) {
+            if (indexReady(peerName, peerset)) {
+                return
+            }
+
+            delay(1000)
+        }
+
+        throw RuntimeException("Waiting for index timed out")
+    }
+
+    suspend fun indexReady(
+        peerName: String,
+        peerset: String,
+    ): Boolean {
+        logger.info("Checking index ready of $peerset through $peerName")
+        return testHttpClient.get<Boolean>("http://${apps.getPeer(peerName).address}/gmmf/graph/index/ready?peerset=$peerset") {
+            contentType(ContentType.Application.Json)
+            accept(ContentType.Application.Json)
         }
     }
 

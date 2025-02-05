@@ -82,16 +82,15 @@ data class AddEdgeTx(
         eventDatabase: EventDatabase,
     ) {
         if (from.owner() == graph.currentZoneId) {
-            postChangeEvent(graph, indices, eventDatabase, false, eventId, EdgeId(from, to), false)
+            postChangeEvent(indices, eventDatabase, false, eventId, EdgeId(from, to), false)
         }
         if (to.owner() == graph.currentZoneId) {
-            postChangeEvent(graph, indices, eventDatabase, true, reverseEventId, EdgeId(from, to), false)
+            postChangeEvent(indices, eventDatabase, true, reverseEventId, EdgeId(from, to), false)
         }
     }
 }
 
 private fun postChangeEvent(
-    graph: Graph,
     indices: VertexIndices,
     eventDatabase: EventDatabase,
     reverseDirection: Boolean,
@@ -102,7 +101,7 @@ private fun postChangeEvent(
     val subjects: MutableSet<VertexId> = HashSet()
     if (reverseDirection) {
         subjects.addAll(
-            indices.getIndexOf(graph.getVertex(edgeId.to))
+            indices.getIndexOf(edgeId.to)
                 .getEffectiveParentsSet(),
         )
         subjects.add(edgeId.to)
@@ -119,7 +118,7 @@ private fun postChangeEvent(
         )
     } else {
         subjects.addAll(
-            indices.getIndexOf(graph.getVertex(edgeId.from))
+            indices.getIndexOf(edgeId.from)
                 .getEffectiveChildrenSet(),
         )
         subjects.add(edgeId.from)

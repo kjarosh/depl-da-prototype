@@ -27,8 +27,8 @@ import strikt.assertions.isFalse
 import strikt.assertions.isNull
 import strikt.assertions.isTrue
 
-@ExtendWith(TestLogExtension::class)
 @Disabled
+@ExtendWith(TestLogExtension::class)
 class GmmfIndexedSpec : IntegrationTestBase() {
     @BeforeEach
     fun setup() {
@@ -63,6 +63,9 @@ class GmmfIndexedSpec : IntegrationTestBase() {
                 VertexId(ZoneId("peerset0"), "v3"),
                 Permissions("01010"),
             )
+
+            logger.info("Waiting for event processing")
+            waitForIndex("peer0", "peerset0")
 
             val reachesMessage1 =
                 indexedReaches(

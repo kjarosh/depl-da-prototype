@@ -29,4 +29,8 @@ class EventDatabase(private val currentZoneId: ZoneId) {
             getInbox(id).addLast(event)
         }
     }
+
+    fun isEmpty(): Boolean {
+        return outboxes.values.all { it.isEmpty() } && inboxes.values.all { it.isEmpty() }
+    }
 }
