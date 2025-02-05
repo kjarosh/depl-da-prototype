@@ -5,8 +5,8 @@ import com.github.davenury.common.UnknownPeersetException
 import com.github.davenury.ucac.common.MultiplePeersetProtocols
 import com.github.davenury.ucac.common.PeerResolver
 import com.github.davenury.ucac.gmmf.client.GmmfClient
+import com.github.davenury.ucac.gmmf.model.IndexFromHistory
 import com.github.kjarosh.agh.pp.graph.model.EdgeId
-import com.github.kjarosh.agh.pp.graph.model.Graph
 import com.github.kjarosh.agh.pp.graph.model.Permissions
 import com.github.kjarosh.agh.pp.graph.model.VertexId
 import com.github.kjarosh.agh.pp.index.EffectiveVertex
@@ -14,6 +14,7 @@ import com.github.kjarosh.agh.pp.index.VertexIndices
 import io.ktor.application.Application
 import io.ktor.application.call
 import io.ktor.response.respond
+import io.ktor.routing.get
 import io.ktor.routing.post
 import io.ktor.routing.routing
 
@@ -21,9 +22,9 @@ fun Application.gmmfIndexedRouting(
     multiplePeersetProtocols: MultiplePeersetProtocols,
     peerResolver: PeerResolver,
 ) {
-    fun graph(peersetId: PeersetId): Graph = multiplePeersetProtocols.forPeerset(peersetId).graphFromHistory.getGraph()
+    fun indexFromHistory(peersetId: PeersetId): IndexFromHistory = multiplePeersetProtocols.forPeerset(peersetId).indexFromHistory
 
-    fun indices(peersetId: PeersetId): VertexIndices = multiplePeersetProtocols.forPeerset(peersetId).indexFromHistory.getIndices()
+    fun indices(peersetId: PeersetId): VertexIndices = indexFromHistory(peersetId).getIndices()
 
     fun client(peersetId: PeersetId): GmmfClient {
         val peer = peerResolver.getPeerFromPeerset(peersetId)
@@ -33,15 +34,11 @@ fun Application.gmmfIndexedRouting(
     suspend fun members(of: String): Set<VertexId> {
         val ofId = VertexId(of)
         val peersetId = PeersetId.create(ofId.owner().id)
-        val graph =
-            try {
-                graph(peersetId)
-            } catch (e: UnknownPeersetException) {
-                return client(peersetId).indexedMembers(ofId).members
-            }
-
-        val ofVertex = graph.getVertex(ofId)
-        return indices(peersetId).getIndexOf(ofVertex).effectiveChildrenSet
+        return try {
+            indices(peersetId).getIndexOf(ofId).effectiveChildrenSet
+        } catch (e: UnknownPeersetException) {
+            client(peersetId).indexedMembers(ofId).members
+        }
     }
 
     suspend fun effectivePermissions(
@@ -55,18 +52,14 @@ fun Application.gmmfIndexedRouting(
             )
         val peersetId = PeersetId.create(edgeId.to.owner().id)
 
-        val graph =
-            try {
-                graph(peersetId)
-            } catch (e: UnknownPeersetException) {
-                return client(peersetId).indexedEffectivePermissions(edgeId.from, edgeId.to).effectivePermissions
-            }
-
-        val toVertex = graph.getVertex(edgeId.to)
-        return indices(peersetId).getIndexOf(toVertex)
-            .getEffectiveChild(edgeId.from)
-            .map { obj: EffectiveVertex -> obj.effectivePermissions }
-            .orElse(null)
+        return try {
+            indices(peersetId).getIndexOf(edgeId.to)
+                .getEffectiveChild(edgeId.from)
+                .map { obj: EffectiveVertex -> obj.effectivePermissions }
+                .orElse(null)
+        } catch (e: UnknownPeersetException) {
+            client(peersetId).indexedEffectivePermissions(edgeId.from, edgeId.to).effectivePermissions
+        }
     }
 
     suspend fun reaches(
@@ -92,6 +85,12 @@ fun Application.gmmfIndexedRouting(
             val fromId = call.parameters["from"]!!
             val toId = call.parameters["to"]!!
             call.respond(EffectivePermissionsMessage(effectivePermissions(fromId, toId)))
+        }
+
+        get("/gmmf/indexed/ready") {
+            val peersetId = call.parameters["peersetId"]!!
+            val ready = indexFromHistory(PeersetId(peersetId)).isReady()
+            call.respond(ready)
         }
     }
 }
