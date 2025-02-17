@@ -86,11 +86,5 @@ fun Application.gmmfIndexedRouting(
             val toId = call.parameters["to"]!!
             call.respond(EffectivePermissionsMessage(effectivePermissions(fromId, toId)))
         }
-
-        get("/gmmf/indexed/ready") {
-            val peersetId = call.parameters["peersetId"]!!
-            val ready = indexFromHistory(PeersetId(peersetId)).isReady()
-            call.respond(ready)
-        }
     }
 }

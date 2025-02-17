@@ -1,18 +1,19 @@
 package com.github.davenury.ucac.gmmf.model
 
-import com.github.kjarosh.agh.pp.graph.GraphLoader
+import com.github.kjarosh.agh.pp.graph.model.Graph
 import com.github.kjarosh.agh.pp.graph.model.VertexId
 import com.github.kjarosh.agh.pp.index.EffectiveVertex
 import com.github.kjarosh.agh.pp.index.GlobalExecutors
 import com.github.kjarosh.agh.pp.index.VertexIndices
 import com.github.kjarosh.agh.pp.index.events.Event
 import com.github.kjarosh.agh.pp.index.events.EventType
+import java.util.UUID
 import java.util.concurrent.ConcurrentSkipListSet
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.Future
 import java.util.function.Consumer
 
-class EventProcessor(private val graphLoader: GraphLoader, private val vertexIndices: VertexIndices) {
+class EventProcessor(private val graph: Graph, private val vertexIndices: VertexIndices) {
     fun process(
         id: VertexId,
         event: Event,
@@ -56,8 +57,6 @@ class EventProcessor(private val graphLoader: GraphLoader, private val vertexInd
         delete: Boolean,
         result: EventProcessingResult,
     ) {
-        val graph = graphLoader.graph
-
         val index = vertexIndices.getIndexOf(id)
         val effectiveParents: MutableSet<VertexId> = ConcurrentSkipListSet()
         for (subjectId in event.effectiveVertices) {
@@ -87,8 +86,6 @@ class EventProcessor(private val graphLoader: GraphLoader, private val vertexInd
         delete: Boolean,
         result: EventProcessingResult,
     ) {
-        val graph = graphLoader.graph
-
         val index = vertexIndices.getIndexOf(id)
         val edgesToCalculate = graph.getEdgesByDestination(id)
 
@@ -157,6 +154,7 @@ class EventProcessor(private val graphLoader: GraphLoader, private val vertexInd
             Consumer { r: VertexId ->
                 val newEvent =
                     Event.builder()
+                        .id(UUID.randomUUID().toString())
                         .trace(event.trace)
                         .type(type)
                         .effectiveVertices(effectiveVertices)

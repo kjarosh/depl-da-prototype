@@ -16,7 +16,7 @@ import kotlin.system.exitProcess
 @JsonSubTypes(
     *arrayOf(
         JsonSubTypes.Type(value = AcceptExternalEvent::class, name = "accept"),
-        JsonSubTypes.Type(value = ProcessEvent::class, name = "process"),
+        JsonSubTypes.Type(value = ProcessEventTx::class, name = "process"),
         JsonSubTypes.Type(value = SendOutboxEvent::class, name = "send"),
     ),
 )
@@ -48,12 +48,12 @@ data class AcceptExternalEvent(val vertex: VertexId, val event: Event) : IndexTr
         indices: VertexIndices,
         eventDatabase: EventDatabase,
     ) {
-        eventDatabase.getInbox(vertex).addLast(event)
+        eventDatabase.post(vertex, event)
         eventDatabase.acceptedEventIds.add(event.id)
     }
 }
 
-data class ProcessEvent(val vertex: VertexId, val eventId: String, val diff: IndexDiff, val generatedEvents: Map<PeersetId, List<Event>>) : IndexTransaction() {
+data class ProcessEventTx(val vertex: VertexId, val eventId: String, val diff: IndexDiff, val generatedEvents: Map<VertexId, List<Event>>) : IndexTransaction() {
     override fun apply(
         indices: VertexIndices,
         eventDatabase: EventDatabase,
@@ -71,7 +71,7 @@ data class ProcessEvent(val vertex: VertexId, val eventId: String, val diff: Ind
 
         generatedEvents.forEach {
             it.value.forEach { event ->
-                eventDatabase.getOutbox(it.key).addLast(event)
+                eventDatabase.post(it.key, event)
             }
         }
     }
