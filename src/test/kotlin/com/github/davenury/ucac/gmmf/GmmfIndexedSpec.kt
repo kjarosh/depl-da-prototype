@@ -27,7 +27,6 @@ import strikt.assertions.isFalse
 import strikt.assertions.isNull
 import strikt.assertions.isTrue
 
-@Disabled
 @ExtendWith(TestLogExtension::class)
 class GmmfIndexedSpec : IntegrationTestBase() {
     @BeforeEach
@@ -97,6 +96,7 @@ class GmmfIndexedSpec : IntegrationTestBase() {
         }
 
     @Test
+    @Disabled
     fun `indexed reaches two peersets`(): Unit =
         runBlocking {
             apps = TestApplicationSet(mapOf("peerset0" to listOf("peer0", "peer1"), "peerset1" to listOf("peer2", "peer3")))
@@ -136,6 +136,10 @@ class GmmfIndexedSpec : IntegrationTestBase() {
                 Permissions("01010"),
             )
 
+            logger.info("Waiting for event processing")
+            waitForIndex("peer0", "peerset0")
+            waitForIndex("peer3", "peerset0")
+
             val reachesMessage1 =
                 indexedReaches(
                     "http://${apps.getPeer("peer0").address}/gmmf/indexed/reaches?" +
@@ -152,6 +156,7 @@ class GmmfIndexedSpec : IntegrationTestBase() {
         }
 
     @Test
+    @Disabled
     fun `indexed members basic`(): Unit =
         runBlocking {
             apps = TestApplicationSet(mapOf("peerset0" to listOf("peer0", "peer1")))
@@ -208,6 +213,7 @@ class GmmfIndexedSpec : IntegrationTestBase() {
         }
 
     @Test
+    @Disabled
     fun `indexed members two peersets`(): Unit =
         runBlocking {
             apps = TestApplicationSet(mapOf("peerset0" to listOf("peer0", "peer1"), "peerset1" to listOf("peer2", "peer3")))
@@ -276,6 +282,7 @@ class GmmfIndexedSpec : IntegrationTestBase() {
      *    v3
      */
     @Test
+    @Disabled
     fun `indexed effective permissions basic`(): Unit =
         runBlocking {
             apps = TestApplicationSet(mapOf("peerset0" to listOf("peer0", "peer1")))
@@ -345,6 +352,7 @@ class GmmfIndexedSpec : IntegrationTestBase() {
      *    v3
      */
     @Test
+    @Disabled
     fun `indexed effective permissions multiple peersets`(): Unit =
         runBlocking {
             apps =

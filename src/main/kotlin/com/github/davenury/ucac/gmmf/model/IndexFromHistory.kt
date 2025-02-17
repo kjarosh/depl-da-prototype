@@ -4,14 +4,18 @@ import com.github.davenury.common.Change
 import com.github.davenury.common.history.History
 import com.github.davenury.common.history.HistoryEntry
 import com.github.davenury.common.history.HistoryListener
+import com.github.davenury.ucac.common.PeersetProtocols
 import com.github.kjarosh.agh.pp.index.VertexIndices
 
 class IndexFromHistory(
     history: History,
     private val graphFromHistory: GraphFromHistory,
+    protocols: PeersetProtocols,
 ) {
     private val indices = VertexIndices()
-    private val eventDatabase = EventDatabase(graphFromHistory.getGraph().currentZoneId)
+    private val eventProcessor = EventProcessor(graphFromHistory.getGraph(), indices)
+    private val eventTransactionProcessor = EventTransactionProcessor(eventProcessor, protocols)
+    private val eventDatabase = EventDatabase(graphFromHistory.getGraph().currentZoneId, eventTransactionProcessor)
 
     init {
         history.addListener(

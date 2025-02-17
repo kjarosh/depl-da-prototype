@@ -182,5 +182,12 @@ fun Application.gmmfGraphModificationRouting(multiplePeersetProtocols: MultipleP
             call.consensus().proposeChangeAsync(change).await().assertSuccess()
             call.respond(HttpStatusCode.OK, "")
         }
+
+        get("/gmmf/graph/index/ready") {
+            val peersetId = call.parameters["peerset"]!!
+            val indexFromHistory = multiplePeersetProtocols.forPeerset(PeersetId(peersetId)).indexFromHistory
+            val ready = indexFromHistory.isReady()
+            call.respond(ready)
+        }
     }
 }
