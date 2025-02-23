@@ -156,7 +156,6 @@ class GmmfIndexedSpec : IntegrationTestBase() {
         }
 
     @Test
-    @Disabled
     fun `indexed members basic`(): Unit =
         runBlocking {
             apps = TestApplicationSet(mapOf("peerset0" to listOf("peer0", "peer1")))
@@ -184,6 +183,9 @@ class GmmfIndexedSpec : IntegrationTestBase() {
                 VertexId(ZoneId("peerset0"), "v3"),
                 Permissions("01010"),
             )
+
+            logger.info("Waiting for event processing")
+            waitForIndex("peer0", "peerset0")
 
             val membersMessage1 =
                 indexedMembers(
@@ -282,7 +284,6 @@ class GmmfIndexedSpec : IntegrationTestBase() {
      *    v3
      */
     @Test
-    @Disabled
     fun `indexed effective permissions basic`(): Unit =
         runBlocking {
             apps = TestApplicationSet(mapOf("peerset0" to listOf("peer0", "peer1")))
@@ -328,6 +329,9 @@ class GmmfIndexedSpec : IntegrationTestBase() {
                 VertexId(ZoneId("peerset0"), "v3"),
                 Permissions("00010"),
             )
+
+            logger.info("Waiting for event processing")
+            waitForIndex("peer0", "peerset0")
 
             val epMessage1 =
                 indexedEffectivePermissions(
