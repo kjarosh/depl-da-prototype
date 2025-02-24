@@ -1,22 +1,30 @@
 package com.github.davenury.ucac.gmmf.routing
 
+import com.github.davenury.common.ChangePeersetInfo
+import com.github.davenury.common.ChangeResult
 import com.github.davenury.common.PeersetId
+import com.github.davenury.common.StandardChange
 import com.github.davenury.common.UnknownPeersetException
 import com.github.davenury.ucac.common.MultiplePeersetProtocols
 import com.github.davenury.ucac.common.PeerResolver
 import com.github.davenury.ucac.gmmf.client.GmmfClient
+import com.github.davenury.ucac.gmmf.model.AcceptExternalEvent
 import com.github.davenury.ucac.gmmf.model.IndexFromHistory
 import com.github.kjarosh.agh.pp.graph.model.EdgeId
 import com.github.kjarosh.agh.pp.graph.model.Permissions
 import com.github.kjarosh.agh.pp.graph.model.VertexId
 import com.github.kjarosh.agh.pp.index.EffectiveVertex
 import com.github.kjarosh.agh.pp.index.VertexIndices
+import com.github.kjarosh.agh.pp.index.events.Event
 import io.ktor.application.Application
 import io.ktor.application.call
+import io.ktor.http.HttpStatusCode
+import io.ktor.request.receive
 import io.ktor.response.respond
 import io.ktor.routing.get
 import io.ktor.routing.post
 import io.ktor.routing.routing
+import kotlinx.coroutines.future.await
 
 fun Application.gmmfIndexedRouting(
     multiplePeersetProtocols: MultiplePeersetProtocols,
@@ -85,6 +93,30 @@ fun Application.gmmfIndexedRouting(
             val fromId = call.parameters["from"]!!
             val toId = call.parameters["to"]!!
             call.respond(EffectivePermissionsMessage(effectivePermissions(fromId, toId)))
+        }
+
+        post("/gmmf/event") {
+            val vertexId = VertexId(call.parameters["to"]!!)
+            val peersetId = PeersetId(vertexId.owner().id)
+            val event = call.receive<Event>()
+
+            val tx = AcceptExternalEvent(vertexId, event)
+            val change =
+                StandardChange(
+                    tx.serialize(),
+                    // TODO parent id?
+                    peersets = listOf(ChangePeersetInfo(peersetId, null)),
+                )
+            val changeResult =
+                multiplePeersetProtocols.forPeerset(peersetId)
+                    .consensusProtocol
+                    .proposeChangeAsync(change)
+                    .await()
+            if (changeResult.status == ChangeResult.Status.SUCCESS) {
+                call.respond(HttpStatusCode.OK)
+            } else {
+                call.respond(HttpStatusCode.InternalServerError)
+            }
         }
     }
 }

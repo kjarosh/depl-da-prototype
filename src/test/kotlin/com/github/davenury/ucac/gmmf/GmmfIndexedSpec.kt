@@ -138,7 +138,7 @@ class GmmfIndexedSpec : IntegrationTestBase() {
 
             logger.info("Waiting for event processing")
             waitForIndex("peer0", "peerset0")
-            waitForIndex("peer3", "peerset0")
+            waitForIndex("peer3", "peerset1")
 
             val reachesMessage1 =
                 indexedReaches(

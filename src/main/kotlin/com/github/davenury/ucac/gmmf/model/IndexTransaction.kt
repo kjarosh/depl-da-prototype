@@ -82,7 +82,7 @@ data class SendOutboxEvent(val peersetId: PeersetId, val eventId: String) : Inde
         indices: VertexIndices,
         eventDatabase: EventDatabase,
     ) {
-        val existingId = eventDatabase.getOutbox(peersetId).removeFirst().id
+        val existingId = eventDatabase.getOutbox(peersetId).removeFirst().second.id
         if (existingId != eventId) {
             logger.error("Event ID mismatch, expected $eventId, was $existingId")
             // TODO better handling?

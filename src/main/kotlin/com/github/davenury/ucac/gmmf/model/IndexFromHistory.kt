@@ -14,7 +14,8 @@ class IndexFromHistory(
 ) {
     private val indices = VertexIndices()
     private val eventProcessor = EventProcessor(graphFromHistory.getGraph(), indices)
-    private val eventTransactionProcessor = EventTransactionProcessor(eventProcessor, protocols)
+    private val eventSender = EventSender(protocols.peerResolver)
+    private val eventTransactionProcessor = EventTransactionProcessor(eventProcessor, eventSender, protocols)
     private val eventDatabase = EventDatabase(graphFromHistory.getGraph().currentZoneId, eventTransactionProcessor)
 
     init {
