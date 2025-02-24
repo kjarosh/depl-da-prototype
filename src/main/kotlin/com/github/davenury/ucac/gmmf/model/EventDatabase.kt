@@ -16,7 +16,7 @@ import java.util.concurrent.Executors
 class EventDatabase(private val currentZoneId: ZoneId, private val eventTransactionProcessor: EventTransactionProcessor) {
     val acceptedEventIds = HashSet<String>()
     val processedEventIds = HashSet<String>()
-    private val outboxes: MutableMap<PeersetId, ArrayDeque<Event>> = HashMap()
+    private val outboxes: MutableMap<PeersetId, ArrayDeque<Pair<VertexId, Event>>> = HashMap()
     private val inboxes: MutableMap<VertexId, ArrayDeque<Event>> = HashMap()
 
     private val executorService: ExecutorCoroutineDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
@@ -33,7 +33,7 @@ class EventDatabase(private val currentZoneId: ZoneId, private val eventTransact
         return inboxes.computeIfAbsent(id) { ArrayDeque() }
     }
 
-    fun getOutbox(peersetId: PeersetId): ArrayDeque<Event> {
+    fun getOutbox(peersetId: PeersetId): ArrayDeque<Pair<VertexId, Event>> {
         return outboxes.computeIfAbsent(peersetId) { ArrayDeque() }
     }
 
@@ -42,7 +42,7 @@ class EventDatabase(private val currentZoneId: ZoneId, private val eventTransact
         event: Event,
     ) {
         if (id.owner() != currentZoneId) {
-            getOutbox(PeersetId(id.owner().id)).addLast(event)
+            getOutbox(PeersetId(id.owner().id)).addLast(Pair(id, event))
         } else {
             getInbox(id).addLast(event)
         }
@@ -75,7 +75,18 @@ class EventDatabase(private val currentZoneId: ZoneId, private val eventTransact
             }
         }
 
-        // TODO outboxes
+        for (e in outboxes) {
+            val queue = e.value
+
+            if (queue.isNotEmpty()) {
+                // Do not remove the event here, we remove events on tx commit.
+                val pair = queue.first()
+                val vertexId = pair.first
+                val event = pair.second
+                processed = processed || eventTransactionProcessor.send(vertexId, event)
+            }
+        }
+
         return processed
     }
 

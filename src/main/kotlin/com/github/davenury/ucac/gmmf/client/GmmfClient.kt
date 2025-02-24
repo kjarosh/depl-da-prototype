@@ -14,6 +14,7 @@ import com.github.kjarosh.agh.pp.graph.model.EdgeId
 import com.github.kjarosh.agh.pp.graph.model.Permissions
 import com.github.kjarosh.agh.pp.graph.model.Vertex
 import com.github.kjarosh.agh.pp.graph.model.VertexId
+import com.github.kjarosh.agh.pp.index.events.Event
 import com.github.kjarosh.agh.pp.rest.dto.BulkVertexCreationRequestDto
 import io.ktor.client.request.accept
 import io.ktor.client.request.get
@@ -137,6 +138,24 @@ class GmmfClient(val peerResolver: PeerResolver, peer: PeerAddress) {
         return httpClient.post<EffectivePermissionsMessage>("$urlBase/gmmf/indexed/effective_permissions?from=$from&to=$to") {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
+        }
+    }
+
+    suspend fun sendEvent(
+        to: VertexId,
+        event: Event,
+    ): Boolean {
+        return try {
+            val response =
+                httpClient.post<HttpResponse>("$urlBase/gmmf/event?to=$to") {
+                    contentType(ContentType.Application.Json)
+                    accept(ContentType.Application.Json)
+                    body = event
+                }
+            response.status == HttpStatusCode.OK
+        } catch (e: Exception) {
+            logger.info("Error sending event: {}", e.toString())
+            false
         }
     }
 
