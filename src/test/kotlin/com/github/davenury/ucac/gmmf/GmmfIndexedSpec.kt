@@ -7,6 +7,7 @@ import com.github.davenury.ucac.testHttpClient
 import com.github.davenury.ucac.utils.IntegrationTestBase
 import com.github.davenury.ucac.utils.TestApplicationSet
 import com.github.davenury.ucac.utils.TestLogExtension
+import com.github.davenury.ucac.utils.eventuallyBlocking
 import com.github.kjarosh.agh.pp.graph.model.Permissions
 import com.github.kjarosh.agh.pp.graph.model.Vertex
 import com.github.kjarosh.agh.pp.graph.model.VertexId
@@ -136,23 +137,21 @@ class GmmfIndexedSpec : IntegrationTestBase() {
                 Permissions("01010"),
             )
 
-            logger.info("Waiting for event processing")
-            waitForIndex("peer0", "peerset0")
-            waitForIndex("peer3", "peerset1")
+            eventuallyBlocking(30) {
+                val reachesMessage1 =
+                    indexedReaches(
+                        "http://${apps.getPeer("peer0").address}/gmmf/indexed/reaches?" +
+                            "from=peerset0:v1&to=peerset1:v4",
+                    )
+                expectThat(reachesMessage1.reaches).isTrue()
 
-            val reachesMessage1 =
-                indexedReaches(
-                    "http://${apps.getPeer("peer0").address}/gmmf/indexed/reaches?" +
-                        "from=peerset0:v1&to=peerset1:v4",
-                )
-            expectThat(reachesMessage1.reaches).isTrue()
-
-            val reachesMessage2 =
-                indexedReaches(
-                    "http://${apps.getPeer("peer3").address}/gmmf/indexed/reaches?" +
-                        "from=peerset0:v1&to=peerset1:v4",
-                )
-            expectThat(reachesMessage2.reaches).isTrue()
+                val reachesMessage2 =
+                    indexedReaches(
+                        "http://${apps.getPeer("peer3").address}/gmmf/indexed/reaches?" +
+                            "from=peerset0:v1&to=peerset1:v4",
+                    )
+                expectThat(reachesMessage2.reaches).isTrue()
+            }
         }
 
     @Test

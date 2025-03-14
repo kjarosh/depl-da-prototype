@@ -1,6 +1,7 @@
 package com.github.davenury.ucac.utils
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.awaitility.Awaitility.await
 import java.time.Duration
@@ -12,6 +13,17 @@ fun eventually(
     fn: () -> Unit,
 ) {
     await().atMost(timeout, TimeUnit.SECONDS).untilAsserted(fn)
+}
+
+fun eventuallyBlocking(
+    timeout: Long = 10L,
+    fn: suspend () -> Unit,
+) {
+    await().atMost(timeout, TimeUnit.SECONDS).untilAsserted {
+        runBlocking {
+            fn()
+        }
+    }
 }
 
 fun atLeast(
