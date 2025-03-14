@@ -11,13 +11,14 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.slf4j.MDCContext
 import org.slf4j.LoggerFactory
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 
 class EventDatabase(private val currentZoneId: ZoneId, private val eventTransactionProcessor: EventTransactionProcessor) {
     val acceptedEventIds = HashSet<String>()
     val processedEventIds = HashSet<String>()
-    private val outboxes: MutableMap<PeersetId, ArrayDeque<Pair<VertexId, Event>>> = HashMap()
-    private val inboxes: MutableMap<VertexId, ArrayDeque<Event>> = HashMap()
+    private val outboxes: MutableMap<PeersetId, ArrayDeque<Pair<VertexId, Event>>> = ConcurrentHashMap()
+    private val inboxes: MutableMap<VertexId, ArrayDeque<Event>> = ConcurrentHashMap()
 
     private val executorService: ExecutorCoroutineDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
 
