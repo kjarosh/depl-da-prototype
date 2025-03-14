@@ -2,7 +2,7 @@ package com.github.davenury.ucac.gmmf.model
 
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
-import com.fasterxml.jackson.databind.DatabindException
+import com.fasterxml.jackson.core.JacksonException
 import com.github.davenury.common.PeersetId
 import com.github.davenury.common.objectMapper
 import com.github.kjarosh.agh.pp.graph.model.VertexId
@@ -35,7 +35,7 @@ sealed class IndexTransaction {
         fun deserialize(content: String): IndexTransaction? {
             return try {
                 objectMapper.readValue(content, IndexTransaction::class.java)
-            } catch (e: DatabindException) {
+            } catch (e: JacksonException) {
                 null
             }
         }
