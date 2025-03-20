@@ -1,9 +1,9 @@
 package com.github.davenury.ucac.gmmf.routing
 
 import com.github.davenury.common.ChangePeersetInfo
+import com.github.davenury.common.ChangeResult
 import com.github.davenury.common.PeersetId
 import com.github.davenury.common.StandardChange
-import com.github.davenury.common.history.History
 import com.github.davenury.common.peersetId
 import com.github.davenury.ucac.commitment.twopc.TwoPC
 import com.github.davenury.ucac.common.MultiplePeersetProtocols
@@ -26,7 +26,10 @@ import io.ktor.response.respond
 import io.ktor.routing.get
 import io.ktor.routing.post
 import io.ktor.routing.routing
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.await
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 
 fun Application.gmmfGraphModificationRouting(multiplePeersetProtocols: MultiplePeersetProtocols) {
@@ -36,10 +39,6 @@ fun Application.gmmfGraphModificationRouting(multiplePeersetProtocols: MultipleP
 
     fun ApplicationCall.twoPC(): TwoPC {
         return multiplePeersetProtocols.forPeerset(this.peersetId()).twoPC
-    }
-
-    fun ApplicationCall.history(): History {
-        return multiplePeersetProtocols.forPeerset(this.peersetId()).history
     }
 
     fun ApplicationCall.graph(): Graph {
@@ -72,52 +71,69 @@ fun Application.gmmfGraphModificationRouting(multiplePeersetProtocols: MultipleP
         }
     }
 
+    suspend fun tryAddEdge(
+        call: ApplicationCall,
+        from: VertexId,
+        to: VertexId,
+        permissions: Permissions,
+    ): Boolean {
+        val fromLocal = from.owner().id == call.peersetId().peersetId
+        val toLocal = to.owner().id == call.peersetId().peersetId
+
+        val tx = AddEdgeTx(from, to, permissions, UUID.randomUUID().toString(), UUID.randomUUID().toString())
+        val result =
+            if (fromLocal && toLocal) {
+                val change =
+                    StandardChange(
+                        tx.serialize(),
+                        peersets = listOf(ChangePeersetInfo(call.peersetId(), null)),
+                    )
+                call.consensus().proposeChangeAsync(change).await()
+            } else if (fromLocal || toLocal) {
+                val change =
+                    StandardChange(
+                        tx.serialize(),
+                        peersets =
+                            listOf(
+                                ChangePeersetInfo(PeersetId(from.owner().id), null),
+                                ChangePeersetInfo(PeersetId(to.owner().id), null),
+                            ),
+                    )
+                call.twoPC().proposeChangeAsync(change).await()
+            } else {
+                throw IllegalArgumentException("Trying to add an edge with no vertex in this peerset")
+            }
+
+        when (result.status) {
+            ChangeResult.Status.ABORTED, ChangeResult.Status.CONFLICT -> {
+                // Change conflicted, we can try again
+                return false
+            }
+            else -> {
+                result.assertSuccess()
+                return true
+            }
+        }
+    }
+
     suspend fun addEdge(
         call: ApplicationCall,
         from: VertexId,
         to: VertexId,
         permissions: Permissions,
     ) {
-        val parentId = call.history().getCurrentEntryId()
-
-        val fromLocal = from.owner().id == call.peersetId().peersetId
-        val toLocal = to.owner().id == call.peersetId().peersetId
-
-        val fromParentId =
-            if (from.owner().id == call.peersetId().peersetId) {
-                parentId
-            } else {
-                null
-            }
-        val toParentId =
-            if (to.owner().id == call.peersetId().peersetId) {
-                parentId
-            } else {
-                null
+        val deadline = Instant.now().plus(60, ChronoUnit.SECONDS)
+        var delayMillis = 200.0
+        while (Instant.now().isBefore(deadline)) {
+            if (tryAddEdge(call, from, to, permissions)) {
+                return
             }
 
-        val tx = AddEdgeTx(from, to, permissions, UUID.randomUUID().toString(), UUID.randomUUID().toString())
-        if (fromLocal && toLocal) {
-            val change =
-                StandardChange(
-                    tx.serialize(),
-                    peersets = listOf(ChangePeersetInfo(call.peersetId(), parentId)),
-                )
-            call.consensus().proposeChangeAsync(change).await().assertSuccess()
-        } else if (fromLocal || toLocal) {
-            val change =
-                StandardChange(
-                    tx.serialize(),
-                    peersets =
-                        listOf(
-                            ChangePeersetInfo(PeersetId(from.owner().id), fromParentId),
-                            ChangePeersetInfo(PeersetId(to.owner().id), toParentId),
-                        ),
-                )
-            call.twoPC().proposeChangeAsync(change).await().assertSuccess()
-        } else {
-            throw IllegalArgumentException("Trying to add an edge with no vertex in this peerset")
+            delay(delayMillis.toLong())
+            delayMillis *= 1.5
         }
+
+        throw AssertionError("Timed out trying to add edge $from->$to, $permissions")
     }
 
     fun getEdge(
