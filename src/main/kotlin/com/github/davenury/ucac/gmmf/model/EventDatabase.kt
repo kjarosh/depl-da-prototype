@@ -43,8 +43,11 @@ class EventDatabase(private val currentZoneId: ZoneId, private val eventTransact
         event: Event,
     ) {
         if (id.owner() != currentZoneId) {
-            getOutbox(PeersetId(id.owner().id)).addLast(Pair(id, event))
+            val peersetId = PeersetId(id.owner().id)
+            logger.info("Posting an event: ${event.id} to outbox $peersetId")
+            getOutbox(peersetId).addLast(Pair(id, event))
         } else {
+            logger.info("Posting an event: ${event.id} to inbox $id")
             getInbox(id).addLast(event)
         }
     }
