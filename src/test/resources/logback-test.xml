@@ -20,6 +20,8 @@
 
     <logger name="com.github.dockerjava" level="INFO"/>
     <logger name="org.testcontainers" level="INFO"/>
+    <logger name="ktor.application" level="WARN"/>
+    <logger name="com.github.kjarosh.agh.pp.config" level="WARN"/>
 
     <!-- it spams "spanStack is null" -->
     <logger name="com.zopa.ktor.opentracing.Utils" level="ERROR"/>

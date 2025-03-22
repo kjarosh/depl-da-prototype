@@ -156,7 +156,7 @@ class RaftConsensusProtocolImpl(
                 votedFor = VotedFor(peerId)
             }
 
-            logger.info("Trying to become a leader in term $currentTerm")
+            logger.debug("Trying to become a leader in term $currentTerm")
 
             val lastIndex =
                 state.proposedEntries.find { it.changeId == transactionBlocker.getChangeId() }?.entry?.getId()
@@ -190,7 +190,7 @@ class RaftConsensusProtocolImpl(
                 executorService = Executors.newCachedThreadPool().asCoroutineDispatcher()
             }
 
-            logger.info("Leader selected: me (in term $currentTerm)")
+            logger.info("Leader elected: me (in term $currentTerm)")
             subscribers?.notifyAboutConsensusLeaderChange(peerId, peersetId)
             signalPublisher.signal(
                 Signal.ConsensusLeaderIHaveBeenElected,
@@ -223,7 +223,7 @@ class RaftConsensusProtocolImpl(
 
             mutex.withLock {
                 if (iteration < currentTerm || (iteration == currentTerm && votedFor != null)) {
-                    logger.info(
+                    logger.debug(
                         "Denying vote for $peerId due to an old term ($iteration vs $currentTerm), " +
                             "I voted for ${votedFor?.id}",
                     )
@@ -239,13 +239,13 @@ class RaftConsensusProtocolImpl(
                 val candidateIsOutdated: Boolean = state.isOlderEntryThanLastEntry(lastLogId)
 
                 if (candidateIsOutdated) {
-                    logger.info("Denying vote for $peerId due to an old index ($lastLogId vs $lastEntryId)")
+                    logger.debug("Denying vote for $peerId due to an old index ($lastLogId vs $lastEntryId)")
                     return ConsensusElectedYou(this@RaftConsensusProtocolImpl.peerId, currentTerm, false)
                 }
                 votedFor = VotedFor(peerId)
             }
             restartTimer()
-            logger.info("Voted for $peerId in term $iteration")
+            logger.debug("Voted for $peerId in term $iteration")
             return ConsensusElectedYou(this@RaftConsensusProtocolImpl.peerId, currentTerm, true)
         }
 
@@ -287,7 +287,7 @@ class RaftConsensusProtocolImpl(
         mutex.withLock {
             val size = heartbeat.logEntries.size
             if (size != 0) {
-                logger.info("Handling heartbeat from ${heartbeat.leaderId}, entries overall: $size")
+                logger.debug("Handling heartbeat from ${heartbeat.leaderId}, entries overall: $size")
             } else {
                 logger.debug("Handling empty heartbeat from ${heartbeat.leaderId}")
             }
@@ -380,7 +380,7 @@ class RaftConsensusProtocolImpl(
                 }
 
                 isUpdatedCommitIndex && transactionBlocker.isAcquiredByProtocol(ProtocolName.CONSENSUS) -> {
-                    logger.info(
+                    logger.debug(
                         "Received heartbeat when is blocked so only accepted changes, blocked on ${transactionBlocker.getChangeId()}",
                     )
                     updateLedger(heartbeat, leaderCommitId, acceptedChangesFromProposed)
@@ -388,23 +388,23 @@ class RaftConsensusProtocolImpl(
                 }
 
                 notAppliedProposedChanges.isNotEmpty() && transactionBlocker.isAcquired() -> {
-                    logger.info("Received heartbeat but is blocked, so can't accept proposed changes")
+                    logger.debug("Received heartbeat but is blocked, so can't accept proposed changes")
                     return@withLock ConsensusHeartbeatResponse(false, currentTerm, true)
                 }
 
                 isUpdatedCommitIndex && areProposedChangesIncompatible -> {
-                    logger.info("Received heartbeat but changes are incompatible, updated accepted changes")
+                    logger.debug("Received heartbeat but changes are incompatible, updated accepted changes")
                     updateLedger(heartbeat, leaderCommitId, acceptedChangesFromProposed)
                     return@withLock ConsensusHeartbeatResponse(true, currentTerm, incompatibleWithHistory = true)
                 }
 
                 areProposedChangesIncompatible -> {
-                    logger.info("Received heartbeat but changes are incompatible")
+                    logger.debug("Received heartbeat but changes are incompatible")
                     return@withLock ConsensusHeartbeatResponse(false, currentTerm, incompatibleWithHistory = true)
                 }
 
                 notAppliedProposedChanges.isNotEmpty() -> {
-                    logger.info("Introduce new changes")
+                    logger.debug("Introduce new changes")
                     val changeId = notAppliedProposedChanges.first().changeId
                     transactionBlocker.acquireReentrant(TransactionAcquisition(ProtocolName.CONSENSUS, changeId))
                 }
@@ -720,7 +720,7 @@ class RaftConsensusProtocolImpl(
                     .map { it.toLedgerItem() }
                     .filter { state.isNotApplied(it.entry.getId()) }
                     .forEach {
-                        logger.info(
+                        logger.debug(
                             "Votes after message to peer ${peerAddress.peerId}, ${
                                 voteContainer.getVotes(
                                     it.entry.getId(),
@@ -842,7 +842,7 @@ class RaftConsensusProtocolImpl(
             var entry: HistoryEntry
 
             mutex.withLock {
-                logger.info("ProposedEntries: ${state.proposedEntries.size}")
+                logger.debug("ProposedEntries: ${state.proposedEntries.size}")
                 if (state.entryAlreadyProposed(change.toHistoryEntry(peersetId, history.getCurrentEntryId()))) {
                     logger.info("Already proposed that change: $change")
 //                    scheduleHeartbeatToPeers(isRegular = false)
@@ -856,7 +856,7 @@ class RaftConsensusProtocolImpl(
                     // TODO Why the hell are we blocking TX when proposing changes to the leader?
                     transactionBlocker.acquireReentrant(acquisition)
                 } catch (e: AlreadyLockedException) {
-                    logger.info("Another TX in progress, queueing the change")
+                    logger.debug("Another TX in progress, queueing the change")
                     changesToBePropagatedToLeader.add(ChangeToBePropagatedToLeader(change, result))
                     return
                 }
@@ -864,7 +864,7 @@ class RaftConsensusProtocolImpl(
                 entry = updatedChange.toHistoryEntry(peersetId, history.getCurrentEntryId())
 
                 if (isDuring2PAndChangeDoesntFinishIt(change)) {
-                    logger.info("Queued change, because is during 2PC")
+                    logger.debug("Queued change, because is during 2PC")
                     changesToBePropagatedToLeader.add(ChangeToBePropagatedToLeader(change, result))
                     transactionBlocker.release(acquisition)
                     return
@@ -899,7 +899,7 @@ class RaftConsensusProtocolImpl(
             }
 
             if (otherConsensusPeers().isEmpty()) {
-                logger.info("No other consensus peers, applying change")
+                logger.debug("No other consensus peers, applying change")
                 applyAcceptedChanges(listOf(entry.getId()))
             }
         }
@@ -1027,11 +1027,11 @@ class RaftConsensusProtocolImpl(
                     }
 
                     votedFor?.elected == true -> {
-                        logger.info("Forwarding change to the leader(${votedFor!!}): $change")
+                        logger.debug("Forwarding change to the leader(${votedFor!!}): $change")
                         sendRequestToLeader(result, change)
                     }
                     else -> {
-                        logger.info("Queueing a change to be propagated when leader is elected")
+                        logger.debug("Queueing a change to be propagated when leader is elected")
                         changesToBePropagatedToLeader.add(ChangeToBePropagatedToLeader(change, result))
                     }
                 }
@@ -1105,10 +1105,10 @@ class RaftConsensusProtocolImpl(
                 changeToBePropagated = changesToBePropagatedToLeader.poll() ?: return
             }
             if (votedFor.id == peerId) {
-                logger.info("Processing a queued change as a leader: ${changeToBePropagated.change}")
+                logger.debug("Processing a queued change as a leader: ${changeToBePropagated.change}")
                 proposeChangeToLedger(changeToBePropagated.cf, changeToBePropagated.change)
             } else {
-                logger.info("Propagating a change to the leader (${votedFor.id}): ${changeToBePropagated.change}")
+                logger.debug("Propagating a change to the leader (${votedFor.id}): ${changeToBePropagated.change}")
                 sendRequestToLeader(changeToBePropagated.cf, changeToBePropagated.change)
             }
         }
