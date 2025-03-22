@@ -88,49 +88,49 @@ data class AddEdgeTx(
             postChangeEvent(indices, eventDatabase, true, reverseEventId, EdgeId(from, to), false)
         }
     }
-}
 
-private fun postChangeEvent(
-    indices: VertexIndices,
-    eventDatabase: EventDatabase,
-    reverseDirection: Boolean,
-    eventId: String,
-    edgeId: EdgeId,
-    delete: Boolean,
-) {
-    val subjects: MutableSet<VertexId> = HashSet()
-    if (reverseDirection) {
-        subjects.addAll(
-            indices.getIndexOf(edgeId.to)
-                .getEffectiveParentsSet(),
-        )
-        subjects.add(edgeId.to)
+    private fun postChangeEvent(
+        indices: VertexIndices,
+        eventDatabase: EventDatabase,
+        reverseDirection: Boolean,
+        eventId: String,
+        edgeId: EdgeId,
+        delete: Boolean,
+    ) {
+        val subjects: MutableSet<VertexId> = HashSet()
+        if (reverseDirection) {
+            subjects.addAll(
+                indices.getIndexOf(edgeId.to)
+                    .getEffectiveParentsSet(),
+            )
+            subjects.add(edgeId.to)
 
-        eventDatabase.post(
-            edgeId.from,
-            Event.builder()
-                .id(eventId)
-                .type(if (delete) EventType.PARENT_REMOVE else EventType.PARENT_CHANGE)
-                .effectiveVertices(subjects)
-                .sender(edgeId.to)
-                .originalSender(edgeId.to)
-                .build(),
-        )
-    } else {
-        subjects.addAll(
-            indices.getIndexOf(edgeId.from)
-                .getEffectiveChildrenSet(),
-        )
-        subjects.add(edgeId.from)
-        eventDatabase.post(
-            edgeId.to,
-            Event.builder()
-                .id(eventId)
-                .type(if (delete) EventType.CHILD_REMOVE else EventType.CHILD_CHANGE)
-                .effectiveVertices(subjects)
-                .sender(edgeId.from)
-                .originalSender(edgeId.from)
-                .build(),
-        )
+            eventDatabase.post(
+                edgeId.from,
+                Event.builder()
+                    .id(eventId)
+                    .type(if (delete) EventType.PARENT_REMOVE else EventType.PARENT_CHANGE)
+                    .effectiveVertices(subjects)
+                    .sender(edgeId.to)
+                    .originalSender(edgeId.to)
+                    .build(),
+            )
+        } else {
+            subjects.addAll(
+                indices.getIndexOf(edgeId.from)
+                    .getEffectiveChildrenSet(),
+            )
+            subjects.add(edgeId.from)
+            eventDatabase.post(
+                edgeId.to,
+                Event.builder()
+                    .id(eventId)
+                    .type(if (delete) EventType.CHILD_REMOVE else EventType.CHILD_CHANGE)
+                    .effectiveVertices(subjects)
+                    .sender(edgeId.from)
+                    .originalSender(edgeId.from)
+                    .build(),
+            )
+        }
     }
 }
