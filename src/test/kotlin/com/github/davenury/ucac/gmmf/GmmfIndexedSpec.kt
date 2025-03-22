@@ -64,36 +64,35 @@ class GmmfIndexedSpec : IntegrationTestBase() {
                 Permissions("01010"),
             )
 
-            logger.info("Waiting for event processing")
-            waitForIndex("peer0", "peerset0")
+            eventuallyBlocking(30) {
+                val reachesMessage1 =
+                    indexedReaches(
+                        "http://${apps.getPeer("peer0").address}/gmmf/indexed/reaches?" +
+                            "from=peerset0:v1&to=peerset0:v3",
+                    )
+                expectThat(reachesMessage1.reaches).isTrue()
 
-            val reachesMessage1 =
-                indexedReaches(
-                    "http://${apps.getPeer("peer0").address}/gmmf/indexed/reaches?" +
-                        "from=peerset0:v1&to=peerset0:v3",
-                )
-            expectThat(reachesMessage1.reaches).isTrue()
+                val reachesMessage2 =
+                    indexedReaches(
+                        "http://${apps.getPeer("peer0").address}/gmmf/indexed/reaches?" +
+                            "from=peerset0:v1&to=peerset0:v2",
+                    )
+                expectThat(reachesMessage2.reaches).isTrue()
 
-            val reachesMessage2 =
-                indexedReaches(
-                    "http://${apps.getPeer("peer0").address}/gmmf/indexed/reaches?" +
-                        "from=peerset0:v1&to=peerset0:v2",
-                )
-            expectThat(reachesMessage2.reaches).isTrue()
+                val reachesMessage3 =
+                    indexedReaches(
+                        "http://${apps.getPeer("peer0").address}/gmmf/indexed/reaches?" +
+                            "from=peerset0:v2&to=peerset0:v3",
+                    )
+                expectThat(reachesMessage3.reaches).isTrue()
 
-            val reachesMessage3 =
-                indexedReaches(
-                    "http://${apps.getPeer("peer0").address}/gmmf/indexed/reaches?" +
-                        "from=peerset0:v2&to=peerset0:v3",
-                )
-            expectThat(reachesMessage3.reaches).isTrue()
-
-            val reachesMessage4 =
-                indexedReaches(
-                    "http://${apps.getPeer("peer0").address}/gmmf/indexed/reaches?" +
-                        "from=peerset0:v3&to=peerset0:v1",
-                )
-            expectThat(reachesMessage4.reaches).isFalse()
+                val reachesMessage4 =
+                    indexedReaches(
+                        "http://${apps.getPeer("peer0").address}/gmmf/indexed/reaches?" +
+                            "from=peerset0:v3&to=peerset0:v1",
+                    )
+                expectThat(reachesMessage4.reaches).isFalse()
+            }
         }
 
     @Test
@@ -183,34 +182,33 @@ class GmmfIndexedSpec : IntegrationTestBase() {
                 Permissions("01010"),
             )
 
-            logger.info("Waiting for event processing")
-            waitForIndex("peer0", "peerset0")
+            eventuallyBlocking(30) {
+                val membersMessage1 =
+                    indexedMembers(
+                        "http://${apps.getPeer("peer0").address}/gmmf/indexed/members?" +
+                            "of=peerset0:v1",
+                    )
+                expectThat(membersMessage1.members).isEqualTo(setOf())
 
-            val membersMessage1 =
-                indexedMembers(
-                    "http://${apps.getPeer("peer0").address}/gmmf/indexed/members?" +
-                        "of=peerset0:v1",
-                )
-            expectThat(membersMessage1.members).isEqualTo(setOf())
+                val membersMessage2 =
+                    indexedMembers(
+                        "http://${apps.getPeer("peer0").address}/gmmf/indexed/members?" +
+                            "of=peerset0:v2",
+                    )
+                expectThat(membersMessage2.members).isEqualTo(setOf(VertexId("peerset0:v1")))
 
-            val membersMessage2 =
-                indexedMembers(
-                    "http://${apps.getPeer("peer0").address}/gmmf/indexed/members?" +
-                        "of=peerset0:v2",
+                val membersMessage3 =
+                    indexedMembers(
+                        "http://${apps.getPeer("peer0").address}/gmmf/indexed/members?" +
+                            "of=peerset0:v3",
+                    )
+                expectThat(membersMessage3.members).isEqualTo(
+                    setOf(
+                        VertexId("peerset0:v1"),
+                        VertexId("peerset0:v2"),
+                    ),
                 )
-            expectThat(membersMessage2.members).isEqualTo(setOf(VertexId("peerset0:v1")))
-
-            val membersMessage3 =
-                indexedMembers(
-                    "http://${apps.getPeer("peer0").address}/gmmf/indexed/members?" +
-                        "of=peerset0:v3",
-                )
-            expectThat(membersMessage3.members).isEqualTo(
-                setOf(
-                    VertexId("peerset0:v1"),
-                    VertexId("peerset0:v2"),
-                ),
-            )
+            }
         }
 
     @Test
@@ -254,25 +252,27 @@ class GmmfIndexedSpec : IntegrationTestBase() {
                 Permissions("01010"),
             )
 
-            val membersMessage1 =
-                indexedMembers(
-                    "http://${apps.getPeer("peer0").address}/gmmf/indexed/members?" +
-                        "of=peerset0:v1",
-                )
-            expectThat(membersMessage1.members).isEqualTo(setOf())
+            eventuallyBlocking(30) {
+                val membersMessage1 =
+                    indexedMembers(
+                        "http://${apps.getPeer("peer0").address}/gmmf/indexed/members?" +
+                            "of=peerset0:v1",
+                    )
+                expectThat(membersMessage1.members).isEqualTo(setOf())
 
-            val membersMessage2 =
-                indexedMembers(
-                    "http://${apps.getPeer("peer3").address}/gmmf/indexed/members?" +
-                        "of=peerset1:v4",
+                val membersMessage2 =
+                    indexedMembers(
+                        "http://${apps.getPeer("peer3").address}/gmmf/indexed/members?" +
+                            "of=peerset1:v4",
+                    )
+                expectThat(membersMessage2.members).isEqualTo(
+                    setOf(
+                        VertexId("peerset0:v1"),
+                        VertexId("peerset0:v2"),
+                        VertexId("peerset1:v3"),
+                    ),
                 )
-            expectThat(membersMessage2.members).isEqualTo(
-                setOf(
-                    VertexId("peerset0:v1"),
-                    VertexId("peerset0:v2"),
-                    VertexId("peerset1:v3"),
-                ),
-            )
+            }
         }
 
     /**
@@ -329,22 +329,21 @@ class GmmfIndexedSpec : IntegrationTestBase() {
                 Permissions("00010"),
             )
 
-            logger.info("Waiting for event processing")
-            waitForIndex("peer0", "peerset0")
+            eventuallyBlocking(30) {
+                val epMessage1 =
+                    indexedEffectivePermissions(
+                        "http://${apps.getPeer("peer0").address}/gmmf/indexed/effective_permissions?" +
+                            "from=peerset0:v1&to=peerset0:v3",
+                    )
+                expectThat(epMessage1.effectivePermissions).isEqualTo(Permissions("00110"))
 
-            val epMessage1 =
-                indexedEffectivePermissions(
-                    "http://${apps.getPeer("peer0").address}/gmmf/indexed/effective_permissions?" +
-                        "from=peerset0:v1&to=peerset0:v3",
-                )
-            expectThat(epMessage1.effectivePermissions).isEqualTo(Permissions("00110"))
-
-            val epMessage2 =
-                indexedEffectivePermissions(
-                    "http://${apps.getPeer("peer0").address}/gmmf/indexed/effective_permissions?" +
-                        "from=peerset0:v3&to=peerset0:v1",
-                )
-            expectThat(epMessage2.effectivePermissions).isNull()
+                val epMessage2 =
+                    indexedEffectivePermissions(
+                        "http://${apps.getPeer("peer0").address}/gmmf/indexed/effective_permissions?" +
+                            "from=peerset0:v3&to=peerset0:v1",
+                    )
+                expectThat(epMessage2.effectivePermissions).isNull()
+            }
         }
 
     /**
@@ -409,19 +408,21 @@ class GmmfIndexedSpec : IntegrationTestBase() {
                 Permissions("00010"),
             )
 
-            val epMessage1 =
-                indexedEffectivePermissions(
-                    "http://${apps.getPeer("peer0").address}/gmmf/indexed/effective_permissions?" +
-                        "from=peerset0:v1&to=peerset2:v3",
-                )
-            expectThat(epMessage1.effectivePermissions).isEqualTo(Permissions("00110"))
+            eventuallyBlocking(30) {
+                val epMessage1 =
+                    indexedEffectivePermissions(
+                        "http://${apps.getPeer("peer0").address}/gmmf/indexed/effective_permissions?" +
+                            "from=peerset0:v1&to=peerset2:v3",
+                    )
+                expectThat(epMessage1.effectivePermissions).isEqualTo(Permissions("00110"))
 
-            val epMessage2 =
-                indexedEffectivePermissions(
-                    "http://${apps.getPeer("peer0").address}/gmmf/indexed/effective_permissions?" +
-                        "from=peerset2:v3&to=peerset0:v1",
-                )
-            expectThat(epMessage2.effectivePermissions).isNull()
+                val epMessage2 =
+                    indexedEffectivePermissions(
+                        "http://${apps.getPeer("peer0").address}/gmmf/indexed/effective_permissions?" +
+                            "from=peerset2:v3&to=peerset0:v1",
+                    )
+                expectThat(epMessage2.effectivePermissions).isNull()
+            }
         }
 
     private suspend fun indexedReaches(url: String): ReachesMessage =
