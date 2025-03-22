@@ -19,14 +19,19 @@ class EventTransactionProcessor(
         vertexId: VertexId,
         event: Event,
     ): Boolean {
+        val currentEntryIdBefore = protocols.history.getCurrentEntryId()
         val result = eventProcessor.process(vertexId, event)
+        val currentEntryIdAfter = protocols.history.getCurrentEntryId()
+
+        if (currentEntryIdBefore != currentEntryIdAfter) {
+            return false
+        }
 
         val tx = ProcessEventTx(vertexId, event.id, result.diff, result.generatedEvents)
         val change =
             StandardChange(
                 tx.serialize(),
-                // TODO parent id?
-                peersets = listOf(ChangePeersetInfo(protocols.peersetId, null)),
+                peersets = listOf(ChangePeersetInfo(protocols.peersetId, currentEntryIdAfter)),
             )
         val changeResult = protocols.consensusProtocol.proposeChangeAsync(change).await()
         logger.info("Event processing transaction status: {}", changeResult)
