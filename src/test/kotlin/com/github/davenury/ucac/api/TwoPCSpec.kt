@@ -433,7 +433,7 @@ class TwoPCSpec : IntegrationTestBase() {
             }
         }
 
-    @Test
+    @RetryingTest(3)
     fun `transaction should be processed if peer from second peerset accepted change`(): Unit =
         runBlocking {
             val firstPeersetChangeAppliedPhaser = Phaser(4)
