@@ -19,11 +19,14 @@ class EventTransactionProcessor(
         vertexId: VertexId,
         event: Event,
     ): Boolean {
+        logger.info("Processing event: ${event.id}")
+
         val currentEntryIdBefore = protocols.history.getCurrentEntryId()
         val result = eventProcessor.process(vertexId, event)
         val currentEntryIdAfter = protocols.history.getCurrentEntryId()
 
         if (currentEntryIdBefore != currentEntryIdAfter) {
+            logger.info("Processing event ${event.id} failed, optimistic lock failure")
             return false
         }
 
@@ -34,8 +37,13 @@ class EventTransactionProcessor(
                 peersets = listOf(ChangePeersetInfo(protocols.peersetId, currentEntryIdAfter)),
             )
         val changeResult = protocols.consensusProtocol.proposeChangeAsync(change).await()
-        logger.info("Event processing transaction status: {}", changeResult)
-        return changeResult.status == ChangeResult.Status.SUCCESS
+        val success = changeResult.status == ChangeResult.Status.SUCCESS
+        if (success) {
+            logger.info("Successfully processed event ${event.id}")
+        } else {
+            logger.info("Failed to process event ${event.id}: $changeResult")
+        }
+        return success
     }
 
     suspend fun send(
