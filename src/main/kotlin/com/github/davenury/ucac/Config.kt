@@ -24,6 +24,7 @@ data class Config(
     val workerPoolSize: Int = 1,
     val configureTraces: Boolean = false,
     val peerIdIsAddress: Boolean = false,
+    val indexing: Boolean = true,
 ) {
     fun peerId() = PeerId(peerId)
 

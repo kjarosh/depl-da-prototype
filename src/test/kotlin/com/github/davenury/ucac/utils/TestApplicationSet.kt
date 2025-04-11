@@ -20,6 +20,7 @@ class TestApplicationSet(
     configOverrides: Map<String, Map<String, Any>> = emptyMap(),
     val appsToExclude: List<String> = emptyList(),
     subscribers: Map<String, Map<PeersetId, Subscribers>> = emptyMap(),
+    enableIndexing: Boolean = true,
 ) : AutoCloseable {
     private val apps: Map<PeerId, ApplicationUcac>
     private val peerAddresses: Map<PeerId, PeerAddress>
@@ -41,6 +42,7 @@ class TestApplicationSet(
                     },
                 "port" to 0,
                 "host" to "localhost",
+                "indexing" to enableIndexing,
             )
 
         val peersToValidate = signalListeners.keys + configOverrides.keys + appsToExclude
