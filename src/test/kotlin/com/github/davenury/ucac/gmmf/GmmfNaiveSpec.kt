@@ -36,7 +36,7 @@ class GmmfNaiveSpec : IntegrationTestBase() {
     @Test
     fun `naive reaches basic`(): Unit =
         runBlocking {
-            apps = TestApplicationSet(mapOf("peerset0" to listOf("peer0", "peer1")))
+            apps = TestApplicationSet(mapOf("peerset0" to listOf("peer0", "peer1")), enableIndexing = false)
 
             logger.info("Adding v1")
             addVertex("peer0", "peerset0", "v1", Vertex.Type.GROUP)
@@ -94,7 +94,7 @@ class GmmfNaiveSpec : IntegrationTestBase() {
     @Test
     fun `naive reaches two peersets`(): Unit =
         runBlocking {
-            apps = TestApplicationSet(mapOf("peerset0" to listOf("peer0", "peer1"), "peerset1" to listOf("peer2", "peer3")))
+            apps = TestApplicationSet(mapOf("peerset0" to listOf("peer0", "peer1"), "peerset1" to listOf("peer2", "peer3")), enableIndexing = false)
 
             addVertex("peer0", "peerset0", "v1", Vertex.Type.GROUP)
             addVertex("peer1", "peerset0", "v2", Vertex.Type.GROUP)
@@ -149,7 +149,7 @@ class GmmfNaiveSpec : IntegrationTestBase() {
     @Test
     fun `naive members basic`(): Unit =
         runBlocking {
-            apps = TestApplicationSet(mapOf("peerset0" to listOf("peer0", "peer1")))
+            apps = TestApplicationSet(mapOf("peerset0" to listOf("peer0", "peer1")), enableIndexing = false)
 
             logger.info("Adding v1")
             addVertex("peer0", "peerset0", "v1", Vertex.Type.GROUP)
@@ -205,7 +205,7 @@ class GmmfNaiveSpec : IntegrationTestBase() {
     @Test
     fun `naive members two peersets`(): Unit =
         runBlocking {
-            apps = TestApplicationSet(mapOf("peerset0" to listOf("peer0", "peer1"), "peerset1" to listOf("peer2", "peer3")))
+            apps = TestApplicationSet(mapOf("peerset0" to listOf("peer0", "peer1"), "peerset1" to listOf("peer2", "peer3")), enableIndexing = false)
 
             addVertex("peer0", "peerset0", "v1", Vertex.Type.GROUP)
             addVertex("peer1", "peerset0", "v2", Vertex.Type.GROUP)
@@ -273,7 +273,7 @@ class GmmfNaiveSpec : IntegrationTestBase() {
     @Test
     fun `naive effective permissions basic`(): Unit =
         runBlocking {
-            apps = TestApplicationSet(mapOf("peerset0" to listOf("peer0", "peer1")))
+            apps = TestApplicationSet(mapOf("peerset0" to listOf("peer0", "peer1")), enableIndexing = false)
 
             logger.info("Adding v1")
             addVertex("peer0", "peerset0", "v1", Vertex.Type.GROUP)
@@ -349,6 +349,8 @@ class GmmfNaiveSpec : IntegrationTestBase() {
                         "peerset1" to listOf("peer3", "peer4"),
                         "peerset2" to listOf("peer5", "peer6", "peer7"),
                     ),
+                    // Indexing causes too much load and naive requests time out
+                    enableIndexing = false,
                 )
 
             logger.info("Adding v1")

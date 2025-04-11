@@ -4,10 +4,14 @@ import com.github.davenury.common.Change
 import com.github.davenury.common.history.History
 import com.github.davenury.common.history.HistoryEntry
 import com.github.davenury.common.history.HistoryListener
+import com.github.davenury.ucac.Config
 import com.github.davenury.ucac.common.PeersetProtocols
 import com.github.kjarosh.agh.pp.index.VertexIndices
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 class IndexFromHistory(
+    config: Config,
     history: History,
     private val graphFromHistory: GraphFromHistory,
     protocols: PeersetProtocols,
@@ -19,6 +23,15 @@ class IndexFromHistory(
     private val eventDatabase = EventDatabase(graphFromHistory.getGraph().currentZoneId, eventTransactionProcessor)
 
     init {
+        if (config.indexing) {
+            logger.info("Indexing enabled")
+            initialize(history)
+        } else {
+            logger.info("Indexing disabled")
+        }
+    }
+
+    private fun initialize(history: History) {
         history.addListener(
             object : HistoryListener {
                 override fun afterNewEntry(
@@ -55,5 +68,9 @@ class IndexFromHistory(
 
     fun isReady(): Boolean {
         return eventDatabase.isEmpty()
+    }
+
+    companion object {
+        val logger: Logger = LoggerFactory.getLogger("index")
     }
 }
