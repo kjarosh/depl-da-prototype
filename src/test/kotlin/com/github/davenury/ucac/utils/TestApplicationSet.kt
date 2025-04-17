@@ -86,9 +86,22 @@ class TestApplicationSet(
         timeoutPeriodMillis: Long = 1000,
     ) {
         logger.info("Stopping apps")
+        dumpHistories()
         runBlocking {
             apps.map { (_, app) -> GlobalScope.launch { app.stop(gracePeriodMillis, timeoutPeriodMillis) } }
                 .forEach { it.join() }
+        }
+    }
+
+    private fun dumpHistories() {
+        apps.forEach { (peerId, app) ->
+            app.getMultiplePeersetProtocols()?.protocols?.forEach { (peersetId, protocols) ->
+                val string =
+                    protocols.history.toEntryList(false).joinToString("\n    ") {
+                        "${it.getId().substring(0, 8)}: ${it.getContent()}"
+                    }
+                logger.info("History of $peerId,$peersetId:\n    $string\n    ")
+            }
         }
     }
 
