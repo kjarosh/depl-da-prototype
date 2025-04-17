@@ -71,6 +71,8 @@ class PersistentHistory(private val persistence: Persistence) : CachedHistory() 
 
         persistEntry(entry)
 
+        logger.info("Adding history entry (${newId.substring(0, 8)}): $entry")
+
         listeners.forEach { l -> l.beforeNewEntry(entry) }
         val successful = compareAndSetCurrentEntryId(expectedParentId, newId)
         listeners.forEach { l -> l.afterNewEntry(entry, successful) }
@@ -81,7 +83,7 @@ class PersistentHistory(private val persistence: Persistence) : CachedHistory() 
                     "entryId=$newId",
             )
         } else {
-            logger.info("History entry added ($newId): $entry")
+            logger.info("History entry added (${newId.substring(0, 8)}): $entry")
         }
     }
 
