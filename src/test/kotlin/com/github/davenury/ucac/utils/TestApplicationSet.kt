@@ -62,6 +62,9 @@ class TestApplicationSet(
         apps.filter { (peerId, _) -> !appsToExclude.contains(peerId.toString()) }
             .forEach { (_, app) -> app.startNonblocking() }
 
+        apps.filter { (peerId, _) -> !appsToExclude.contains(peerId.toString()) }
+            .forEach { (_, app) -> app.printPort() }
+
         peerAddresses =
             apps.mapValues { (peerId, app) ->
                 val address =

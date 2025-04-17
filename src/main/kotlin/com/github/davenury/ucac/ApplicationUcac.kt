@@ -168,7 +168,6 @@ class ApplicationUcac(
         embeddedServer(Netty, port = config.port, host = "0.0.0.0") {
             val peersetIds = config.peersetIds()
 
-            logger.info("Using port: ${config.port}")
             logger.info("My peersets: $peersetIds")
             val changeNotifier = ChangeNotifier(peerResolver)
 
@@ -392,6 +391,12 @@ class ApplicationUcac(
     fun startNonblocking() {
         withMdc {
             engine.start(wait = false)
+        }
+    }
+
+    fun printPort() {
+        withMdc {
+            logger.info("Using port: ${getBoundPort()}")
         }
     }
 
