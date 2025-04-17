@@ -40,13 +40,11 @@ class PeersetProtocols(
     val twoPC: TwoPC
     val gpacFactory: GPACFactory
 
-    val graphFromHistory: GraphFromHistory by lazy {
+    val graphFromHistory: GraphFromHistory =
         GraphFromHistory(history, peersetId)
-    }
 
-    val indexFromHistory: IndexFromHistory by lazy {
+    val indexFromHistory: IndexFromHistory =
         IndexFromHistory(config, history, graphFromHistory, this)
-    }
 
     init {
         gpacFactory =
