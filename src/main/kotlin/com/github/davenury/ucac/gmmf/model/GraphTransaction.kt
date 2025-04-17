@@ -40,10 +40,10 @@ sealed class GraphTransaction {
         val logger: Logger = LoggerFactory.getLogger("graph-tx")
 
         fun deserialize(content: String): GraphTransaction? {
-            try {
-                return objectMapper.readValue(content, GraphTransaction::class.java)
+            return try {
+                objectMapper.readValue(content, GraphTransaction::class.java)
             } catch (e: JacksonException) {
-                return null
+                null
             }
         }
     }
