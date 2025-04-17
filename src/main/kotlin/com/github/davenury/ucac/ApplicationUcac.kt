@@ -426,6 +426,14 @@ class ApplicationUcac(
 
     fun getPeersetProtocols(peersetId: PeersetId) = multiplePeersetProtocols.forPeerset(peersetId)
 
+    fun getMultiplePeersetProtocols(): MultiplePeersetProtocols? {
+        return if (this::multiplePeersetProtocols.isInitialized) {
+            this.multiplePeersetProtocols
+        } else {
+            null
+        }
+    }
+
     companion object {
         val logger: Logger = LoggerFactory.getLogger("ucac")
     }
