@@ -1,5 +1,6 @@
 package com.github.davenury.ucac.utils
 
+import com.github.davenury.common.Change
 import com.github.davenury.common.PeerAddress
 import com.github.davenury.common.PeerId
 import com.github.davenury.common.PeersetId
@@ -103,7 +104,8 @@ class TestApplicationSet(
             app.getMultiplePeersetProtocols()?.protocols?.forEach { (peersetId, protocols) ->
                 val string =
                     protocols.history.toEntryList(false).joinToString("\n    ") {
-                        "${it.getId().substring(0, 8)}: ${it.getContent()}"
+                        val change = Change.fromHistoryEntry(it)
+                        "${it.getId().substring(0, 8)}: $change"
                     }
                 logger.info("History of $peerId,$peersetId:\n    $string\n    ")
             }
