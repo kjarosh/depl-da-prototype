@@ -138,7 +138,7 @@ data class StandardChange(
     }
 
     override fun toString(): String {
-        return "StandardChange($id, $peersets, $content)"
+        return "StandardChange($id, $content, $peersets)"
     }
 }
 
@@ -187,6 +187,6 @@ data class TwoPCChange(
     }
 
     override fun toString(): String {
-        return "2PCChange($id, $twoPCStatus, $peersets (leader $leaderPeerset), $change)"
+        return "2PCChange($id, $twoPCStatus, $change, $peersets (leader $leaderPeerset))"
     }
 }
