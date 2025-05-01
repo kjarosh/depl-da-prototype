@@ -1,6 +1,7 @@
 package com.github.davenury.ucac.gmmf.model
 
 import com.github.davenury.common.PeersetId
+import com.github.davenury.ucac.utils.MdcProvider
 import com.github.kjarosh.agh.pp.graph.model.VertexId
 import com.github.kjarosh.agh.pp.graph.model.ZoneId
 import com.github.kjarosh.agh.pp.index.events.Event
@@ -15,6 +16,8 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 
 class EventDatabase(private val currentZoneId: ZoneId, private val eventTransactionProcessor: EventTransactionProcessor) {
+    private val mdcProvider = MdcProvider(mapOf("peerset" to currentZoneId.toString()))
+
     val acceptedEventIds = HashSet<String>()
     val processedEventIds = HashSet<String>()
     private val outboxes: MutableMap<PeersetId, ArrayDeque<Pair<VertexId, Event>>> = ConcurrentHashMap()
@@ -23,9 +26,11 @@ class EventDatabase(private val currentZoneId: ZoneId, private val eventTransact
     private val executorService: ExecutorCoroutineDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
 
     init {
-        with(CoroutineScope(executorService)) {
-            launch(MDCContext()) {
-                processEvents()
+        mdcProvider.withMdc {
+            with(CoroutineScope(executorService)) {
+                launch(MDCContext()) {
+                    processEvents()
+                }
             }
         }
     }
