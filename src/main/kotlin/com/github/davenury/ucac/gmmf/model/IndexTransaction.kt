@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.fasterxml.jackson.core.JacksonException
 import com.github.davenury.common.PeersetId
 import com.github.davenury.common.objectMapper
+import com.github.kjarosh.agh.pp.graph.model.Graph
 import com.github.kjarosh.agh.pp.graph.model.VertexId
 import com.github.kjarosh.agh.pp.index.VertexIndices
 import com.github.kjarosh.agh.pp.index.events.Event
@@ -25,6 +26,7 @@ sealed class IndexTransaction {
     }
 
     abstract fun apply(
+        graph: Graph,
         indices: VertexIndices,
         eventDatabase: EventDatabase,
     )
@@ -44,6 +46,7 @@ sealed class IndexTransaction {
 
 data class AcceptExternalEvent(val vertex: VertexId, val event: Event) : IndexTransaction() {
     override fun apply(
+        graph: Graph,
         indices: VertexIndices,
         eventDatabase: EventDatabase,
     ) {
@@ -55,6 +58,7 @@ data class AcceptExternalEvent(val vertex: VertexId, val event: Event) : IndexTr
 
 data class ProcessEventTx(val vertex: VertexId, val eventId: String, val diff: IndexDiff, val generatedEvents: Map<VertexId, List<Event>>) : IndexTransaction() {
     override fun apply(
+        graph: Graph,
         indices: VertexIndices,
         eventDatabase: EventDatabase,
     ) {
@@ -65,7 +69,7 @@ data class ProcessEventTx(val vertex: VertexId, val eventId: String, val diff: I
             throw RuntimeException("ProcessEventTx: Event ID mismatch, expected $eventId, was $existingId")
         }
 
-        diff.apply(indices)
+        diff.apply(graph, indices)
 
         eventDatabase.processedEventIds.add(eventId)
 
@@ -79,6 +83,7 @@ data class ProcessEventTx(val vertex: VertexId, val eventId: String, val diff: I
 
 data class SendOutboxEvent(val peersetId: PeersetId, val eventId: String) : IndexTransaction() {
     override fun apply(
+        graph: Graph,
         indices: VertexIndices,
         eventDatabase: EventDatabase,
     ) {
