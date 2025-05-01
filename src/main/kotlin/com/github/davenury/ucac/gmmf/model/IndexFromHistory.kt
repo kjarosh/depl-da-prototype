@@ -57,7 +57,7 @@ class IndexFromHistory(
 
     private fun applyNewEntry(entry: HistoryEntry) {
         Change.fromHistoryEntry(entry)?.getAppliedContent()?.let {
-            IndexTransaction.deserialize(it)?.apply(indices, eventDatabase)
+            IndexTransaction.deserialize(it)?.apply(graphFromHistory.getGraph(), indices, eventDatabase)
             GraphTransaction.deserialize(it)?.applyEvents(graphFromHistory.getGraph(), indices, eventDatabase)
         }
     }
