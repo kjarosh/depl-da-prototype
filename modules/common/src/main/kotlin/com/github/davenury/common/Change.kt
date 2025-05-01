@@ -1,5 +1,6 @@
 package com.github.davenury.common
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonSubTypes
@@ -71,6 +72,7 @@ sealed class Change(open val id: String = UUID.randomUUID().toString()) {
         parentId: String?,
     ): Change
 
+    @JsonIgnore
     abstract fun getAppliedContent(): String?
 
     protected fun doesEqual(other: Any?): Boolean = (other is Change) && Objects.equals(id, other.id)
