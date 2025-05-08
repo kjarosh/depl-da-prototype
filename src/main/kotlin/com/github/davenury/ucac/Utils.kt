@@ -49,7 +49,7 @@ val testHttpClient =
             serializer = JacksonSerializer(objectMapper)
         }
         install(HttpTimeout) {
-            requestTimeoutMillis = 30000
+            requestTimeoutMillis = 120000
             socketTimeoutMillis = 120000
         }
     }
