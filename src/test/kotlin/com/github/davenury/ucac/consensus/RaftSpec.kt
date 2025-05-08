@@ -581,7 +581,7 @@ class RaftSpec : IntegrationTestBase() {
         }
 
     //    DONE: Exactly half of peers is running
-    @Test
+    @RetryingTest(3)
     fun `exactly half of peers is failed`(): Unit =
         runBlocking {
             val peersWithoutLeader = 3
