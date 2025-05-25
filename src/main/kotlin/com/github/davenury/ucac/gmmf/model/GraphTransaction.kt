@@ -34,6 +34,7 @@ sealed class GraphTransaction {
         graph: Graph,
         indices: VertexIndices,
         eventDatabase: EventDatabase,
+        postedEntryId: String,
     )
 
     companion object {
@@ -59,6 +60,7 @@ data class AddVertexTx(val id: VertexId, val type: Vertex.Type) : GraphTransacti
         graph: Graph,
         indices: VertexIndices,
         eventDatabase: EventDatabase,
+        postedEntryId: String,
     ) {
         // adding a vertex does not generate any events
     }
@@ -80,12 +82,13 @@ data class AddEdgeTx(
         graph: Graph,
         indices: VertexIndices,
         eventDatabase: EventDatabase,
+        postedEntryId: String,
     ) {
         if (from.owner() == graph.currentZoneId) {
-            postChangeEvent(indices, eventDatabase, false, eventId, EdgeId(from, to), false)
+            postChangeEvent(indices, eventDatabase, false, eventId, EdgeId(from, to), false, postedEntryId)
         }
         if (to.owner() == graph.currentZoneId) {
-            postChangeEvent(indices, eventDatabase, true, reverseEventId, EdgeId(from, to), false)
+            postChangeEvent(indices, eventDatabase, true, reverseEventId, EdgeId(from, to), false, postedEntryId)
         }
     }
 
@@ -96,6 +99,7 @@ data class AddEdgeTx(
         eventId: String,
         edgeId: EdgeId,
         delete: Boolean,
+        postedEntryId: String,
     ) {
         val subjects: MutableSet<VertexId> = HashSet()
         if (reverseDirection) {
@@ -114,6 +118,7 @@ data class AddEdgeTx(
                     .sender(edgeId.to)
                     .originalSender(edgeId.to)
                     .build(),
+                postedEntryId,
             )
         } else {
             subjects.addAll(
@@ -130,6 +135,7 @@ data class AddEdgeTx(
                     .sender(edgeId.from)
                     .originalSender(edgeId.from)
                     .build(),
+                postedEntryId,
             )
         }
     }
