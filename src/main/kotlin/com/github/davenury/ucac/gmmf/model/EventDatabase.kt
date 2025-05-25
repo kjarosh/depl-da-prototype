@@ -95,7 +95,8 @@ class EventDatabase(private val currentZoneId: ZoneId, private val eventTransact
                 val postedEvent = queue.first()
                 val vertexId = postedEvent.vertexId
                 val event = postedEvent.event
-                processed = processed || eventTransactionProcessor.send(vertexId, event)
+                val postedEntryId = postedEvent.postedEntryId
+                processed = processed || eventTransactionProcessor.send(vertexId, event, postedEntryId)
             }
         }
 

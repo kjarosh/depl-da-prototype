@@ -1,5 +1,6 @@
 package com.github.davenury.ucac.gmmf.model
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.fasterxml.jackson.core.JacksonException
@@ -32,6 +33,9 @@ sealed class IndexTransaction {
         entryId: String,
     )
 
+    @JsonIgnore
+    abstract fun getSentEventId(): String?
+
     companion object {
         val logger: Logger = LoggerFactory.getLogger("index-tx")
 
@@ -56,6 +60,8 @@ data class AcceptExternalEvent(val vertex: VertexId, val event: Event) : IndexTr
         eventDatabase.post(vertex, event, entryId)
         eventDatabase.acceptedEventIds.add(event.id)
     }
+
+    override fun getSentEventId(): String? = null
 }
 
 data class ProcessEventTx(val vertex: VertexId, val eventId: String, val diff: IndexDiff, val generatedEvents: Map<VertexId, List<Event>>) : IndexTransaction() {
@@ -82,6 +88,8 @@ data class ProcessEventTx(val vertex: VertexId, val eventId: String, val diff: I
             }
         }
     }
+
+    override fun getSentEventId(): String? = null
 }
 
 data class SendOutboxEvent(val peersetId: PeersetId, val eventId: String) : IndexTransaction() {
@@ -98,4 +106,6 @@ data class SendOutboxEvent(val peersetId: PeersetId, val eventId: String) : Inde
             throw RuntimeException("SendOutboxEvent: Event ID mismatch, expected $eventId, was $existingId")
         }
     }
+
+    override fun getSentEventId(): String = eventId
 }

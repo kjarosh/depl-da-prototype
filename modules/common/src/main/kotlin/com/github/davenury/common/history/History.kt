@@ -1,5 +1,7 @@
 package com.github.davenury.common.history
 
+import java.util.function.Predicate
+
 /**
  * @author Kamil Jarosz
  */
@@ -64,4 +66,23 @@ interface History {
         } else {
             listOf()
         }
+
+    fun hasEntry(
+        fromEntryId: String? = null,
+        toEntryId: String? = null,
+        predicate: Predicate<HistoryEntry>,
+    ): Boolean {
+        // Go in the reverse direction, following parents
+        var entryId = toEntryId ?: getCurrentEntryId()
+        while (entryId != fromEntryId) {
+            val entry = getEntry(entryId)
+            if (predicate.test(entry)) {
+                return true
+            }
+
+            entryId = entry.getParentId() ?: break
+        }
+
+        return false
+    }
 }

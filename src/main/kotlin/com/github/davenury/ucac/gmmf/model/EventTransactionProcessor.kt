@@ -1,5 +1,6 @@
 package com.github.davenury.ucac.gmmf.model
 
+import com.github.davenury.common.Change
 import com.github.davenury.common.ChangePeersetInfo
 import com.github.davenury.common.ChangeResult
 import com.github.davenury.common.PeersetId
@@ -49,8 +50,24 @@ class EventTransactionProcessor(
     suspend fun send(
         vertexId: VertexId,
         event: Event,
+        postedEntryId: String,
     ): Boolean {
         if (!eventSender.send(vertexId, event)) {
+            return false
+        }
+
+        val currentEntryId = protocols.history.getCurrentEntryId()
+        val alreadySent =
+            protocols.history.hasEntry(postedEntryId, currentEntryId) { entry ->
+                val sentEventId =
+                    Change.fromHistoryEntry(entry)?.getAppliedContent()?.let {
+                        IndexTransaction.deserialize(it)?.getSentEventId()
+                    }
+
+                return@hasEntry sentEventId == event.id
+            }
+
+        if (alreadySent) {
             return false
         }
 
@@ -59,8 +76,7 @@ class EventTransactionProcessor(
         val change =
             StandardChange(
                 tx.serialize(),
-                // TODO parent id?
-                peersets = listOf(ChangePeersetInfo(protocols.peersetId, null)),
+                peersets = listOf(ChangePeersetInfo(protocols.peersetId, currentEntryId)),
             )
         val changeResult = protocols.consensusProtocol.proposeChangeAsync(change).await()
         logger.info("Event sending transaction status: {}", changeResult)
