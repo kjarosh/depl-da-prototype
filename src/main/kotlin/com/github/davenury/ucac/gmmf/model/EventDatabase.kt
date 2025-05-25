@@ -20,8 +20,8 @@ class EventDatabase(private val currentZoneId: ZoneId, private val eventTransact
 
     val acceptedEventIds = HashSet<String>()
     val processedEventIds = HashSet<String>()
-    private val outboxes: MutableMap<PeersetId, ArrayDeque<Pair<VertexId, Event>>> = ConcurrentHashMap()
-    private val inboxes: MutableMap<VertexId, ArrayDeque<Event>> = ConcurrentHashMap()
+    private val outboxes: MutableMap<PeersetId, ArrayDeque<PostedEvent>> = ConcurrentHashMap()
+    private val inboxes: MutableMap<VertexId, ArrayDeque<PostedEvent>> = ConcurrentHashMap()
 
     private val executorService: ExecutorCoroutineDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
 
@@ -35,25 +35,27 @@ class EventDatabase(private val currentZoneId: ZoneId, private val eventTransact
         }
     }
 
-    fun getInbox(id: VertexId): ArrayDeque<Event> {
+    fun getInbox(id: VertexId): ArrayDeque<PostedEvent> {
         return inboxes.computeIfAbsent(id) { ArrayDeque() }
     }
 
-    fun getOutbox(peersetId: PeersetId): ArrayDeque<Pair<VertexId, Event>> {
+    fun getOutbox(peersetId: PeersetId): ArrayDeque<PostedEvent> {
         return outboxes.computeIfAbsent(peersetId) { ArrayDeque() }
     }
 
     fun post(
         id: VertexId,
         event: Event,
+        postedEntryId: String,
     ) {
+        val postedEvent = PostedEvent(event, id, postedEntryId)
         if (id.owner() != currentZoneId) {
             val peersetId = PeersetId(id.owner().id)
             logger.info("Posting an event: ${event.id} to outbox $peersetId")
-            getOutbox(peersetId).addLast(Pair(id, event))
+            getOutbox(peersetId).addLast(postedEvent)
         } else {
             logger.info("Posting an event: ${event.id} to inbox $id")
-            getInbox(id).addLast(event)
+            getInbox(id).addLast(postedEvent)
         }
     }
 
@@ -79,7 +81,8 @@ class EventDatabase(private val currentZoneId: ZoneId, private val eventTransact
 
             if (queue.isNotEmpty()) {
                 // Do not remove the event here, we remove events on tx commit.
-                val event = queue.first()
+                val postedEvent = queue.first()
+                val event = postedEvent.event
                 processed = processed || eventTransactionProcessor.process(vertexId, event)
             }
         }
@@ -89,9 +92,9 @@ class EventDatabase(private val currentZoneId: ZoneId, private val eventTransact
 
             if (queue.isNotEmpty()) {
                 // Do not remove the event here, we remove events on tx commit.
-                val pair = queue.first()
-                val vertexId = pair.first
-                val event = pair.second
+                val postedEvent = queue.first()
+                val vertexId = postedEvent.vertexId
+                val event = postedEvent.event
                 processed = processed || eventTransactionProcessor.send(vertexId, event)
             }
         }

@@ -29,6 +29,7 @@ sealed class IndexTransaction {
         graph: Graph,
         indices: VertexIndices,
         eventDatabase: EventDatabase,
+        entryId: String,
     )
 
     companion object {
@@ -49,9 +50,10 @@ data class AcceptExternalEvent(val vertex: VertexId, val event: Event) : IndexTr
         graph: Graph,
         indices: VertexIndices,
         eventDatabase: EventDatabase,
+        entryId: String,
     ) {
         logger.info("Applying accepting external event {}", event.id)
-        eventDatabase.post(vertex, event)
+        eventDatabase.post(vertex, event, entryId)
         eventDatabase.acceptedEventIds.add(event.id)
     }
 }
@@ -61,9 +63,10 @@ data class ProcessEventTx(val vertex: VertexId, val eventId: String, val diff: I
         graph: Graph,
         indices: VertexIndices,
         eventDatabase: EventDatabase,
+        entryId: String,
     ) {
         logger.info("Applying processed event {}", eventId)
-        val existingId = eventDatabase.getInbox(vertex).removeFirst().id
+        val existingId = eventDatabase.getInbox(vertex).removeFirst().event.id
         if (existingId != eventId) {
             logger.error("ProcessEventTx: Event ID mismatch, expected $eventId, was $existingId")
             throw RuntimeException("ProcessEventTx: Event ID mismatch, expected $eventId, was $existingId")
@@ -75,7 +78,7 @@ data class ProcessEventTx(val vertex: VertexId, val eventId: String, val diff: I
 
         generatedEvents.forEach {
             it.value.forEach { event ->
-                eventDatabase.post(it.key, event)
+                eventDatabase.post(it.key, event, entryId)
             }
         }
     }
@@ -86,9 +89,10 @@ data class SendOutboxEvent(val peersetId: PeersetId, val eventId: String) : Inde
         graph: Graph,
         indices: VertexIndices,
         eventDatabase: EventDatabase,
+        entryId: String,
     ) {
         logger.info("Applying sent event {}", eventId)
-        val existingId = eventDatabase.getOutbox(peersetId).removeFirst().second.id
+        val existingId = eventDatabase.getOutbox(peersetId).removeFirst().event.id
         if (existingId != eventId) {
             logger.error("SendOutboxEvent: Event ID mismatch, expected $eventId, was $existingId")
             throw RuntimeException("SendOutboxEvent: Event ID mismatch, expected $eventId, was $existingId")
