@@ -58,6 +58,7 @@ class TestApplicationSet(
                         testConfigOverrides +
                         (configOverrides[peerId.toString()] ?: emptyMap()),
                     subscribers[peerId.toString()] ?: emptyMap(),
+                    true,
                 )
             }
 
