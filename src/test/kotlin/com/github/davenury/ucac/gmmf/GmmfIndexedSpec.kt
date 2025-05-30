@@ -96,7 +96,6 @@ class GmmfIndexedSpec : IntegrationTestBase() {
         }
 
     @Test
-    @Disabled
     fun `indexed reaches two peersets`(): Unit =
         runBlocking {
             apps = TestApplicationSet(mapOf("peerset0" to listOf("peer0", "peer1"), "peerset1" to listOf("peer2", "peer3")))
@@ -212,7 +211,6 @@ class GmmfIndexedSpec : IntegrationTestBase() {
         }
 
     @Test
-    @Disabled
     fun `indexed members two peersets`(): Unit =
         runBlocking {
             apps = TestApplicationSet(mapOf("peerset0" to listOf("peer0", "peer1"), "peerset1" to listOf("peer2", "peer3")))
