@@ -62,7 +62,7 @@ class TwoPCProtocolClientImpl : TwoPCProtocolClient {
         peersetId: PeersetId,
     ): Change? {
         val url = "http://${peer.address}/protocols/2pc/ask/${change.id}?peerset=$peersetId"
-        logger.info("Sending to: $url")
+        logger.debug("Sending to: $url")
         return try {
             httpClient.get<Change?>(url) {
                 contentType(ContentType.Application.Json)
@@ -120,7 +120,7 @@ class TwoPCProtocolClientImpl : TwoPCProtocolClient {
         url: String,
         message: Message,
     ): Response? {
-        logger.info("Sending to: $url")
+        logger.debug("Sending to: $url")
         return httpClient.post<Response>(url) {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
