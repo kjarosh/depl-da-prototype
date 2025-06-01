@@ -21,15 +21,18 @@ import io.ktor.application.call
 import io.ktor.http.HttpStatusCode
 import io.ktor.request.receive
 import io.ktor.response.respond
-import io.ktor.routing.get
 import io.ktor.routing.post
 import io.ktor.routing.routing
 import kotlinx.coroutines.future.await
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 fun Application.gmmfIndexedRouting(
     multiplePeersetProtocols: MultiplePeersetProtocols,
     peerResolver: PeerResolver,
 ) {
+    val logger: Logger = LoggerFactory.getLogger("ix-routing")
+
     fun indexFromHistory(peersetId: PeersetId): IndexFromHistory = multiplePeersetProtocols.forPeerset(peersetId).indexFromHistory
 
     fun indices(peersetId: PeersetId): VertexIndices = indexFromHistory(peersetId).getIndices()
@@ -99,16 +102,32 @@ fun Application.gmmfIndexedRouting(
             val vertexId = VertexId(call.parameters["to"]!!)
             val peersetId = PeersetId(vertexId.owner().id)
             val event = call.receive<Event>()
+            val protocols = multiplePeersetProtocols.forPeerset(peersetId)
+
+            var currentEntryId: String
+            while (true) {
+                currentEntryId = protocols.history.getCurrentEntryId()
+                if (protocols.indexFromHistory.eventDatabase.acceptedEventIds.contains(event.id)) {
+                    logger.info("Event ${event.id} already accepted")
+                    call.respond(HttpStatusCode.OK)
+                    return@post
+                }
+                if (protocols.history.getCurrentEntryId() != currentEntryId) {
+                    // Optimistic locking, event might have been accepted in between
+                    continue
+                } else {
+                    break
+                }
+            }
 
             val tx = AcceptExternalEvent(vertexId, event)
             val change =
                 StandardChange(
                     tx.serialize(),
-                    // TODO parent id?
-                    peersets = listOf(ChangePeersetInfo(peersetId, null)),
+                    peersets = listOf(ChangePeersetInfo(peersetId, currentEntryId)),
                 )
             val changeResult =
-                multiplePeersetProtocols.forPeerset(peersetId)
+                protocols
                     .consensusProtocol
                     .proposeChangeAsync(change)
                     .await()
