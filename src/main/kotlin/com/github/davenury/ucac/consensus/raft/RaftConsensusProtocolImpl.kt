@@ -698,6 +698,7 @@ class RaftConsensusProtocolImpl(
     //  TODO: Useless function
     private suspend fun checkIfQueuedChanges() {
         val change = changesToBePropagatedToLeader.poll() ?: return
+        logger.info("Proposing a queued change (${changesToBePropagatedToLeader.size} left): $change")
         proposeChangeToLedger(change.cf, change.change)
     }
 
@@ -843,6 +844,7 @@ class RaftConsensusProtocolImpl(
 
             mutex.withLock {
                 logger.debug("ProposedEntries: ${state.proposedEntries.size}")
+                logger.info("Proposing change: $change")
                 if (state.entryAlreadyProposed(change.toHistoryEntry(peersetId, history.getCurrentEntryId()))) {
                     logger.info("Already proposed that change: $change")
 //                    scheduleHeartbeatToPeers(isRegular = false)
@@ -885,13 +887,14 @@ class RaftConsensusProtocolImpl(
                             entryId = history.getCurrentEntryId(),
                         ),
                     )
+                    logger.error("Change conflicted")
                     transactionBlocker.release(acquisition)
                     this.setTag("result", "conflict")
                     this.finish()
                     return
                 }
 
-                logger.info("Propose change to ledger: $updatedChange")
+                logger.debug("Propose change to ledger: $updatedChange")
                 state.proposeEntry(entry, updatedChange.id)
                 voteContainer.initializeChange(entry.getId())
 
@@ -984,6 +987,7 @@ class RaftConsensusProtocolImpl(
                     while (result == null) {
                         val address: String
                         if (votedFor == null || votedFor!!.id == peerId) {
+                            logger.info("Queueing the change, there's no leader")
                             changesToBePropagatedToLeader.add(ChangeToBePropagatedToLeader(change, cf))
                             return@asyncTraced
                         } else {
@@ -1022,7 +1026,6 @@ class RaftConsensusProtocolImpl(
             measureTimeMillis {
                 when {
                     amILeader() -> {
-                        logger.info("Proposing change: $change")
                         proposeChangeToLedger(result, change)
                     }
 
