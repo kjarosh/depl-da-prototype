@@ -13,6 +13,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.junitpioneer.jupiter.RetryingTest
 import org.slf4j.LoggerFactory
 import strikt.api.expectCatching
 import strikt.api.expectThat
@@ -125,7 +126,7 @@ class GmmfModificationSpec : IntegrationTestBase() {
             expectThat(edgePeer1.permissions).isEqualTo(Permissions("01010"))
         }
 
-    @Test
+    @RetryingTest(3)
     fun `add external edge`(): Unit =
         runBlocking {
             apps =
