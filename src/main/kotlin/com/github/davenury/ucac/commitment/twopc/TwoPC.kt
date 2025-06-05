@@ -4,7 +4,6 @@ import com.github.davenury.common.Change
 import com.github.davenury.common.ChangeDoesntExist
 import com.github.davenury.common.ChangeResult
 import com.github.davenury.common.HistoryCannotBeBuildException
-import com.github.davenury.common.ImNotLeaderException
 import com.github.davenury.common.Metrics
 import com.github.davenury.common.PeerAddress
 import com.github.davenury.common.PeerId
@@ -149,13 +148,7 @@ class TwoPC(
                     history.getCurrentEntryId(),
                 )
             val result =
-                if (consensusProtocol.amILeader()) {
-                    consensusProtocol.proposeChangeAsync(changeWithProperParentId).await()
-                } else {
-                    consensusProtocol.getLeaderId()?.let {
-                        throw ImNotLeaderException(it, peersetId)
-                    } ?: throw TwoPCHandleException("TwoPCChange didn't apply change")
-                }
+                consensusProtocol.proposeChangeAsync(changeWithProperParentId).await()
 
             if (result.status != ChangeResult.Status.SUCCESS) {
                 throw TwoPCHandleException("TwoPCChange didn't apply change")
