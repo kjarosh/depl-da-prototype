@@ -19,9 +19,9 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.junitpioneer.jupiter.RetryingTest
 import org.slf4j.LoggerFactory
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
@@ -352,16 +352,15 @@ class GmmfIndexedSpec : IntegrationTestBase() {
      *   ↘  ↙
      *    v3
      */
-    @Test
-    @Disabled
+    @RetryingTest(3)
     fun `indexed effective permissions multiple peersets`(): Unit =
         runBlocking {
             apps =
                 TestApplicationSet(
                     mapOf(
-                        "peerset0" to listOf("peer0", "peer1", "peer2"),
+                        "peerset0" to listOf("peer0", "peer1"),
                         "peerset1" to listOf("peer3", "peer4"),
-                        "peerset2" to listOf("peer5", "peer6", "peer7"),
+                        "peerset2" to listOf("peer5", "peer6"),
                     ),
                 )
 
@@ -372,7 +371,7 @@ class GmmfIndexedSpec : IntegrationTestBase() {
             logger.info("Adding v2b")
             addVertex("peer3", "peerset1", "v2b", Vertex.Type.GROUP)
             logger.info("Adding v3")
-            addVertex("peer7", "peerset2", "v3", Vertex.Type.GROUP)
+            addVertex("peer6", "peerset2", "v3", Vertex.Type.GROUP)
 
             logger.info("Adding v1->v2a")
             addEdge(
