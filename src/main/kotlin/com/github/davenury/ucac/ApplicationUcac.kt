@@ -37,11 +37,12 @@ import com.github.davenury.ucac.routing.twoPCRouting
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.jackson.jackson
 import io.ktor.server.application.install
+import io.ktor.server.engine.EmbeddedServer
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.metrics.micrometer.MicrometerMetrics
 import io.ktor.server.netty.Netty
 import io.ktor.server.netty.NettyApplicationEngine
-import io.ktor.server.plugins.callloging.CallLogging
+import io.ktor.server.plugins.calllogging.CallLogging
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.response.respond
@@ -117,7 +118,7 @@ class ApplicationUcac(
 ) {
     private val mdc: MutableMap<String, String> = HashMap(mapOf("peer" to config.peerId().toString()))
     private val peerResolver = config.newPeerResolver()
-    private val engine: NettyApplicationEngine
+    private val server: EmbeddedServer<NettyApplicationEngine, NettyApplicationEngine.Configuration>
     private lateinit var service: ApiV2Service
     private lateinit var multiplePeersetProtocols: MultiplePeersetProtocols
 
@@ -136,10 +137,10 @@ class ApplicationUcac(
     }
 
     init {
-        var engine: NettyApplicationEngine? = null
+        var server: EmbeddedServer<NettyApplicationEngine, NettyApplicationEngine.Configuration>? = null
         withMdc {
             logger.info("Starting application with config: $config")
-            engine = createServer()
+            server = createServer()
         }
         config.experimentId?.let { experimentId ->
             meterRegistry.config().meterFilter(
@@ -151,7 +152,7 @@ class ApplicationUcac(
                 },
             )
         }
-        this.engine = engine!!
+        this.server = server!!
     }
 
     private fun createServer() =
@@ -349,7 +350,7 @@ class ApplicationUcac(
 
     fun startNonblocking() {
         withMdc {
-            engine.start(wait = false)
+            server.start(wait = false)
         }
     }
 
@@ -368,7 +369,7 @@ class ApplicationUcac(
             if (this::multiplePeersetProtocols.isInitialized) {
                 multiplePeersetProtocols.close()
             }
-            engine.stop(gracePeriodMillis, timeoutMillis)
+            server.stop(gracePeriodMillis, timeoutMillis)
         }
     }
 
@@ -378,7 +379,7 @@ class ApplicationUcac(
         val oldAccessible = channelsProperty.isAccessible
         try {
             channelsProperty.isAccessible = true
-            val channels = channelsProperty.get(engine) as List<*>
+            val channels = channelsProperty.get(server.engine) as List<*>
             val channel = channels.single() as NioServerSocketChannel
             return channel.localAddress()!!.port
         } finally {
