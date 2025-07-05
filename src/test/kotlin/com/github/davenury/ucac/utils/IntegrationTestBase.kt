@@ -17,8 +17,11 @@ import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.debug.DebugProbes
 import kotlinx.coroutines.delay
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.time.Instant
@@ -28,6 +31,13 @@ import java.time.Instant
  */
 abstract class IntegrationTestBase {
     lateinit var apps: TestApplicationSet
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @BeforeEach
+    internal fun setUpTestBase() {
+        DebugProbes.enableCreationStackTraces = true
+        DebugProbes.install()
+    }
 
     @AfterEach
     internal fun tearDown() {
