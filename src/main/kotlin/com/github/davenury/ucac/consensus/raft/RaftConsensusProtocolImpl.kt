@@ -857,7 +857,7 @@ class RaftConsensusProtocolImpl(
             entry = updatedChange.toHistoryEntry(peersetId, history.getCurrentEntryId())
 
             if (isDuring2PAndChangeDoesntFinishIt(change)) {
-                logger.debug("Queued change, because is during 2PC")
+                logger.info("Queued change, because is during 2PC")
                 changesToBePropagatedToLeader.add(ChangeToBePropagatedToLeader(change, result))
                 transactionBlocker.release(acquisition)
                 return
