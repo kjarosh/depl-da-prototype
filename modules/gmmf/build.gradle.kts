@@ -10,10 +10,10 @@ sourceSets {
 
 dependencies {
     // GMMF
-    compileOnly("org.projectlombok:lombok:1.18.36")
-    annotationProcessor("org.projectlombok:lombok:1.18.36")
-    testCompileOnly("org.projectlombok:lombok:1.18.36")
-    testAnnotationProcessor("org.projectlombok:lombok:1.18.36")
+    compileOnly("org.projectlombok:lombok:1.18.38")
+    annotationProcessor("org.projectlombok:lombok:1.18.38")
+    testCompileOnly("org.projectlombok:lombok:1.18.38")
+    testAnnotationProcessor("org.projectlombok:lombok:1.18.38")
     implementation("com.github.javafaker:javafaker:1.0.2")
     implementation("com.google.guava:guava:33.3.1-jre")
     implementation(platform("org.springframework.boot:spring-boot-dependencies:2.7.4"))
