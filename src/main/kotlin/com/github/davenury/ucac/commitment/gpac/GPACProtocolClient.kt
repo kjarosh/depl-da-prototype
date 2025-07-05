@@ -3,7 +3,6 @@ package com.github.davenury.ucac.commitment.gpac
 import com.github.davenury.common.PeerAddress
 import com.github.davenury.common.PeersetId
 import com.github.davenury.ucac.httpClient
-import com.zopa.ktor.opentracing.asyncTraced
 import io.ktor.client.request.accept
 import io.ktor.client.request.post
 import io.ktor.client.statement.HttpResponse
@@ -12,6 +11,7 @@ import io.ktor.http.contentType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.slf4j.MDCContext
 import org.slf4j.LoggerFactory
 
@@ -71,7 +71,7 @@ class GPACProtocolClientImpl : GPACProtocolClient {
     ): Map<PeersetId, List<Deferred<K?>>> =
         otherPeers.mapValues { (peersetId, peerset) ->
             peerset.map { peer ->
-                CoroutineScope(Dispatchers.IO).asyncTraced(MDCContext()) {
+                CoroutineScope(Dispatchers.IO).async(MDCContext()) {
                     gpacHttpCall<K, T>(
                         "http://${peer.address}/$urlPath?peerset=$peersetId",
                         requestBody,

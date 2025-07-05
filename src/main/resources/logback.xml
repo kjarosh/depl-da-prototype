@@ -27,7 +27,4 @@
     </root>
     <logger name="org.eclipse.jetty" level="INFO"/>
     <logger name="io.netty" level="INFO"/>
-
-    <!-- it spams "spanStack is null" -->
-    <logger name="com.zopa.ktor.opentracing.Utils" level="ERROR"/>
 </configuration>

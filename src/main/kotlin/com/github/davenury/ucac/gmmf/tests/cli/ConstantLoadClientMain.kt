@@ -3,7 +3,6 @@ package com.github.davenury.ucac.gmmf.tests.cli
 import com.github.davenury.ucac.Config
 import com.github.davenury.ucac.gmmf.tests.RemoteGraphBuilder
 import com.github.kjarosh.agh.pp.graph.GraphLoader
-import com.zopa.ktor.opentracing.span
 import org.apache.commons.cli.CommandLineParser
 import org.apache.commons.cli.DefaultParser
 import org.apache.commons.cli.Options
@@ -16,7 +15,7 @@ object ConstantLoadClientMain {
     fun main(
         config: Config,
         args: Array<String>,
-    ) = span("ConstantLoadClientMain.main") {
+    ) {
         val options = Options()
         options.addRequiredOption("l", "load-graph", false, "load graph at the beginning")
         options.addRequiredOption("g", "graph", true, "path to graph")

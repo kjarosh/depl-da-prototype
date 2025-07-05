@@ -1,7 +1,6 @@
 package com.github.davenury.ucac
 
 import com.github.davenury.common.objectMapper
-import com.zopa.ktor.opentracing.OpenTracingClient
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.features.HttpTimeout
@@ -17,7 +16,6 @@ val httpClient =
             requestTimeoutMillis = 5 * 60 * 1_000
             socketTimeoutMillis = 5 * 60 * 1_000
         }
-        install(OpenTracingClient)
     }
 val raftHttpClient =
     HttpClient(OkHttp) {
@@ -27,7 +25,6 @@ val raftHttpClient =
         install(HttpTimeout) {
             requestTimeoutMillis = 750
         }
-        install(OpenTracingClient)
     }
 
 val raftHttpClients =
@@ -39,7 +36,6 @@ val raftHttpClients =
             install(HttpTimeout) {
                 requestTimeoutMillis = 750
             }
-            install(OpenTracingClient)
         }
     }
 

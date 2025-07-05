@@ -6,7 +6,6 @@ import com.github.davenury.common.PeerAddress
 import com.github.davenury.common.PeerId
 import com.github.davenury.common.PeersetId
 import com.github.davenury.ucac.httpClient
-import com.zopa.ktor.opentracing.asyncTraced
 import io.ktor.client.call.receive
 import io.ktor.client.features.RedirectResponseException
 import io.ktor.client.request.accept
@@ -16,6 +15,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.slf4j.MDCContext
 import org.slf4j.LoggerFactory
 
@@ -80,7 +80,7 @@ class TwoPCProtocolClientImpl : TwoPCProtocolClient {
         urlPath: String,
     ): Map<PeerAddress, TwoPCRequestResponse> =
         peers.map { (peersetId, peerAddress) ->
-            CoroutineScope(Dispatchers.IO).asyncTraced(MDCContext()) {
+            CoroutineScope(Dispatchers.IO).async(MDCContext()) {
                 send2PCMessage<T, Unit>("http://${peerAddress.address}/$urlPath?peerset=$peersetId", body)
             }.let { coroutine ->
                 Triple(peerAddress, peersetId, coroutine)

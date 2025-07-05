@@ -55,10 +55,6 @@ dependencies {
     implementation("io.micrometer:micrometer-registry-prometheus:1.10.0")
     implementation("io.ktor:ktor-metrics-micrometer:$ktorVersion")
 
-    // traces
-    implementation("io.jaegertracing:jaeger-client:1.8.1")
-    implementation("com.zopa:ktor-opentracing:0.3.6")
-
     // k8s
     implementation("io.kubernetes:client-java:12.0.2")
     implementation("commons-cli:commons-cli:1.5.0")

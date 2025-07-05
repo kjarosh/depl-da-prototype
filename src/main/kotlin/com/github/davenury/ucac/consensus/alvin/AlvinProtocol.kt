@@ -23,13 +23,13 @@ import com.github.davenury.ucac.common.ProtocolTimer
 import com.github.davenury.ucac.common.ProtocolTimerImpl
 import com.github.davenury.ucac.common.structure.Subscribers
 import com.github.davenury.ucac.consensus.ConsensusResponse
-import com.zopa.ktor.opentracing.launchTraced
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExecutorCoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.slf4j.MDCContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -675,7 +675,7 @@ class AlvinProtocol(
         sendMessage: suspend (peerAddress: PeerAddress) -> ConsensusResponse<A?>,
     ) = (0 until otherConsensusPeers().size).map {
         with(CoroutineScope(executorService)) {
-            launchTraced(MDCContext()) {
+            launch(MDCContext()) {
                 var peerAddress: PeerAddress
                 var response: ConsensusResponse<A?>
                 do {
@@ -704,7 +704,7 @@ class AlvinProtocol(
                                 isInterrupted = true,
                             ),
                         )
-                        return@launchTraced
+                        return@launch
                     }
 
                     if (epoch != -1 && entry != null && response.unauthorized) {
@@ -720,7 +720,7 @@ class AlvinProtocol(
                                 isInterrupted = true,
                             ),
                         )
-                        return@launchTraced
+                        return@launch
                     }
 
                     if (response.message == null) {
@@ -746,7 +746,7 @@ class AlvinProtocol(
         sendMessage: suspend (peerAddress: PeerAddress) -> ConsensusResponse<A?>,
     ) = (0 until otherConsensusPeers().size).map {
         with(CoroutineScope(executorService)) {
-            launchTraced(MDCContext()) {
+            launch(MDCContext()) {
                 val peerAddress = otherConsensusPeers()[it]
                 val response = sendMessage(peerAddress)
                 channel?.send(RequestResult(entryId, response.message))

@@ -1,7 +1,6 @@
 package com.github.davenury.ucac.commitment.gpac
 
 import com.github.davenury.common.PeersetId
-import com.zopa.ktor.opentracing.span
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -40,43 +39,41 @@ class GPACResponsesContainer<T>(
     private fun Map<*, List<*>>.flattenedSize() = this.values.flatten().size
 
     fun awaitForMessages(condition: (Map<PeersetId, List<T>>) -> Boolean): Pair<Map<PeersetId, List<T>>, Boolean> =
-        span("GPAC.awaitForMessages") {
-            return lock.withLock {
-                ctx.dispatch(Dispatchers.IO) { timeout() }
-                while (true) {
-                    logger.trace(
-                        "Responses size: ${responses.flattenedSize()}, $responses, current resolved: $overallResponses",
-                    )
-                    when {
-                        !condition(currentState) && shouldWait.get() && overallResponses < responses.flattenedSize() -> {
-                            logger.debug("Waiting for responses, current state: $currentState")
-                            this@GPACResponsesContainer.condition.await()
-                        }
+        lock.withLock {
+            ctx.dispatch(Dispatchers.IO) { timeout() }
+            while (true) {
+                logger.trace(
+                    "Responses size: ${responses.flattenedSize()}, $responses, current resolved: $overallResponses",
+                )
+                when {
+                    !condition(currentState) && shouldWait.get() && overallResponses < responses.flattenedSize() -> {
+                        logger.debug("Waiting for responses, current state: $currentState")
+                        this@GPACResponsesContainer.condition.await()
+                    }
 
-                        condition(currentState) -> {
-                            logger.debug("Got condition, responses: $currentState")
-                            success = true
-                            waitingForResponses.set(false)
-                            break
-                        }
+                    condition(currentState) -> {
+                        logger.debug("Got condition, responses: $currentState")
+                        success = true
+                        waitingForResponses.set(false)
+                        break
+                    }
 
-                        !shouldWait.get() -> {
-                            logger.warn("Waiter timeout")
-                            success = false
-                            waitingForResponses.set(false)
-                            break
-                        }
+                    !shouldWait.get() -> {
+                        logger.warn("Waiter timeout")
+                        success = false
+                        waitingForResponses.set(false)
+                        break
+                    }
 
-                        overallResponses >= responses.flattenedSize() -> {
-                            logger.warn("Got all responses and condition wasn't satisfied")
-                            success = false
-                            waitingForResponses.set(false)
-                            break
-                        }
+                    overallResponses >= responses.flattenedSize() -> {
+                        logger.warn("Got all responses and condition wasn't satisfied")
+                        success = false
+                        waitingForResponses.set(false)
+                        break
                     }
                 }
-                return@withLock Pair(currentState, success)
             }
+            return@withLock Pair(currentState, success)
         }
 
     private fun timeout() {
