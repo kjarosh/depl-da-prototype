@@ -1,6 +1,6 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-val ktorVersion = "1.6.8"
+val ktorVersion = "2.1.3"
 
 plugins {
     id("application")
@@ -23,7 +23,7 @@ dependencies {
 
     implementation("io.micrometer:micrometer-registry-prometheus:1.9.2")
 
-    implementation("io.ktor:ktor-metrics-micrometer:$ktorVersion")
+    implementation("io.ktor:ktor-server-metrics-micrometer:$ktorVersion")
 
     // config reading
     implementation("com.sksamuel.hoplite:hoplite-core:2.9.0")

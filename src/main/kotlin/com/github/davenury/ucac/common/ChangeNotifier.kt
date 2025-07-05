@@ -5,7 +5,9 @@ import com.github.davenury.common.ChangeResult
 import com.github.davenury.common.Notification
 import com.github.davenury.common.meterRegistry
 import com.github.davenury.ucac.httpClient
+import io.ktor.client.call.body
 import io.ktor.client.request.post
+import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpStatement
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
@@ -41,10 +43,10 @@ class ChangeNotifier(
     ) {
         try {
             val response =
-                httpClient.post<HttpStatement>(notificationUrl) {
+                httpClient.post(notificationUrl) {
                     contentType(ContentType.Application.Json)
-                    body = Notification(change, changeResult, sender = peerResolver.currentPeerAddress())
-                }
+                    setBody(Notification(change, changeResult, sender = peerResolver.currentPeerAddress()))
+                }.body<HttpStatement>()
             logger.info("Response from notifier: ${response.execute().status.value}")
         } catch (e: Exception) {
             logger.error("Error while sending notification to $notificationUrl", e)

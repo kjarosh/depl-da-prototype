@@ -6,11 +6,12 @@ import com.github.davenury.common.PeerAddress
 import com.github.davenury.common.PeerId
 import com.github.davenury.common.PeersetId
 import com.github.davenury.ucac.httpClient
-import io.ktor.client.call.receive
-import io.ktor.client.features.RedirectResponseException
+import io.ktor.client.call.body
+import io.ktor.client.plugins.RedirectResponseException
 import io.ktor.client.request.accept
 import io.ktor.client.request.get
 import io.ktor.client.request.post
+import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import kotlinx.coroutines.CoroutineScope
@@ -64,10 +65,10 @@ class TwoPCProtocolClientImpl : TwoPCProtocolClient {
         val url = "http://${peer.address}/protocols/2pc/ask/${change.id}?peerset=$peersetId"
         logger.debug("Sending to: $url")
         return try {
-            httpClient.get<Change?>(url) {
+            httpClient.get(url) {
                 contentType(ContentType.Application.Json)
                 accept(ContentType.Application.Json)
-            }
+            }.body<Change?>()
         } catch (e: Exception) {
             logger.error("Error while evaluating response from $peer: $e", e)
             null
@@ -96,7 +97,7 @@ class TwoPCProtocolClientImpl : TwoPCProtocolClient {
                         )
                 } catch (e: RedirectResponseException) {
                     logger.info("Peer ${it.first} responded with redirect")
-                    val newConsensusLeaderId = e.response.receive<CurrentLeaderFullInfoDto>()
+                    val newConsensusLeaderId = e.response.body<CurrentLeaderFullInfoDto>()
                     it.first to
                         TwoPCRequestResponse(
                             success = false,
@@ -121,11 +122,11 @@ class TwoPCProtocolClientImpl : TwoPCProtocolClient {
         message: Message,
     ): Response? {
         logger.debug("Sending to: $url")
-        return httpClient.post<Response>(url) {
+        return httpClient.post(url) {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
-            body = message!!
-        }
+            setBody(message!!)
+        }.body<Response>()
     }
 
     companion object {

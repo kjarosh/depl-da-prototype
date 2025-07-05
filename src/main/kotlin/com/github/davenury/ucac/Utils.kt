@@ -1,16 +1,16 @@
 package com.github.davenury.ucac
 
-import com.github.davenury.common.objectMapper
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
-import io.ktor.client.features.HttpTimeout
-import io.ktor.client.features.json.JacksonSerializer
-import io.ktor.client.features.json.JsonFeature
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.serialization.jackson.jackson
 
 val httpClient =
     HttpClient(OkHttp) {
-        install(JsonFeature) {
-            serializer = JacksonSerializer(objectMapper)
+        expectSuccess = true
+        install(ContentNegotiation) {
+            jackson()
         }
         install(HttpTimeout) {
             requestTimeoutMillis = 5 * 60 * 1_000
@@ -19,8 +19,9 @@ val httpClient =
     }
 val raftHttpClient =
     HttpClient(OkHttp) {
-        install(JsonFeature) {
-            serializer = JacksonSerializer(objectMapper)
+        expectSuccess = true
+        install(ContentNegotiation) {
+            jackson()
         }
         install(HttpTimeout) {
             requestTimeoutMillis = 750
@@ -30,8 +31,9 @@ val raftHttpClient =
 val raftHttpClients =
     (0..5).map {
         HttpClient(OkHttp) {
-            install(JsonFeature) {
-                serializer = JacksonSerializer(objectMapper)
+            expectSuccess = true
+            install(ContentNegotiation) {
+                jackson()
             }
             install(HttpTimeout) {
                 requestTimeoutMillis = 750
@@ -41,8 +43,9 @@ val raftHttpClients =
 
 val testHttpClient =
     HttpClient(OkHttp) {
-        install(JsonFeature) {
-            serializer = JacksonSerializer(objectMapper)
+        expectSuccess = true
+        install(ContentNegotiation) {
+            jackson()
         }
         install(HttpTimeout) {
             requestTimeoutMillis = 120000

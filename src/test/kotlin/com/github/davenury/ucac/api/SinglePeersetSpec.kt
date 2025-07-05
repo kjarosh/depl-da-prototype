@@ -17,10 +17,12 @@ import com.github.davenury.ucac.utils.IntegrationTestBase
 import com.github.davenury.ucac.utils.TestApplicationSet
 import com.github.davenury.ucac.utils.TestLogExtension
 import com.github.davenury.ucac.utils.arriveAndAwaitAdvanceWithTimeout
-import io.ktor.client.features.ServerResponseException
+import io.ktor.client.call.body
+import io.ktor.client.plugins.ServerResponseException
 import io.ktor.client.request.accept
 import io.ktor.client.request.get
 import io.ktor.client.request.post
+import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
@@ -164,12 +166,12 @@ class SinglePeersetSpec : IntegrationTestBase() {
 
             try {
                 val peer2Address = apps.getPeer("peer2").address
-                testHttpClient.get<HttpResponse>(
+                testHttpClient.get(
                     "http://$peer2Address/v2/change_status/${change2.id}?peerset=peerset0",
                 ) {
                     contentType(ContentType.Application.Json)
                     accept(ContentType.Application.Json)
-                }
+                }.body<HttpResponse>()
                 fail("executing change didn't fail")
             } catch (e: Exception) {
                 expect {
@@ -191,11 +193,11 @@ class SinglePeersetSpec : IntegrationTestBase() {
                 SignalListener {
                     runBlocking {
                         val peer1Address = it.peerResolver.resolve("peer1").address
-                        testHttpClient.post<Agreed>("http://$peer1Address/protocols/gpac/ft-agree?peerset=peerset0") {
+                        testHttpClient.post("http://$peer1Address/protocols/gpac/ft-agree?peerset=peerset0") {
                             contentType(ContentType.Application.Json)
                             accept(ContentType.Application.Json)
-                            body = Agree(it.transaction!!.ballotNumber, Accept.COMMIT, it.change!!)
-                        }
+                            setBody(Agree(it.transaction!!.ballotNumber, Accept.COMMIT, it.change!!))
+                        }.body<Agreed>()
                         throw RuntimeException("Stop")
                     }
                 }
@@ -245,10 +247,10 @@ class SinglePeersetSpec : IntegrationTestBase() {
 
             val peer1Address = apps.getPeer("peer1").address
             val response =
-                testHttpClient.get<Change>("http://$peer1Address/change?peerset=peerset0") {
+                testHttpClient.get("http://$peer1Address/change?peerset=peerset0") {
                     contentType(ContentType.Application.Json)
                     accept(ContentType.Application.Json)
-                }
+                }.body<Change>()
 
             expectThat(response).isEqualTo(change)
         }
@@ -273,17 +275,18 @@ class SinglePeersetSpec : IntegrationTestBase() {
                 SignalListener { signalData ->
                     val url = "http://${signalData.peerResolver.resolve("peer1").address}/protocols/gpac/apply"
                     runBlocking {
-                        testHttpClient.post<HttpResponse>(url) {
+                        testHttpClient.post(url) {
                             contentType(ContentType.Application.Json)
                             accept(ContentType.Application.Json)
-                            body =
+                            setBody(
                                 Apply(
                                     signalData.transaction!!.ballotNumber,
                                     true,
                                     Accept.COMMIT,
                                     signalData.change!!,
-                                )
-                        }.also {
+                                ),
+                            )
+                        }.body<HttpResponse>().also {
                             logger.info("Got response ${it.status.value}")
                         }
                     }
@@ -345,10 +348,10 @@ class SinglePeersetSpec : IntegrationTestBase() {
 
             val peer1Address = apps.getPeer("peer1").address
             val change =
-                testHttpClient.get<Change>("http://$peer1Address/change?peerset=peerset0") {
+                testHttpClient.get("http://$peer1Address/change?peerset=peerset0") {
                     contentType(ContentType.Application.Json)
                     accept(ContentType.Application.Json)
-                }
+                }.body<Change>()
 
             expect {
                 that(change).isA<StandardChange>()
@@ -361,10 +364,10 @@ class SinglePeersetSpec : IntegrationTestBase() {
             apps.getPeerAddresses("peerset0").forEach { (_, peerAddress) ->
                 // and should not execute this change couple of times
                 val changes =
-                    testHttpClient.get<Changes>("http://${peerAddress.address}/changes?peerset=peerset0") {
+                    testHttpClient.get("http://${peerAddress.address}/changes?peerset=peerset0") {
                         contentType(ContentType.Application.Json)
                         accept(ContentType.Application.Json)
-                    }
+                    }.body<Changes>()
 
                 // only one change and this change shouldn't be applied two times
                 expectThat(changes.size).isGreaterThanOrEqualTo(1)
@@ -378,11 +381,12 @@ class SinglePeersetSpec : IntegrationTestBase() {
     private suspend fun executeChange(
         uri: String,
         change: Change,
-    ) = testHttpClient.post<String>(uri) {
-        contentType(ContentType.Application.Json)
-        accept(ContentType.Application.Json)
-        body = change
-    }
+    ): String =
+        testHttpClient.post(uri) {
+            contentType(ContentType.Application.Json)
+            accept(ContentType.Application.Json)
+            setBody(change)
+        }.body()
 
     private fun change() =
         StandardChange(

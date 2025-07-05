@@ -12,8 +12,10 @@ import com.github.davenury.common.SubscriberAddress
 import com.github.davenury.common.history.InitialHistoryEntry
 import com.github.davenury.tests.strategies.changes.CreateChangeStrategy
 import com.github.davenury.tests.strategies.peersets.GetPeersStrategy
+import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.post
+import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import kotlinx.coroutines.Dispatchers
@@ -78,11 +80,12 @@ class Changes(
                         "http://${address.address}/v2/subscribe-to-peer-configuration-changes?peerset=${peersetId.peersetId}",
                     ) {
                         contentType(ContentType.Application.Json)
-                        body =
+                        setBody(
                             SubscriberAddress(
                                 address = "$ownAddress/api/v1/new-consensus-leader",
                                 type = "http",
-                            )
+                            ),
+                        )
                     }
                 }
             }
@@ -229,7 +232,7 @@ class OnePeersetChanges(
 
     suspend fun getChange(): Change {
         return try {
-            httpClient.get("http://${changesReceiver.get()!!.address}/v2/last-change?peerset=${peersetId.peersetId}")
+            httpClient.get("http://${changesReceiver.get()!!.address}/v2/last-change?peerset=${peersetId.peersetId}").body()
         } catch (e: IOException) {
             logger.info("Consensus leader ${changesReceiver.get()} is dead, I'm trying to get a new one")
             populateChangesReceiver()

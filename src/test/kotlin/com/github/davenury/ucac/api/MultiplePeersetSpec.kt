@@ -19,12 +19,14 @@ import com.github.davenury.ucac.utils.TestApplicationSet.Companion.NON_RUNNING_P
 import com.github.davenury.ucac.utils.TestLogExtension
 import com.github.davenury.ucac.utils.arriveAndAwaitAdvanceWithTimeout
 import com.github.davenury.ucac.utils.eventually
-import io.ktor.client.features.ServerResponseException
+import io.ktor.client.call.body
+import io.ktor.client.plugins.ServerResponseException
 import io.ktor.client.request.accept
 import io.ktor.client.request.get
 import io.ktor.client.request.post
+import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
-import io.ktor.client.statement.readText
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
@@ -230,12 +232,12 @@ class MultiplePeersetSpec : IntegrationTestBase() {
             }
 
             try {
-                testHttpClient.get<HttpResponse>(
+                testHttpClient.get(
                     "http://${apps.getPeer("peer0").address}/v2/change_status/${change.id}?peerset=peerset0",
                 ) {
                     contentType(ContentType.Application.Json)
                     accept(ContentType.Application.Json)
-                }
+                }.body<HttpResponse>()
                 fail("executing change didn't fail")
             } catch (e: ServerResponseException) {
                 expectThat(e).isA<ServerResponseException>()
@@ -442,8 +444,8 @@ class MultiplePeersetSpec : IntegrationTestBase() {
                 // TODO rewrite — we cannot model leader failure as part of API
                 expect {
                     that(e.response.status).isEqualTo(HttpStatusCode.InternalServerError)
-                    that(e.response.readText()).contains("Change not applied due to timeout")
-                    that(e.response.readText()).contains("Leader failed after ft-agree")
+                    that(e.response.bodyAsText()).contains("Change not applied due to timeout")
+                    that(e.response.bodyAsText()).contains("Leader failed after ft-agree")
                 }
             }
 
@@ -465,34 +467,36 @@ class MultiplePeersetSpec : IntegrationTestBase() {
                 SignalListener { data ->
                     val url2 = "${data.peerResolver.resolve("peer1")}/protocols/gpac/apply"
                     runBlocking {
-                        httpClient.post<HttpResponse>(url2) {
+                        httpClient.post(url2) {
                             contentType(ContentType.Application.Json)
                             accept(ContentType.Application.Json)
-                            body =
+                            setBody(
                                 Apply(
                                     data.transaction!!.ballotNumber,
                                     true,
                                     Accept.COMMIT,
                                     change(0, 1),
-                                )
-                        }.also {
+                                ),
+                            )
+                        }.body<HttpResponse>().also {
                             logger.info("Got response test apply ${it.status.value}")
                         }
                     }
                     logger.info("${data.peerResolver.resolve("peer1")} sent response to apply")
                     val url3 = "${data.peerResolver.resolve("peer2")}/protocols/gpac/apply"
                     runBlocking {
-                        httpClient.post<HttpResponse>(url3) {
+                        httpClient.post(url3) {
                             contentType(ContentType.Application.Json)
                             accept(ContentType.Application.Json)
-                            body =
+                            setBody(
                                 Apply(
                                     data.transaction!!.ballotNumber,
                                     true,
                                     Accept.COMMIT,
                                     change(0, 1),
-                                )
-                        }.also {
+                                ),
+                            )
+                        }.body<HttpResponse>().also {
                             logger.info("Got response test apply ${it.status.value}")
                         }
                     }
@@ -1008,16 +1012,17 @@ class MultiplePeersetSpec : IntegrationTestBase() {
         testHttpClient.post(uri) {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
-            body = change
+            setBody(change)
         }
 
     private suspend fun askForChanges(
         peerAddress: PeerAddress,
         peersetId: String,
-    ) = testHttpClient.get<Changes>("http://${peerAddress.address}/changes?peerset=$peersetId") {
-        contentType(ContentType.Application.Json)
-        accept(ContentType.Application.Json)
-    }
+    ): Changes =
+        testHttpClient.get("http://${peerAddress.address}/changes?peerset=$peersetId") {
+            contentType(ContentType.Application.Json)
+            accept(ContentType.Application.Json)
+        }.body()
 
     private suspend fun askAllForChanges(vararg peersetIds: String) =
         peersetIds.flatMap { peersetId ->

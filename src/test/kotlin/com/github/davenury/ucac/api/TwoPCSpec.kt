@@ -21,12 +21,14 @@ import com.github.davenury.ucac.utils.TestApplicationSet
 import com.github.davenury.ucac.utils.TestApplicationSet.Companion.NON_RUNNING_PEER
 import com.github.davenury.ucac.utils.TestLogExtension
 import com.github.davenury.ucac.utils.arriveAndAwaitAdvanceWithTimeout
-import io.ktor.client.features.ServerResponseException
+import io.ktor.client.call.body
+import io.ktor.client.plugins.ServerResponseException
 import io.ktor.client.request.accept
 import io.ktor.client.request.get
 import io.ktor.client.request.post
+import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
-import io.ktor.client.statement.readText
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
@@ -329,17 +331,17 @@ class TwoPCSpec : IntegrationTestBase() {
             }
 
             try {
-                testHttpClient.get<HttpResponse>(
+                testHttpClient.get(
                     "http://${apps.getPeer("peer0").address}/v2/change_status/${change.id}?peerset=peerset0",
                 ) {
                     contentType(ContentType.Application.Json)
                     accept(ContentType.Application.Json)
-                }
+                }.body<HttpResponse>()
                 fail("executing change didn't fail")
             } catch (e: ServerResponseException) {
                 expect {
                     that(e.response.status).isEqualTo(HttpStatusCode.InternalServerError)
-                    that(e.response.readText()).contains("Change was applied with ABORT result")
+                    that(e.response.bodyAsText()).contains("Change was applied with ABORT result")
                 }
             }
         }
@@ -1055,16 +1057,17 @@ class TwoPCSpec : IntegrationTestBase() {
         testHttpClient.post(uri) {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
-            body = change
+            setBody(change)
         }
 
     private suspend fun askForChanges(
         peer: PeerAddress,
         peersetId: String,
-    ) = testHttpClient.get<Changes>("http://${peer.address}/changes?peerset=$peersetId") {
-        contentType(ContentType.Application.Json)
-        accept(ContentType.Application.Json)
-    }
+    ): Changes =
+        testHttpClient.get("http://${peer.address}/changes?peerset=$peersetId") {
+            contentType(ContentType.Application.Json)
+            accept(ContentType.Application.Json)
+        }.body()
 
     private suspend fun askAllForChanges(vararg peersetIds: String) =
         peersetIds.flatMap { peersetId ->

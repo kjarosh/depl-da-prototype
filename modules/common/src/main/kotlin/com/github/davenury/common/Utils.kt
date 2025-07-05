@@ -3,7 +3,7 @@ package com.github.davenury.common
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import io.ktor.application.ApplicationCall
+import io.ktor.server.application.ApplicationCall
 import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.Timer
 import io.micrometer.prometheus.PrometheusConfig

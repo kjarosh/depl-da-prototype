@@ -5,21 +5,20 @@ import com.github.davenury.common.Notification
 import com.github.davenury.common.loadConfig
 import com.github.davenury.common.meterRegistry
 import com.github.davenury.common.objectMapper
-import io.ktor.application.call
-import io.ktor.application.install
-import io.ktor.features.ContentNegotiation
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
-import io.ktor.jackson.JacksonConverter
-import io.ktor.metrics.micrometer.MicrometerMetrics
-import io.ktor.request.receive
-import io.ktor.response.respond
-import io.ktor.routing.get
-import io.ktor.routing.post
-import io.ktor.routing.routing
+import io.ktor.serialization.jackson.JacksonConverter
+import io.ktor.server.application.call
+import io.ktor.server.application.install
 import io.ktor.server.engine.embeddedServer
+import io.ktor.server.metrics.micrometer.MicrometerMetrics
 import io.ktor.server.netty.Netty
-import io.ktor.server.netty.NettyApplicationEngine
+import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.request.receive
+import io.ktor.server.response.respond
+import io.ktor.server.routing.get
+import io.ktor.server.routing.post
+import io.ktor.server.routing.routing
 import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics
 import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics
 import io.micrometer.core.instrument.binder.system.ProcessorMetrics
@@ -59,7 +58,7 @@ class TestNotificationService {
             config,
         )
 
-    private val server: NettyApplicationEngine =
+    private val server =
         embeddedServer(Netty, port = 8080, host = "0.0.0.0") {
             install(ContentNegotiation) {
                 register(ContentType.Application.Json, JacksonConverter(objectMapper))

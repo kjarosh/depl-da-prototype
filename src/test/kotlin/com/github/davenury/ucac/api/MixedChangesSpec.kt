@@ -14,9 +14,11 @@ import com.github.davenury.ucac.utils.IntegrationTestBase
 import com.github.davenury.ucac.utils.TestApplicationSet
 import com.github.davenury.ucac.utils.TestLogExtension
 import com.github.davenury.ucac.utils.arriveAndAwaitAdvanceWithTimeout
+import io.ktor.client.call.body
 import io.ktor.client.request.accept
 import io.ktor.client.request.get
 import io.ktor.client.request.post
+import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
@@ -469,16 +471,17 @@ class MixedChangesSpec : IntegrationTestBase() {
         testHttpClient.post(uri) {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
-            body = change
+            setBody(change)
         }
 
     private suspend fun askForChanges(
         peerAddress: PeerAddress,
         peersetId: String,
-    ) = testHttpClient.get<Changes>("http://${peerAddress.address}/changes?peerset=$peersetId") {
-        contentType(ContentType.Application.Json)
-        accept(ContentType.Application.Json)
-    }
+    ): Changes =
+        testHttpClient.get("http://${peerAddress.address}/changes?peerset=$peersetId") {
+            contentType(ContentType.Application.Json)
+            accept(ContentType.Application.Json)
+        }.body()
 
     private suspend fun askAllForChanges(peersetId: String) = apps.getPeerAddresses(peersetId).values.map { Pair(it, askForChanges(it, peersetId)) }
 

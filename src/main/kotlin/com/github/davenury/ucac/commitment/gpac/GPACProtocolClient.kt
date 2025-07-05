@@ -3,8 +3,10 @@ package com.github.davenury.ucac.commitment.gpac
 import com.github.davenury.common.PeerAddress
 import com.github.davenury.common.PeersetId
 import com.github.davenury.ucac.httpClient
+import io.ktor.client.call.body
 import io.ktor.client.request.accept
 import io.ktor.client.request.post
+import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
@@ -63,7 +65,7 @@ class GPACProtocolClientImpl : GPACProtocolClient {
             "protocols/gpac/apply",
         ) { peer, e -> "Peer: ${peer.peerId} didn't apply transaction: $e" }
 
-    private suspend inline fun <T, reified K> sendRequests(
+    private suspend inline fun <reified T, reified K> sendRequests(
         otherPeers: Map<PeersetId, List<PeerAddress>>,
         requestBody: T,
         urlPath: String,
@@ -80,7 +82,7 @@ class GPACProtocolClientImpl : GPACProtocolClient {
             }
         }
 
-    private suspend inline fun <reified Response, Message> gpacHttpCall(
+    private suspend inline fun <reified Response, reified Message> gpacHttpCall(
         url: String,
         requestBody: Message,
         errorMessage: (Throwable) -> String,
@@ -88,11 +90,11 @@ class GPACProtocolClientImpl : GPACProtocolClient {
         try {
             logger.debug("Sending $requestBody to: $url")
             val response =
-                httpClient.post<Response>(url) {
+                httpClient.post(url) {
                     contentType(ContentType.Application.Json)
                     accept(ContentType.Application.Json)
-                    body = requestBody!!
-                }
+                    setBody(requestBody!!)
+                }.body<Response>()
             response
         } catch (e: Exception) {
             logger.error(errorMessage(e), e)

@@ -1,5 +1,5 @@
 val logbackVersion: String by project
-val ktorVersion = "1.6.8"
+val ktorVersion = "2.1.3"
 val slf4jVersion = "2.0.16"
 
 plugins {
@@ -35,10 +35,13 @@ dependencies {
     // ktor
     implementation("io.ktor:ktor-server:$ktorVersion")
     implementation("io.ktor:ktor-server-netty:$ktorVersion")
-    implementation("io.ktor:ktor-jackson:$ktorVersion")
+    implementation("io.ktor:ktor-server-call-logging:$ktorVersion")
+    implementation("io.ktor:ktor-server-content-negotiation:$ktorVersion")
+    implementation("io.ktor:ktor-serialization-jackson:$ktorVersion")
     implementation("io.ktor:ktor-client-core:$ktorVersion")
     implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
     implementation("io.ktor:ktor-client-jackson:$ktorVersion")
+    implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
 
     // object mapper
     implementation("com.fasterxml.jackson.core:jackson-databind:2.18.2")
@@ -53,8 +56,7 @@ dependencies {
 
     // metrics
     implementation("io.micrometer:micrometer-registry-prometheus:1.10.0")
-    implementation("io.ktor:ktor-metrics-micrometer:$ktorVersion")
-
+    implementation("io.ktor:ktor-server-metrics-micrometer:$ktorVersion")
     // k8s
     implementation("io.kubernetes:client-java:12.0.2")
     implementation("commons-cli:commons-cli:1.5.0")

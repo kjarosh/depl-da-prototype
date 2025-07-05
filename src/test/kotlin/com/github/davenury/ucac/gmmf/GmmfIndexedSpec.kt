@@ -12,6 +12,7 @@ import com.github.kjarosh.agh.pp.graph.model.Permissions
 import com.github.kjarosh.agh.pp.graph.model.Vertex
 import com.github.kjarosh.agh.pp.graph.model.VertexId
 import com.github.kjarosh.agh.pp.graph.model.ZoneId
+import io.ktor.client.call.body
 import io.ktor.client.request.accept
 import io.ktor.client.request.post
 import io.ktor.http.ContentType
@@ -424,22 +425,22 @@ class GmmfIndexedSpec : IntegrationTestBase() {
         }
 
     private suspend fun indexedReaches(url: String): ReachesMessage =
-        testHttpClient.post<ReachesMessage>(url) {
+        testHttpClient.post(url) {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
-        }
+        }.body()
 
     private suspend fun indexedMembers(url: String): MembersMessage =
-        testHttpClient.post<MembersMessage>(url) {
+        testHttpClient.post(url) {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
-        }
+        }.body()
 
     private suspend fun indexedEffectivePermissions(url: String): EffectivePermissionsMessage =
-        testHttpClient.post<EffectivePermissionsMessage>(url) {
+        testHttpClient.post(url) {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
-        }
+        }.body()
 
     companion object {
         private val logger = LoggerFactory.getLogger(GmmfIndexedSpec::class.java)

@@ -24,9 +24,11 @@ import com.github.davenury.ucac.utils.IntegrationTestBase
 import com.github.davenury.ucac.utils.TestApplicationSet
 import com.github.davenury.ucac.utils.TestLogExtension
 import com.github.davenury.ucac.utils.arriveAndAwaitAdvanceWithTimeout
+import io.ktor.client.call.body
 import io.ktor.client.request.accept
 import io.ktor.client.request.get
 import io.ktor.client.request.post
+import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
@@ -1209,17 +1211,18 @@ class RaftSpec : IntegrationTestBase() {
                 SignalListener { signalData ->
                     val url = "http://${signalData.peerResolver.resolve("peer1").address}/protocols/gpac/apply?peerset=peerset0"
                     runBlocking {
-                        testHttpClient.post<HttpResponse>(url) {
+                        testHttpClient.post(url) {
                             contentType(ContentType.Application.Json)
                             accept(ContentType.Application.Json)
-                            body =
+                            setBody(
                                 Apply(
                                     signalData.transaction!!.ballotNumber,
                                     true,
                                     Accept.COMMIT,
                                     signalData.change!!,
-                                )
-                        }.also {
+                                ),
+                            )
+                        }.body<HttpResponse>().also {
                             logger.info("Got response ${it.status.value}")
                         }
                     }
@@ -1312,10 +1315,10 @@ class RaftSpec : IntegrationTestBase() {
             isSecondGPAC.set(true)
 
             val change =
-                testHttpClient.get<Change>("http://${apps.getPeer("peer1").address}/change?peerset=peerset0") {
+                testHttpClient.get("http://${apps.getPeer("peer1").address}/change?peerset=peerset0") {
                     contentType(ContentType.Application.Json)
                     accept(ContentType.Application.Json)
-                }
+                }.body<Change>()
 
             expect {
                 that(change).isA<StandardChange>()
@@ -1327,10 +1330,10 @@ class RaftSpec : IntegrationTestBase() {
             apps.getPeerAddresses("peerset0").forEach { (_, peerAddress) ->
                 // and should not execute this change couple of times
                 val changes =
-                    testHttpClient.get<Changes>("http://${peerAddress.address}/changes?peerset=peerset0") {
+                    testHttpClient.get("http://${peerAddress.address}/changes?peerset=peerset0") {
                         contentType(ContentType.Application.Json)
                         accept(ContentType.Application.Json)
-                    }
+                    }.body<Changes>()
 
                 // only one change and this change shouldn't be applied two times
                 expectThat(changes.size).isGreaterThanOrEqualTo(1)
@@ -1412,25 +1415,27 @@ class RaftSpec : IntegrationTestBase() {
     private suspend fun executeChange(
         uri: String,
         change: Change,
-    ) = testHttpClient.post<String>("http://$uri") {
-        contentType(ContentType.Application.Json)
-        accept(ContentType.Application.Json)
-        body = change
-    }
+    ): String =
+        testHttpClient.post("http://$uri") {
+            contentType(ContentType.Application.Json)
+            accept(ContentType.Application.Json)
+            setBody(change)
+        }.body()
 
     private suspend fun genericAskForChange(
         suffix: String,
         peerAddress: PeerAddress,
-    ) = testHttpClient.get<Changes>("http://${peerAddress.address}/protocols/raft/$suffix?peerset=peerset0") {
-        contentType(ContentType.Application.Json)
-        accept(ContentType.Application.Json)
-    }
-
-    private suspend fun askForChanges(peerAddress: PeerAddress) =
-        testHttpClient.get<Changes>("http://${peerAddress.address}/v2/change?peerset=peerset0") {
+    ): Changes =
+        testHttpClient.get("http://${peerAddress.address}/protocols/raft/$suffix?peerset=peerset0") {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
-        }
+        }.body()
+
+    private suspend fun askForChanges(peerAddress: PeerAddress): Changes =
+        testHttpClient.get("http://${peerAddress.address}/v2/change?peerset=peerset0") {
+            contentType(ContentType.Application.Json)
+            accept(ContentType.Application.Json)
+        }.body()
 
     private suspend fun askAllForChanges(peerAddresses: Collection<PeerAddress>) =
         peerAddresses.map {
