@@ -97,6 +97,7 @@ class RaftConsensusProtocolImpl(
     private var currentTerm: Int = 0
     private val peerToNextIndex: MutableMap<PeerId, PeerIndices> = mutableMapOf()
     private val peerToLastHeartbeat: MutableMap<PeerId, ConsensusHeartbeat> = mutableMapOf()
+
     // private val peerToDeferred: MutableMap<PeerId, Deferred<ConsensusResponse<ConsensusHeartbeatResponse?>>> =
     //     mutableMapOf()
     private val voteContainer: VoteContainer = VoteContainer()

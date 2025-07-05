@@ -1,6 +1,6 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-val ktorVersion = "2.3.13"
+val ktorVersion = "3.2.1"
 
 plugins {
     id("application")
