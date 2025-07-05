@@ -1,6 +1,5 @@
 package com.github.davenury.ucac.common
 
-import com.zopa.ktor.opentracing.tracingContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExecutorCoroutineDispatcher
@@ -43,9 +42,9 @@ class ProtocolTimerImpl(
         action: suspend () -> Unit,
     ) {
         cancelCounting()
-        with(CoroutineScope(ctx) + tracingContext()) {
+        with(CoroutineScope(ctx)) {
             task =
-                launch(MDCContext() + tracingContext()) {
+                launch(MDCContext()) {
                     val exponent = 1.5.pow(iteration)
 
                     val backoff =

@@ -21,7 +21,6 @@ import com.github.davenury.ucac.common.structure.Subscribers
 import com.github.davenury.ucac.consensus.ConsensusResponse
 import com.github.davenury.ucac.consensus.VotedFor
 import com.github.davenury.ucac.consensus.raft.ChangeToBePropagatedToLeader
-import com.zopa.ktor.opentracing.span
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExecutorCoroutineDispatcher
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -83,134 +82,47 @@ class PaxosProtocolImpl(
     }
 
     override suspend fun handlePropose(message: PaxosPropose): PaxosPromise =
-        span("PigPaxos.handlePropose") {
-            mutex.withLock {
-                logger.info("Handle PaxosPropose: ${message.paxosRound} ${message.peerId} ${message.lastEntryId} ")
+        mutex.withLock {
+            logger.info("Handle PaxosPropose: ${message.paxosRound} ${message.peerId} ${message.lastEntryId} ")
 
-                val committedEntries =
-                    if (history.containsEntry(message.lastEntryId)) {
-                        history.getAllEntriesUntilHistoryEntryId(message.lastEntryId)
-                    } else {
-                        listOf()
-                    }
-                val proposedEntries = entryIdPaxosRound.map { it.value.entry }
-
-                if (currentRound > message.paxosRound || (currentRound == message.paxosRound && votedFor?.id != message.peerId)) {
-                    return@withLock PaxosPromise(
-                        false,
-                        currentRound,
-                        votedFor?.id,
-                        listOf(),
-                        listOf(),
-                        history.getCurrentEntryId(),
-                    )
+            val committedEntries =
+                if (history.containsEntry(message.lastEntryId)) {
+                    history.getAllEntriesUntilHistoryEntryId(message.lastEntryId)
+                } else {
+                    listOf()
                 }
+            val proposedEntries = entryIdPaxosRound.map { it.value.entry }
 
-                leaderFailureDetector.cancelCounting()
-                leaderFailureDetector = getHeartbeatTimer()
-                updateVotedFor(message.paxosRound, message.peerId)
-
-                return PaxosPromise(
-                    true,
-                    message.paxosRound,
-                    message.peerId,
-                    committedEntries.serialize(),
-                    proposedEntries.serialize(),
+            if (currentRound > message.paxosRound || (currentRound == message.paxosRound && votedFor?.id != message.peerId)) {
+                return@withLock PaxosPromise(
+                    false,
+                    currentRound,
+                    votedFor?.id,
+                    listOf(),
+                    listOf(),
                     history.getCurrentEntryId(),
                 )
             }
+
+            leaderFailureDetector.cancelCounting()
+            leaderFailureDetector = getHeartbeatTimer()
+            updateVotedFor(message.paxosRound, message.peerId)
+
+            return PaxosPromise(
+                true,
+                message.paxosRound,
+                message.peerId,
+                committedEntries.serialize(),
+                proposedEntries.serialize(),
+                history.getCurrentEntryId(),
+            )
         }
 
     override suspend fun handleAccept(message: PaxosAccept): PaxosAccepted =
-        span("PigPaxos.handleAccept") {
-            mutex.withLock {
-                val entry = HistoryEntry.deserialize(message.entry)
-                val change = Change.fromHistoryEntry(entry)!!
-                val changeId = change.id
-
-                signalPublisher.signal(
-                    Signal.PigPaxosBeginHandleMessages,
-                    this@PaxosProtocolImpl,
-                    mapOf(peersetId to otherConsensusPeers()),
-                    change = change,
-                )
-
-                logger.info("Handle PaxosAccept: ${message.paxosRound} ${message.proposer} ${entry.getId()}")
-
-                if (isMessageFromNotLeader(message.paxosRound, message.proposer)) {
-                    logger.info(
-                        "Reject PaxosAccept, because message is not from leader, current leader ${votedFor?.id}",
-                    )
-                    return@withLock PaxosAccepted(
-                        false,
-                        currentRound,
-                        votedFor?.id,
-                        currentEntryId = history.getCurrentEntryId(),
-                    )
-                }
-
-                if (isTransactionFinished(entry.getId(), changeId)) {
-                    return@span PaxosAccepted(
-                        true,
-                        currentRound,
-                        votedFor?.id,
-                        currentEntryId = history.getCurrentEntryId(),
-                    )
-                }
-
-                val transactionAcquisition = TransactionAcquisition(ProtocolName.CONSENSUS, changeId)
-                val isTransactionBlockerAcquired = transactionBlocker.tryAcquireReentrant(transactionAcquisition)
-
-                if (!isTransactionBlockerAcquired) {
-                    return@withLock PaxosAccepted(
-                        false,
-                        currentRound,
-                        votedFor?.id,
-                        isTransactionBlocked = true,
-                        currentEntryId = history.getCurrentEntryId(),
-                    )
-                }
-
-                if (!history.isEntryCompatible(entry)) {
-                    logger.info(
-                        "Reject PaxosAccept, because entry is not compatible, currentEntryId: ${history.getCurrentEntryId()}, entryParentId: ${entry.getParentId()}",
-                    )
-                    return@withLock PaxosAccepted(
-                        false,
-                        currentRound,
-                        votedFor?.id,
-                        currentEntryId = history.getCurrentEntryId(),
-                    )
-                }
-
-                updateVotedFor(message.paxosRound, message.proposer)
-
-                signalPublisher.signal(
-                    Signal.PigPaxosReceivedAccept,
-                    this@PaxosProtocolImpl,
-                    mapOf(peersetId to otherConsensusPeers()),
-                    change = change,
-                )
-
-                entryIdPaxosRound[entry.getId()] = PaxosRound(message.paxosRound, entry, message.proposer)
-                resetFailureDetector(entry, change)
-
-                return@withLock PaxosAccepted(
-                    true,
-                    currentRound,
-                    votedFor?.id,
-                    currentEntryId = history.getCurrentEntryId(),
-                )
-            }
-        }
-
-    override suspend fun handleCommit(message: PaxosCommit): PaxosCommitResponse =
-        span("PigPaxos.handleCommit") {
+        mutex.withLock {
             val entry = HistoryEntry.deserialize(message.entry)
             val change = Change.fromHistoryEntry(entry)!!
-            if (isTransactionFinished(entry.getId(), change.id)) {
-                return@span PaxosCommitResponse(history.getCurrentEntryId(), true)
-            }
+            val changeId = change.id
 
             signalPublisher.signal(
                 Signal.PigPaxosBeginHandleMessages,
@@ -218,25 +130,107 @@ class PaxosProtocolImpl(
                 mapOf(peersetId to otherConsensusPeers()),
                 change = change,
             )
+
+            logger.info("Handle PaxosAccept: ${message.paxosRound} ${message.proposer} ${entry.getId()}")
+
+            if (isMessageFromNotLeader(message.paxosRound, message.proposer)) {
+                logger.info(
+                    "Reject PaxosAccept, because message is not from leader, current leader ${votedFor?.id}",
+                )
+                return@withLock PaxosAccepted(
+                    false,
+                    currentRound,
+                    votedFor?.id,
+                    currentEntryId = history.getCurrentEntryId(),
+                )
+            }
+
+            if (isTransactionFinished(entry.getId(), changeId)) {
+                return PaxosAccepted(
+                    true,
+                    currentRound,
+                    votedFor?.id,
+                    currentEntryId = history.getCurrentEntryId(),
+                )
+            }
+
+            val transactionAcquisition = TransactionAcquisition(ProtocolName.CONSENSUS, changeId)
+            val isTransactionBlockerAcquired = transactionBlocker.tryAcquireReentrant(transactionAcquisition)
+
+            if (!isTransactionBlockerAcquired) {
+                return@withLock PaxosAccepted(
+                    false,
+                    currentRound,
+                    votedFor?.id,
+                    isTransactionBlocked = true,
+                    currentEntryId = history.getCurrentEntryId(),
+                )
+            }
+
+            if (!history.isEntryCompatible(entry)) {
+                logger.info(
+                    "Reject PaxosAccept, because entry is not compatible, currentEntryId: ${history.getCurrentEntryId()}, entryParentId: ${entry.getParentId()}",
+                )
+                return@withLock PaxosAccepted(
+                    false,
+                    currentRound,
+                    votedFor?.id,
+                    currentEntryId = history.getCurrentEntryId(),
+                )
+            }
+
+            updateVotedFor(message.paxosRound, message.proposer)
+
             signalPublisher.signal(
-                Signal.PigPaxosReceivedCommit,
+                Signal.PigPaxosReceivedAccept,
                 this@PaxosProtocolImpl,
                 mapOf(peersetId to otherConsensusPeers()),
                 change = change,
             )
-            logger.info(
-                "Handle PaxosCommit: ${message.paxosRound} ${message.proposer} ${message.paxosResult} ${entry.getId()}",
-            )
-            mutex.withLock {
-                leaderFailureDetector.cancelCounting()
-                updateVotedFor(message.paxosRound, message.proposer)
-            }
-            commitChange(message.paxosResult, change)
-            return@span PaxosCommitResponse(
-                history.getCurrentEntryId(),
-                isTransactionFinished(entry.getId(), change.id),
+
+            entryIdPaxosRound[entry.getId()] = PaxosRound(message.paxosRound, entry, message.proposer)
+            resetFailureDetector(entry, change)
+
+            return@withLock PaxosAccepted(
+                true,
+                currentRound,
+                votedFor?.id,
+                currentEntryId = history.getCurrentEntryId(),
             )
         }
+
+    override suspend fun handleCommit(message: PaxosCommit): PaxosCommitResponse {
+        val entry = HistoryEntry.deserialize(message.entry)
+        val change = Change.fromHistoryEntry(entry)!!
+        if (isTransactionFinished(entry.getId(), change.id)) {
+            return PaxosCommitResponse(history.getCurrentEntryId(), true)
+        }
+
+        signalPublisher.signal(
+            Signal.PigPaxosBeginHandleMessages,
+            this@PaxosProtocolImpl,
+            mapOf(peersetId to otherConsensusPeers()),
+            change = change,
+        )
+        signalPublisher.signal(
+            Signal.PigPaxosReceivedCommit,
+            this@PaxosProtocolImpl,
+            mapOf(peersetId to otherConsensusPeers()),
+            change = change,
+        )
+        logger.info(
+            "Handle PaxosCommit: ${message.paxosRound} ${message.proposer} ${message.paxosResult} ${entry.getId()}",
+        )
+        mutex.withLock {
+            leaderFailureDetector.cancelCounting()
+            updateVotedFor(message.paxosRound, message.proposer)
+        }
+        commitChange(message.paxosResult, change)
+        return PaxosCommitResponse(
+            history.getCurrentEntryId(),
+            isTransactionFinished(entry.getId(), change.id),
+        )
+    }
 
     override suspend fun handleBatchCommit(message: PaxosBatchCommit) {
         val entries = message.entries.map { HistoryEntry.deserialize(it) }
@@ -390,21 +384,17 @@ class PaxosProtocolImpl(
         }
 
     override suspend fun getProposedChanges(): List<Change> =
-        span("PigPaxos.getProposedChanges") {
-            mutex.withLock {
-                entryIdPaxosRound
-                    .values
-                    .mapNotNull { Change.fromHistoryEntry(it.entry) }
-            }
+        mutex.withLock {
+            entryIdPaxosRound
+                .values
+                .mapNotNull { Change.fromHistoryEntry(it.entry) }
         }
 
     override suspend fun getAcceptedChanges(): List<Change> =
-        span("PigPaxos.getAcceptedChanges") {
-            mutex.withLock {
-                history
-                    .toEntryList(true)
-                    .mapNotNull { Change.fromHistoryEntry(it) }
-            }
+        mutex.withLock {
+            history
+                .toEntryList(true)
+                .mapNotNull { Change.fromHistoryEntry(it) }
         }
 
     private suspend fun sendRequestToLeader(

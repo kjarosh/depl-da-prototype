@@ -35,10 +35,6 @@ import com.github.davenury.ucac.routing.metaRouting
 import com.github.davenury.ucac.routing.pigPaxosProtocolRouting
 import com.github.davenury.ucac.routing.raftProtocolRouting
 import com.github.davenury.ucac.routing.twoPCRouting
-import com.zopa.ktor.opentracing.OpenTracingServer
-import com.zopa.ktor.opentracing.ThreadContextElementScopeManager
-import io.jaegertracing.Configuration
-import io.jaegertracing.internal.samplers.ConstSampler
 import io.ktor.application.call
 import io.ktor.application.install
 import io.ktor.application.log
@@ -49,7 +45,6 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.jackson.JacksonConverter
 import io.ktor.metrics.micrometer.MicrometerMetrics
-import io.ktor.request.path
 import io.ktor.response.respond
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
@@ -62,7 +57,6 @@ import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics
 import io.micrometer.core.instrument.binder.system.ProcessorMetrics
 import io.micrometer.core.instrument.config.MeterFilter
 import io.netty.channel.socket.nio.NioServerSocketChannel
-import io.opentracing.util.GlobalTracer
 import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -171,28 +165,6 @@ class ApplicationUcac(
             logger.info("My peersets: $peersetIds")
             val changeNotifier = ChangeNotifier(peerResolver)
 
-            if (config.configureTraces) {
-                val tracer =
-                    Configuration("${peerResolver.peerName()}-${config.experimentId}")
-                        .withSampler(
-                            Configuration.SamplerConfiguration.fromEnv()
-                                .withType(ConstSampler.TYPE)
-                                .withParam(1),
-                        )
-                        .withReporter(
-                            Configuration.ReporterConfiguration.fromEnv()
-                                .withLogSpans(false)
-                                .withSender(
-                                    Configuration.SenderConfiguration()
-                                        .withAgentHost(System.getenv("TEMPO_HOST"))
-                                        .withAgentPort(6831),
-                                ),
-                        ).tracerBuilder
-                        .withScopeManager(ThreadContextElementScopeManager())
-                        .build()
-                GlobalTracer.registerIfAbsent(tracer)
-            }
-
             val signalPublisher = SignalPublisher(signalListeners, peerResolver)
 
             multiplePeersetProtocols =
@@ -205,15 +177,6 @@ class ApplicationUcac(
                 )
 
             service = ApiV2Service(config, multiplePeersetProtocols, changeNotifier, peerResolver)
-
-            install(OpenTracingServer) {
-                addTag("threadName") { Thread.currentThread().name }
-                config.experimentId?.let { addTag("experiment") { it } }
-                filter {
-                        call ->
-                    call.request.path().startsWith("/_meta") || call.request.path().startsWith("/consensus/heartbeat")
-                }
-            }
 
             install(CallLogging) {
                 level = Level.DEBUG
