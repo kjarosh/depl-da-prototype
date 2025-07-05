@@ -20,7 +20,6 @@ import com.github.davenury.common.UnknownOperationException
 import com.github.davenury.common.UnknownPeersetException
 import com.github.davenury.common.loadConfig
 import com.github.davenury.common.meterRegistry
-import com.github.davenury.common.objectMapper
 import com.github.davenury.ucac.api.ApiV2Service
 import com.github.davenury.ucac.api.apiV2Routing
 import com.github.davenury.ucac.common.ChangeNotifier
@@ -35,20 +34,17 @@ import com.github.davenury.ucac.routing.metaRouting
 import com.github.davenury.ucac.routing.pigPaxosProtocolRouting
 import com.github.davenury.ucac.routing.raftProtocolRouting
 import com.github.davenury.ucac.routing.twoPCRouting
-import io.ktor.application.call
-import io.ktor.application.install
-import io.ktor.application.log
-import io.ktor.features.CallLogging
-import io.ktor.features.ContentNegotiation
-import io.ktor.features.StatusPages
-import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
-import io.ktor.jackson.JacksonConverter
-import io.ktor.metrics.micrometer.MicrometerMetrics
-import io.ktor.response.respond
+import io.ktor.serialization.jackson.jackson
+import io.ktor.server.application.install
 import io.ktor.server.engine.embeddedServer
+import io.ktor.server.metrics.micrometer.MicrometerMetrics
 import io.ktor.server.netty.Netty
 import io.ktor.server.netty.NettyApplicationEngine
+import io.ktor.server.plugins.callloging.CallLogging
+import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.plugins.statuspages.StatusPages
+import io.ktor.server.response.respond
 import io.micrometer.core.instrument.Meter
 import io.micrometer.core.instrument.Tag
 import io.micrometer.core.instrument.Tags
@@ -194,7 +190,7 @@ class ApplicationUcac(
             }
 
             install(ContentNegotiation) {
-                register(ContentType.Application.Json, JacksonConverter(objectMapper))
+                jackson()
             }
 
             install(MicrometerMetrics) {
@@ -208,13 +204,13 @@ class ApplicationUcac(
             }
 
             install(StatusPages) {
-                exception<MissingParameterException> { cause ->
+                exception<MissingParameterException> { call, cause ->
                     call.respond(
                         status = HttpStatusCode.UnprocessableEntity,
                         ErrorMessage("Missing parameter: ${cause.message}"),
                     )
                 }
-                exception<UnknownOperationException> { cause ->
+                exception<UnknownOperationException> { call, cause ->
                     call.respond(
                         status = HttpStatusCode.UnprocessableEntity,
                         ErrorMessage(
@@ -222,7 +218,7 @@ class ApplicationUcac(
                         ),
                     )
                 }
-                exception<NotElectingYou> { cause ->
+                exception<NotElectingYou> { call, cause ->
                     call.respond(
                         status = HttpStatusCode.UnprocessableEntity,
                         ErrorMessage(
@@ -230,7 +226,7 @@ class ApplicationUcac(
                         ),
                     )
                 }
-                exception<NotValidLeader> { cause ->
+                exception<NotValidLeader> { call, cause ->
                     call.respond(
                         status = HttpStatusCode.UnprocessableEntity,
                         ErrorMessage(
@@ -238,7 +234,7 @@ class ApplicationUcac(
                         ),
                     )
                 }
-                exception<HistoryCannotBeBuildException> {
+                exception<HistoryCannotBeBuildException> { call, _ ->
                     call.respond(
                         HttpStatusCode.BadRequest,
                         ErrorMessage(
@@ -246,7 +242,7 @@ class ApplicationUcac(
                         ),
                     )
                 }
-                exception<AlreadyLockedException> { cause ->
+                exception<AlreadyLockedException> { call, cause ->
                     call.respond(
                         HttpStatusCode.Conflict,
                         ErrorMessage(
@@ -255,7 +251,7 @@ class ApplicationUcac(
                     )
                 }
 
-                exception<ChangeDoesntExist> { cause ->
+                exception<ChangeDoesntExist> { call, cause ->
                     logger.error("Change doesn't exist", cause)
                     call.respond(
                         status = HttpStatusCode.NotFound,
@@ -263,7 +259,7 @@ class ApplicationUcac(
                     )
                 }
 
-                exception<TwoPCHandleException> { cause ->
+                exception<TwoPCHandleException> { call, cause ->
                     call.respond(
                         status = HttpStatusCode.BadRequest,
                         ErrorMessage(
@@ -272,7 +268,7 @@ class ApplicationUcac(
                     )
                 }
 
-                exception<GPACInstanceNotFoundException> { cause ->
+                exception<GPACInstanceNotFoundException> { call, cause ->
                     logger.error("GPAC instance not found", cause)
                     call.respond(
                         status = HttpStatusCode.NotFound,
@@ -280,14 +276,14 @@ class ApplicationUcac(
                     )
                 }
 
-                exception<AlvinOutdatedPrepareException> { cause ->
+                exception<AlvinOutdatedPrepareException> { call, cause ->
                     call.respond(
                         status = HttpStatusCode.Unauthorized,
                         ErrorMessage(cause.message!!),
                     )
                 }
 
-                exception<MissingPeersetParameterException> { cause ->
+                exception<MissingPeersetParameterException> { call, cause ->
                     logger.error("Missing peerset parameter", cause)
                     call.respond(
                         status = HttpStatusCode.BadRequest,
@@ -295,7 +291,7 @@ class ApplicationUcac(
                     )
                 }
 
-                exception<UnknownPeersetException> { cause ->
+                exception<UnknownPeersetException> { call, cause ->
                     logger.error("Unknown peerset: {}", cause.peersetId, cause)
                     call.respond(
                         status = HttpStatusCode.BadRequest,
@@ -303,15 +299,15 @@ class ApplicationUcac(
                     )
                 }
 
-                exception<ImNotLeaderException> { cause ->
+                exception<ImNotLeaderException> { call, cause ->
                     call.respond(
                         status = HttpStatusCode.TemporaryRedirect,
                         CurrentLeaderFullInfoDto(cause.peerId, cause.peersetId),
                     )
                 }
 
-                exception<Throwable> { cause ->
-                    log.error("Throwable has been thrown in Application: ", cause)
+                exception<Throwable> { call, cause ->
+                    logger.error("Throwable has been thrown in Application: ", cause)
                     call.respond(
                         status = HttpStatusCode.InternalServerError,
                         ErrorMessage("UnexpectedError, $cause"),

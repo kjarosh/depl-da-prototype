@@ -11,12 +11,12 @@ import com.github.kjarosh.agh.pp.graph.model.EdgeId
 import com.github.kjarosh.agh.pp.graph.model.Graph
 import com.github.kjarosh.agh.pp.graph.model.Permissions
 import com.github.kjarosh.agh.pp.graph.model.VertexId
-import io.ktor.application.Application
-import io.ktor.application.ApplicationCall
-import io.ktor.application.call
-import io.ktor.response.respond
-import io.ktor.routing.post
-import io.ktor.routing.routing
+import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.call
+import io.ktor.server.response.respond
+import io.ktor.server.routing.post
+import io.ktor.server.routing.routing
 
 fun Application.gmmfNaiveRouting(
     multiplePeersetProtocols: MultiplePeersetProtocols,

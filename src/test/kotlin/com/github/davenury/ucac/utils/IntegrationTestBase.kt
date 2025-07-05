@@ -9,9 +9,11 @@ import com.github.kjarosh.agh.pp.graph.model.Permissions
 import com.github.kjarosh.agh.pp.graph.model.Vertex
 import com.github.kjarosh.agh.pp.graph.model.VertexId
 import com.github.kjarosh.agh.pp.rest.dto.BulkVertexCreationRequestDto
+import io.ktor.client.call.body
 import io.ktor.client.request.accept
 import io.ktor.client.request.get
 import io.ktor.client.request.post
+import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
@@ -39,11 +41,11 @@ abstract class IntegrationTestBase {
         peerset: String,
     ) {
         logger.info("Syncing $peerset through $peerName")
-        testHttpClient.post<HttpResponse>("http://${apps.getPeer(peerName).address}/gmmf/graph/sync?peerset=$peerset") {
+        testHttpClient.post("http://${apps.getPeer(peerName).address}/gmmf/graph/sync?peerset=$peerset") {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
-            body = "test"
-        }
+            setBody("test")
+        }.body<HttpResponse>()
     }
 
     suspend fun waitForIndex(
@@ -69,10 +71,10 @@ abstract class IntegrationTestBase {
         peerset: String,
     ): Boolean {
         logger.info("Checking index ready of $peerset through $peerName")
-        return testHttpClient.get<Boolean>("http://${apps.getPeer(peerName).address}/gmmf/graph/index/ready?peerset=$peerset") {
+        return testHttpClient.get("http://${apps.getPeer(peerName).address}/gmmf/graph/index/ready?peerset=$peerset") {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
-        }
+        }.body()
     }
 
     suspend fun addVertex(
@@ -82,11 +84,11 @@ abstract class IntegrationTestBase {
         type: Vertex.Type,
     ) {
         logger.info("Adding vertex $name:$type to $peerset through $peerName")
-        testHttpClient.post<HttpResponse>("http://${apps.getPeer(peerName).address}/gmmf/graph/vertex?peerset=$peerset") {
+        testHttpClient.post("http://${apps.getPeer(peerName).address}/gmmf/graph/vertex?peerset=$peerset") {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
-            body = VertexMessage(name, type)
-        }
+            setBody(VertexMessage(name, type))
+        }.body<HttpResponse>()
     }
 
     suspend fun addVertices(
@@ -95,11 +97,11 @@ abstract class IntegrationTestBase {
         vertices: BulkVertexCreationRequestDto,
     ) {
         logger.info("Adding ${vertices.vertices.size} vertices to $peerset through $peerName")
-        testHttpClient.post<HttpResponse>("http://${apps.getPeer(peerName).address}/gmmf/graph/vertex/bulk?peerset=$peerset") {
+        testHttpClient.post("http://${apps.getPeer(peerName).address}/gmmf/graph/vertex/bulk?peerset=$peerset") {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
-            body = vertices
-        }
+            setBody(vertices)
+        }.body<HttpResponse>()
     }
 
     suspend fun getVertex(
@@ -108,10 +110,10 @@ abstract class IntegrationTestBase {
         name: String,
     ): VertexMessage {
         logger.info("Getting vertex $name from $peerset through $peerName")
-        return testHttpClient.get<VertexMessage>("http://${apps.getPeer(peerName).address}/gmmf/graph/vertex/$name?peerset=$peerset") {
+        return testHttpClient.get("http://${apps.getPeer(peerName).address}/gmmf/graph/vertex/$name?peerset=$peerset") {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
-        }
+        }.body()
     }
 
     suspend fun addEdge(
@@ -122,11 +124,11 @@ abstract class IntegrationTestBase {
         permissions: Permissions,
     ) {
         logger.info("Adding edge $from->$to ($permissions) to $peerset through $peerName")
-        testHttpClient.post<HttpResponse>("http://${apps.getPeer(peerName).address}/gmmf/graph/edge?peerset=$peerset") {
+        testHttpClient.post("http://${apps.getPeer(peerName).address}/gmmf/graph/edge?peerset=$peerset") {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
-            body = EdgeMessage(from, to, permissions)
-        }
+            setBody(EdgeMessage(from, to, permissions))
+        }.body<HttpResponse>()
     }
 
     suspend fun getEdge(
@@ -136,10 +138,10 @@ abstract class IntegrationTestBase {
         to: VertexId,
     ): EdgeMessage {
         logger.info("Getting edge $from->$to from $peerset through $peerName")
-        return testHttpClient.get<EdgeMessage>("http://${apps.getPeer(peerName).address}/gmmf/graph/edge/$from/$to?peerset=$peerset") {
+        return testHttpClient.get("http://${apps.getPeer(peerName).address}/gmmf/graph/edge/$from/$to?peerset=$peerset") {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
-        }
+        }.body()
     }
 
     suspend fun executeChangeSync(
@@ -153,11 +155,11 @@ abstract class IntegrationTestBase {
             url += "&use_2pc=true"
         }
         logger.info("Executing sync change $change from $peerset through $peerName")
-        return testHttpClient.post<ChangeCreationResponse>(url) {
+        return testHttpClient.post(url) {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
-            body = change
-        }
+            setBody(change)
+        }.body()
     }
 
     companion object {

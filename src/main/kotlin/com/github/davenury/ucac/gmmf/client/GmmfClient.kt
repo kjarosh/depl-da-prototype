@@ -16,9 +16,11 @@ import com.github.kjarosh.agh.pp.graph.model.Vertex
 import com.github.kjarosh.agh.pp.graph.model.VertexId
 import com.github.kjarosh.agh.pp.index.events.Event
 import com.github.kjarosh.agh.pp.rest.dto.BulkVertexCreationRequestDto
+import io.ktor.client.call.body
 import io.ktor.client.request.accept
 import io.ktor.client.request.get
 import io.ktor.client.request.post
+import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
@@ -32,10 +34,10 @@ class GmmfClient(val peerResolver: PeerResolver, peer: PeerAddress) {
         val address = peerResolver.resolve(peerId)
         return try {
             val response =
-                httpClient.get<HttpResponse>("http://${address.address}/_meta/health") {
+                httpClient.get("http://${address.address}/_meta/health") {
                     contentType(ContentType.Application.Json)
                     accept(ContentType.Application.Json)
-                }
+                }.body<HttpResponse>()
 
             if (response.status == HttpStatusCode.OK) {
                 true
@@ -53,33 +55,33 @@ class GmmfClient(val peerResolver: PeerResolver, peer: PeerAddress) {
         id: VertexId,
         type: Vertex.Type,
     ) {
-        httpClient.post<HttpResponse>("$urlBase/gmmf/graph/vertex?peerset=${id.owner()}") {
+        httpClient.post("$urlBase/gmmf/graph/vertex?peerset=${id.owner()}") {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
-            body = VertexMessage(id.name(), type)
-        }
+            setBody(VertexMessage(id.name(), type))
+        }.body<HttpResponse>()
     }
 
     suspend fun addVertices(
         peersetId: PeersetId,
         request: BulkVertexCreationRequestDto,
     ) {
-        httpClient.post<HttpResponse>("$urlBase/gmmf/graph/vertex/bulk?peerset=$peersetId") {
+        httpClient.post("$urlBase/gmmf/graph/vertex/bulk?peerset=$peersetId") {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
-            body = request
-        }
+            setBody(request)
+        }.body<HttpResponse>()
     }
 
     suspend fun addEdge(
         id: EdgeId,
         permissions: Permissions,
     ) {
-        httpClient.post<HttpResponse>("$urlBase/gmmf/graph/edge?peerset=${id.to.owner()}") {
+        httpClient.post("$urlBase/gmmf/graph/edge?peerset=${id.to.owner()}") {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
-            body = EdgeMessage(id.from, id.to, permissions)
-        }
+            setBody(EdgeMessage(id.from, id.to, permissions))
+        }.body<HttpResponse>()
     }
 
     suspend fun naiveReaches(
@@ -87,20 +89,20 @@ class GmmfClient(val peerResolver: PeerResolver, peer: PeerAddress) {
         to: VertexId,
         ttl: Int,
     ): ReachesMessage {
-        return httpClient.post<ReachesMessage>("$urlBase/gmmf/naive/reaches?from=$from&to=$to&ttl=$ttl") {
+        return httpClient.post("$urlBase/gmmf/naive/reaches?from=$from&to=$to&ttl=$ttl") {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
-        }
+        }.body<ReachesMessage>()
     }
 
     suspend fun naiveMembers(
         of: VertexId,
         ttl: Int,
     ): MembersMessage {
-        return httpClient.post<MembersMessage>("$urlBase/gmmf/naive/members?of=$of&ttl=$ttl") {
+        return httpClient.post("$urlBase/gmmf/naive/members?of=$of&ttl=$ttl") {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
-        }
+        }.body()
     }
 
     suspend fun naiveEffectivePermissions(
@@ -108,37 +110,37 @@ class GmmfClient(val peerResolver: PeerResolver, peer: PeerAddress) {
         to: VertexId,
         ttl: Int,
     ): EffectivePermissionsMessage {
-        return httpClient.post<EffectivePermissionsMessage>("$urlBase/gmmf/naive/effective_permissions?from=$from&to=$to&ttl=$ttl") {
+        return httpClient.post("$urlBase/gmmf/naive/effective_permissions?from=$from&to=$to&ttl=$ttl") {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
-        }
+        }.body()
     }
 
     suspend fun indexedReaches(
         from: VertexId,
         to: VertexId,
     ): ReachesMessage {
-        return httpClient.post<ReachesMessage>("$urlBase/gmmf/indexed/reaches?from=$from&to=$to") {
+        return httpClient.post("$urlBase/gmmf/indexed/reaches?from=$from&to=$to") {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
-        }
+        }.body()
     }
 
     suspend fun indexedMembers(of: VertexId): MembersMessage {
-        return httpClient.post<MembersMessage>("$urlBase/gmmf/indexed/members?of=$of") {
+        return httpClient.post("$urlBase/gmmf/indexed/members?of=$of") {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
-        }
+        }.body()
     }
 
     suspend fun indexedEffectivePermissions(
         from: VertexId,
         to: VertexId,
     ): EffectivePermissionsMessage {
-        return httpClient.post<EffectivePermissionsMessage>("$urlBase/gmmf/indexed/effective_permissions?from=$from&to=$to") {
+        return httpClient.post("$urlBase/gmmf/indexed/effective_permissions?from=$from&to=$to") {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
-        }
+        }.body()
     }
 
     suspend fun sendEvent(
@@ -147,11 +149,11 @@ class GmmfClient(val peerResolver: PeerResolver, peer: PeerAddress) {
     ): Boolean {
         return try {
             val response =
-                httpClient.post<HttpResponse>("$urlBase/gmmf/event?to=$to") {
+                httpClient.post("$urlBase/gmmf/event?to=$to") {
                     contentType(ContentType.Application.Json)
                     accept(ContentType.Application.Json)
-                    body = event
-                }
+                    setBody(event)
+                }.body<HttpResponse>()
             response.status == HttpStatusCode.OK
         } catch (e: Exception) {
             logger.info("Error sending event: {}", e.toString())

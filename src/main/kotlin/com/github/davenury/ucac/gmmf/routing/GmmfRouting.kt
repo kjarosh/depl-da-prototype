@@ -2,7 +2,7 @@ package com.github.davenury.ucac.gmmf.routing
 
 import com.github.davenury.ucac.common.MultiplePeersetProtocols
 import com.github.davenury.ucac.common.PeerResolver
-import io.ktor.application.Application
+import io.ktor.server.application.Application
 
 fun Application.gmmfRouting(
     multiplePeersetProtocols: MultiplePeersetProtocols,

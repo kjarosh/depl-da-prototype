@@ -4,9 +4,11 @@ import com.github.davenury.common.PeerAddress
 import com.github.davenury.common.PeersetId
 import com.github.davenury.ucac.raftHttpClient
 import io.ktor.client.HttpClient
-import io.ktor.client.features.ClientRequestException
+import io.ktor.client.call.body
+import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.request.accept
 import io.ktor.client.request.post
+import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
@@ -24,7 +26,7 @@ interface ConsensusProtocolClient {
 }
 
 open class ConsensusProtocolClientImpl(open val peersetId: PeersetId) : ConsensusProtocolClient {
-    suspend inline fun <T, reified K> sendRequest(
+    suspend inline fun <reified T, reified K> sendRequest(
         peerWithBody: Pair<PeerAddress, T>,
         urlPath: String,
         httpClient: HttpClient = raftHttpClient,
@@ -55,21 +57,21 @@ open class ConsensusProtocolClientImpl(open val peersetId: PeersetId) : Consensu
             }
         }
 
-    suspend inline fun <Message, reified Response> sendConsensusMessage(
+    suspend inline fun <reified Message, reified Response> sendConsensusMessage(
         peer: PeerAddress,
         suffix: String,
         message: Message,
         httpClient: HttpClient = raftHttpClient,
     ): Response? {
         logger.debug("Sending request to: ${peer.peerId} ${peer.address}, message: $message")
-        return httpClient.post<Response>("http://${peer.address}/$suffix?peerset=$peersetId") {
+        return httpClient.post("http://${peer.address}/$suffix?peerset=$peersetId") {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
-            body = message!!
-        }
+            setBody(message!!)
+        }.body<Response>()
     }
 
-    suspend inline fun <T, reified K> sendRequests(
+    suspend inline fun <reified T, reified K> sendRequests(
         peersWithBody: List<Pair<PeerAddress, T>>,
         urlPath: String,
     ): List<ConsensusResponse<K?>> =

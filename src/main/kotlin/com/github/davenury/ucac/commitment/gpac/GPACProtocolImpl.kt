@@ -173,7 +173,7 @@ class GPACProtocolImpl(
         }
     }
 
-    override suspend fun handleApply(message: Apply): Unit =
+    override suspend fun handleApply(message: Apply) =
         phaseMutex.withLock {
             logger.info("HandleApply message: $message")
             val isCurrentTransaction =

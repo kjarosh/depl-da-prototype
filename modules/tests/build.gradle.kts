@@ -1,6 +1,6 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-val ktorVersion = "1.6.8"
+val ktorVersion = "2.1.3"
 val logbackVersion: String by project
 
 plugins {
@@ -23,18 +23,20 @@ dependencies {
 
     implementation("io.ktor:ktor-server:$ktorVersion")
     implementation("io.ktor:ktor-server-netty:$ktorVersion")
-    implementation("io.ktor:ktor-jackson:$ktorVersion")
+    implementation("io.ktor:ktor-server-content-negotiation:$ktorVersion")
+    implementation("io.ktor:ktor-serialization-jackson:$ktorVersion")
 
     implementation("io.ktor:ktor-client-core:$ktorVersion")
     implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
     implementation("io.ktor:ktor-client-jackson:$ktorVersion")
+    implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
 
     implementation("org.slf4j:slf4j-api:2.0.16")
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
     implementation("com.github.loki4j:loki-logback-appender:1.4.0")
 
     implementation("io.micrometer:micrometer-registry-prometheus:1.9.2")
-    implementation("io.ktor:ktor-metrics-micrometer:$ktorVersion")
+    implementation("io.ktor:ktor-server-metrics-micrometer:$ktorVersion")
     implementation("io.prometheus:simpleclient_pushgateway:0.16.0")
 
     implementation("com.sksamuel.hoplite:hoplite-core:2.9.0")

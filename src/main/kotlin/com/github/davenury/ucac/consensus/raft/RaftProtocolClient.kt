@@ -9,9 +9,11 @@ import com.github.davenury.ucac.consensus.ConsensusProtocolClientImpl
 import com.github.davenury.ucac.consensus.ConsensusResponse
 import com.github.davenury.ucac.httpClient
 import io.ktor.client.HttpClient
-import io.ktor.client.features.ClientRequestException
+import io.ktor.client.call.body
+import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.request.accept
 import io.ktor.client.request.post
+import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
@@ -88,11 +90,11 @@ class RaftProtocolClientImpl(override val peersetId: PeersetId) : RaftProtocolCl
     override suspend fun sendRequestApplyChange(
         address: String,
         change: Change,
-    ) = httpClient.post<ChangeResult>("http://$address/protocols/raft/request_apply_change?peerset=$peersetId") {
+    ) = httpClient.post("http://$address/protocols/raft/request_apply_change?peerset=$peersetId") {
         contentType(ContentType.Application.Json)
         accept(ContentType.Application.Json)
-        body = change
-    }
+        setBody(change)
+    }.body<ChangeResult>()
 
     companion object {
         private val logger = LoggerFactory.getLogger("raft-client")

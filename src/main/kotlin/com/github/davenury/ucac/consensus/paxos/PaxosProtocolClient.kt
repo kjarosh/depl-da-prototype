@@ -8,8 +8,10 @@ import com.github.davenury.ucac.consensus.ConsensusProtocolClient
 import com.github.davenury.ucac.consensus.ConsensusProtocolClientImpl
 import com.github.davenury.ucac.consensus.ConsensusResponse
 import com.github.davenury.ucac.httpClient
+import io.ktor.client.call.body
 import io.ktor.client.request.accept
 import io.ktor.client.request.post
+import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 
@@ -84,6 +86,6 @@ class PigPaxosProtocolClientImpl(override val peersetId: PeersetId) : PigPaxosPr
         httpClient.post("http://${peer.address}/protocols/paxos/request_apply_change?peerset=$peersetId") {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
-            body = change
-        }
+            setBody(change)
+        }.body()
 }

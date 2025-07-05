@@ -5,12 +5,13 @@ import com.github.davenury.common.PeerAddress
 import com.github.davenury.common.PeerId
 import com.github.davenury.common.PeersetId
 import com.github.davenury.common.PeersetInformationDto
-import io.ktor.client.features.ClientRequestException
-import io.ktor.client.features.ServerResponseException
+import io.ktor.client.call.body
+import io.ktor.client.plugins.ClientRequestException
+import io.ktor.client.plugins.ServerResponseException
 import io.ktor.client.request.accept
 import io.ktor.client.request.get
 import io.ktor.client.request.post
-import io.ktor.client.statement.HttpStatement
+import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import org.slf4j.LoggerFactory
@@ -41,16 +42,16 @@ class HttpSender(
             logger.info("Sending $change to $address")
             Metrics.bumpSentChanges()
             val response =
-                httpClient.post<HttpStatement>(
+                httpClient.post(
                     "http://${address.address}/v2/change/async?${acProtocolConfig.protocol.getParam(
                         acProtocolConfig.enforceUsage,
                     )}&peerset=${peersetId.peersetId}",
                 ) {
                     accept(ContentType.Application.Json)
                     contentType(ContentType.Application.Json)
-                    body = change
+                    setBody(change)
                 }
-            logger.info("Received: ${response.execute().status.value}")
+            logger.info("Received: ${response.status.value}")
             ChangeState.ACCEPTED
         } catch (e: Exception) {
             logger.error("Couldn't execute change with address: $address", e)
@@ -68,9 +69,9 @@ class HttpSender(
         peersetId: PeersetId,
     ): PeerId? {
         return try {
-            httpClient.get<PeersetInformationDto>(
+            httpClient.get(
                 "http://${address.address}/peerset-information?peerset=${peersetId.peersetId}",
-            )
+            ).body<PeersetInformationDto>()
                 .toDomain()
                 .currentConsensusLeader
         } catch (e: IOException) {

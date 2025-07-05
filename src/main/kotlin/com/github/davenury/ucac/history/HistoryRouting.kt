@@ -5,17 +5,17 @@ import com.github.davenury.common.Changes
 import com.github.davenury.common.ErrorMessage
 import com.github.davenury.common.history.History
 import com.github.davenury.common.history.InitialHistoryEntry
+import com.github.davenury.common.logger
 import com.github.davenury.common.peersetId
 import com.github.davenury.ucac.common.MultiplePeersetProtocols
-import io.ktor.application.Application
-import io.ktor.application.ApplicationCall
-import io.ktor.application.call
-import io.ktor.application.log
 import io.ktor.http.HttpStatusCode
-import io.ktor.response.respond
-import io.ktor.routing.get
-import io.ktor.routing.route
-import io.ktor.routing.routing
+import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.call
+import io.ktor.server.response.respond
+import io.ktor.server.routing.get
+import io.ktor.server.routing.route
+import io.ktor.server.routing.routing
 
 fun Application.historyRouting(multiplePeersetProtocols: MultiplePeersetProtocols) {
     fun ApplicationCall.history(): History {
@@ -38,7 +38,7 @@ fun Application.historyRouting(multiplePeersetProtocols: MultiplePeersetProtocol
         route("/changes") {
             get {
                 val changes = Changes.fromHistory(call.history())
-                log.info("Changes: $changes")
+                logger.info("Changes: $changes")
                 call.respond(changes)
             }
         }
