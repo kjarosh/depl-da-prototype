@@ -1,6 +1,6 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-val ktorVersion = "2.1.3"
+val ktorVersion = "2.3.13"
 val logbackVersion: String by project
 
 plugins {
