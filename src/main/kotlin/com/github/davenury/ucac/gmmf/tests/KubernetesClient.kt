@@ -36,7 +36,7 @@ object KubernetesClient {
         options.addOption("c", "config", true, "path to kubectl config")
         options.addOption("n", "namespace", true, "k8s namespace")
         options.addOption("p", "peersets", true, "peersets configuration, e.g. 3,2,6,7")
-        options.addOption("P", "setup-peers", false, "whether to set up peers")
+        options.addOption("P", "set-up-peers", false, "whether to set up peers")
         options.addOption("g", "graph", true, "path to the graph to use")
         options.addOption("i", "image", true, "desired docker image")
         options.addOption(null, "require-cpu", true, "cpu requirement for k8s")
@@ -59,6 +59,7 @@ object KubernetesClient {
             if (cmd.hasOption("p")) {
                 cmd.getOptionValue("p").split(",").map { it.toInt() }
             } else {
+                println("No peersets to set up, exiting")
                 return
             }
 

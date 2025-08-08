@@ -106,3 +106,22 @@ subprojects {
         mavenCentral()
     }
 }
+
+tasks.register<JavaExec>("runK8sTests") {
+    group = "K8s Tests"
+
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass.set("com.github.davenury.ucac.gmmf.tests.KubernetesClient")
+
+    args(
+        "--namespace",
+        "kjarosz",
+        "--peersets",
+        "2,2,3",
+        "--set-up-peers",
+        "--constant-load-opts",
+        "-l -n 1",
+        "--graph",
+        "graphs/graph-small-3ps.json",
+    )
+}
