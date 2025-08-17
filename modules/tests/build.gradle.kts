@@ -1,6 +1,3 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 val ktorVersion = "3.2.1"
 val logbackVersion: String by project
 
@@ -52,10 +49,6 @@ dependencies {
 repositories {
     mavenCentral()
 }
-val compileKotlin: KotlinCompile by tasks
-compileKotlin.compilerOptions.jvmTarget.set(JvmTarget.JVM_11)
-val compileTestKotlin: KotlinCompile by tasks
-compileTestKotlin.compilerOptions.jvmTarget.set(JvmTarget.JVM_11)
 
 tasks.test {
     useJUnitPlatform()

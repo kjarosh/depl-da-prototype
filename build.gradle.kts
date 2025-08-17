@@ -93,15 +93,6 @@ subprojects {
     apply(plugin = "java")
     apply(plugin = "kotlin")
 
-    java {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-
-    kotlin {
-        jvmToolchain(11)
-    }
-
     repositories {
         mavenCentral()
     }
