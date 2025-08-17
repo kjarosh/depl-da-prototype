@@ -82,6 +82,7 @@ class RemoteGraphBuilder(private val graph: Graph, private val peerResolver: Pee
                 logger.info("Building vertices")
                 buildVertices()
             }
+            logger.info("Vertices built")
 
             if (!optionsSet.contains(BulkOption.NO_BULK_EDGES)) {
                 logger.info("Building edges in bulk")
@@ -90,6 +91,7 @@ class RemoteGraphBuilder(private val graph: Graph, private val peerResolver: Pee
                 logger.info("Building edges")
                 buildEdges()
             }
+            logger.info("Edges built")
 
             logger.info("Waiting for index to be built: {}", allPeers)
             // TODO client.waitForIndex(allZones, Duration.ofHours(2))
