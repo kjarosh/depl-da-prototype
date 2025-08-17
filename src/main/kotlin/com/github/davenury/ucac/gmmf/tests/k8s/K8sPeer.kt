@@ -320,7 +320,7 @@ class K8sPeer(
     }
 
     companion object {
-        const val DEFAULT_IMAGE: String = "ghcr.io/kjarosh/depl-da-prototype:latest"
+        const val DEFAULT_IMAGE: String = "ghcr.io/kjarosh/depl-da-prototype:dev"
 
         private val logger = LoggerFactory.getLogger("k8s-peer")
 
