@@ -19,7 +19,7 @@ jobs:
       packages: write
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Log in container registry
         uses: docker/login-action@v3
