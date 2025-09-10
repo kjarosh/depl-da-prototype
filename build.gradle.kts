@@ -66,7 +66,7 @@ dependencies {
     implementation("com.github.loki4j:loki-logback-appender:1.5.1")
     testImplementation(platform("org.junit:junit-bom:5.10.3"))
     testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation("io.strikt:strikt-core:0.34.1")
+    testImplementation("io.strikt:strikt-core:0.35.1")
     testImplementation("io.mockk:mockk:1.13.16")
     testImplementation("org.awaitility:awaitility:4.3.0")
     testImplementation("org.testcontainers:testcontainers:1.19.8")
