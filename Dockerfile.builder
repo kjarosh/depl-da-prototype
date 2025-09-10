@@ -1,4 +1,4 @@
-FROM gradle:8.8.0-jdk11-alpine AS builder
+FROM gradle:8.14.3-jdk11-alpine AS builder
 COPY --chown=gradle:gradle . /home/gradle/src
 WORKDIR /home/gradle/src
 RUN gradle build --info --no-daemon -x test
