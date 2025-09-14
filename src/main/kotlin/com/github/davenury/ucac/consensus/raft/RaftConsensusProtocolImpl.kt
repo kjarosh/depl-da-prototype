@@ -867,9 +867,9 @@ class RaftConsensusProtocolImpl(
 
             if (!history.isEntryCompatible(entry)) {
                 logger.info(
-                    "Proposed change is incompatible. \n CurrentChange: ${
+                    "Proposed change is incompatible, current entry ID: ${
                         history.getCurrentEntryId()
-                    } \n Change.parentId: ${
+                    }, parentId: ${
                         entry.getParentId()
                     }",
                 )
