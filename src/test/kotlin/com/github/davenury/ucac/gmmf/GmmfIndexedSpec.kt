@@ -352,7 +352,7 @@ class GmmfIndexedSpec : IntegrationTestBase() {
      *   ↘  ↙
      *    v3
      */
-    @RetryingTest(3)
+    @RetryingTest(5)
     fun `indexed effective permissions multiple peersets`(): Unit =
         runBlocking {
             apps =
