@@ -116,3 +116,19 @@ tasks.register<JavaExec>("runK8sTests") {
         "graphs/graph-small-3ps.json",
     )
 }
+
+tasks.register<JavaExec>("pushGraphsToPvc") {
+    group = "K8s Tests"
+
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass.set("com.github.davenury.ucac.gmmf.tests.PushDirectoryToPvcClient")
+
+    args(
+        "--namespace",
+        "kjarosz",
+        "--dir",
+        "./graphs",
+        "--pvc",
+        "constant-client-graph",
+    )
+}

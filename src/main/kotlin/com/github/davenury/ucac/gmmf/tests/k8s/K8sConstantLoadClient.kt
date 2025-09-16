@@ -20,12 +20,12 @@ class K8sConstantLoadClient(
     private val configMapName: String,
     private val image: String?,
     namespace: String,
-    graph: ByteArray,
+    private val graphPath: String,
     private val constantLoadOpts: String,
     resourceCpu: String,
     resourceMemory: String,
 ) {
-    private val configMap: K8sGraphConfigMap
+    private val graphPvc: K8sGraphPvc
     private val namespace: String
     private val graphName = "constant-client-graph"
     private val jobName = "constant-load"
@@ -34,7 +34,7 @@ class K8sConstantLoadClient(
     private val resourceMemory: String
 
     init {
-        this.configMap = K8sGraphConfigMap(namespace, graphName, graph)
+        this.graphPvc = K8sGraphPvc(namespace, graphName)
         this.namespace = namespace
         this.resourceCpu = resourceCpu
         this.resourceMemory = resourceMemory
@@ -63,7 +63,7 @@ class K8sConstantLoadClient(
             .withName("constant-load-client")
             .withImage(image ?: K8sPeer.DEFAULT_IMAGE)
             .withImagePullPolicy("Always")
-            .withArgs("constant-load", "-g", "/graph/graph.json")
+            .withArgs("constant-load", "-g", "/graph/$graphPath")
             .addToArgs(*constantLoadOpts.split("\\s+".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray())
             .addNewVolumeMount()
             .withName(volumeName)
@@ -90,20 +90,16 @@ class K8sConstantLoadClient(
     private fun buildVolume(): V1Volume {
         return V1VolumeBuilder()
             .withName(volumeName)
-            .withNewConfigMap()
-            .withName(graphName)
-            .addNewItem()
-            .withKey("graph.json")
-            .withPath("graph.json")
-            .endItem()
-            .endConfigMap()
+            .withNewPersistentVolumeClaim()
+            .withClaimName(graphName)
+            .endPersistentVolumeClaim()
             .build()
     }
 
     @Throws(ApiException::class)
     fun apply() {
         logger.info("Applying constant load client")
-        configMap.apply()
+        graphPvc.apply()
 
         if (exists()) {
             logger.info("  Deleting the existing constant load client...")
