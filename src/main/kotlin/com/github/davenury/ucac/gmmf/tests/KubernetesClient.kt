@@ -3,7 +3,6 @@ package com.github.davenury.ucac.gmmf.tests
 import com.github.davenury.ucac.gmmf.tests.k8s.K8sConstantLoadClient
 import com.github.davenury.ucac.gmmf.tests.k8s.K8sPeer
 import com.github.davenury.ucac.gmmf.tests.k8s.K8sPeerConfigMap
-import com.google.common.io.ByteStreams
 import io.kubernetes.client.openapi.ApiException
 import io.kubernetes.client.openapi.Configuration
 import io.kubernetes.client.openapi.JSON
@@ -17,7 +16,6 @@ import java.io.IOException
 import java.io.InputStreamReader
 import java.io.UncheckedIOException
 import java.nio.file.Files
-import java.nio.file.Path
 import java.nio.file.Paths
 
 /**
@@ -71,7 +69,7 @@ object KubernetesClient {
 
             if (cmd.hasOption("g") && cmd.hasOption("constant-load-opts")) {
                 val constantLoadOpts = cmd.getOptionValue("constant-load-opts")
-                val graphPath = Paths.get(cmd.getOptionValue("g"))
+                val graphPath = cmd.getOptionValue("g")
                 setupConstantLoad(image, peersets, constantLoadOpts, graphPath)
             }
         } catch (e: ApiException) {
@@ -122,17 +120,14 @@ object KubernetesClient {
         image: String,
         peersets: List<Int>,
         constantLoadOpts: String,
-        graphPath: Path,
+        graphPath: String,
     ) {
         try {
             val configMapName = "constant-load-config"
             setupPeerConfigMap(configMapName, peersets)
 
-            Files.newInputStream(graphPath).use { `is` ->
-                val contents: ByteArray = ByteStreams.toByteArray(`is`)
-                K8sConstantLoadClient(configMapName, image, namespace!!, contents, constantLoadOpts, resourceCpu!!, resourceMemory!!)
-                    .apply()
-            }
+            K8sConstantLoadClient(configMapName, image, namespace!!, graphPath, constantLoadOpts, resourceCpu!!, resourceMemory!!)
+                .apply()
         } catch (e: IOException) {
             throw UncheckedIOException(e)
         }
