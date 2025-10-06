@@ -30,12 +30,15 @@ object ConstantLoadClientMain {
 
         val peerResolver = config.newPeerResolver()
 
+        val graphPath = cmd.getOptionValue("g")
+        val graph = GraphLoader.loadGraph(graphPath)
+
         if (cmd.hasOption("l")) {
-            val graphPath = cmd.getOptionValue("g")
             logger.info("Loading graph {}", graphPath)
-            val graph = GraphLoader.loadGraph(graphPath)
             RemoteGraphBuilder(graph, peerResolver).build()
         }
+
+        val opGenerator = OperationGenerator(graph)
 
         if (cmd.hasOption("n")) {
             val threads = Integer.parseInt(cmd.getOptionValue("threads", "4"))
@@ -46,13 +49,14 @@ object ConstantLoadClientMain {
 
             val periodSeconds = 1.0 / opsPerSecond.toDouble()
             val periodNanoseconds = periodSeconds * 1_000_000_000.0
-            scheduler.scheduleAtFixedRate({ this.performOperation() }, 0, periodNanoseconds.toLong(), TimeUnit.NANOSECONDS)
+            scheduler.scheduleAtFixedRate({ this.performOperation(opGenerator) }, 0, periodNanoseconds.toLong(), TimeUnit.NANOSECONDS)
 
             scheduler.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS)
         }
     }
 
-    fun performOperation() {
+    fun performOperation(opGenerator: OperationGenerator) {
         logger.info("Beep bop")
+        opGenerator.nextOperation()
     }
 }
