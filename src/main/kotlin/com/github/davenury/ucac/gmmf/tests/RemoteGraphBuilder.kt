@@ -3,7 +3,6 @@ package com.github.davenury.ucac.gmmf.tests
 import com.github.davenury.common.PeerId
 import com.github.davenury.common.PeersetId
 import com.github.davenury.ucac.common.PeerResolver
-import com.github.davenury.ucac.gmmf.client.GmmfClient
 import com.github.kjarosh.agh.pp.graph.model.Edge
 import com.github.kjarosh.agh.pp.graph.model.Graph
 import com.github.kjarosh.agh.pp.graph.model.Vertex
@@ -30,24 +29,7 @@ class RemoteGraphBuilder(private val graph: Graph, private val peerResolver: Pee
     private val verticesBuilt = AtomicInteger(0)
     private val edgesBuilt = AtomicInteger(0)
 
-    private val clients: MutableMap<PeerId, GmmfClient> = mutableMapOf()
-
-    private fun getClient(zoneId: ZoneId): GmmfClient {
-        return getClient(PeersetId(zoneId.id))
-    }
-
-    private fun getClient(peersetId: PeersetId): GmmfClient {
-        val peer = peerResolver.getPeerFromPeerset(peersetId)
-        return clients.computeIfAbsent(peer.peerId) {
-            GmmfClient(peerResolver, peer)
-        }
-    }
-
-    private fun getClient(peerId: PeerId): GmmfClient {
-        return clients.computeIfAbsent(peerId) {
-            GmmfClient(peerResolver, peerResolver.resolve(peerId))
-        }
-    }
+    private val clientCache: ClientCache = ClientCache(peerResolver)
 
     fun build(vararg options: BulkOption?) {
         val optionsSet = if (options.isEmpty()) EnumSet.noneOf(BulkOption::class.java) else EnumSet.copyOf(listOf(*options))
@@ -119,7 +101,7 @@ class RemoteGraphBuilder(private val graph: Graph, private val peerResolver: Pee
     }
 
     private fun healthy(allPeers: Collection<PeerId>): Boolean {
-        val notHealthy = allPeers.filter { peerId -> runBlocking { !getClient(peerId).healthcheck(peerId) } }
+        val notHealthy = allPeers.filter { peerId -> runBlocking { !clientCache.getClient(peerId).healthcheck(peerId) } }
         if (notHealthy.isEmpty()) {
             logger.info("All peers healthy")
             return true
@@ -138,7 +120,7 @@ class RemoteGraphBuilder(private val graph: Graph, private val peerResolver: Pee
                 )
 
         for (owner in groupedByOwner.keys) {
-            val client = getClient(owner)
+            val client = clientCache.getClient(owner)
             logger.debug("Sending batches of vertices to {}", owner)
             val vertices = groupedByOwner[owner]!!
             for (bulk in Lists.partition<Vertex>(vertices, BULK_SIZE)) {
@@ -167,7 +149,7 @@ class RemoteGraphBuilder(private val graph: Graph, private val peerResolver: Pee
             .parallel()
             .forEach { v: Vertex ->
                 runBlocking {
-                    getClient(v.id().owner()).addVertex(v.id(), v.type())
+                    clientCache.getClient(v.id().owner()).addVertex(v.id(), v.type())
                     verticesBuilt.incrementAndGet()
                 }
             }
@@ -229,7 +211,7 @@ class RemoteGraphBuilder(private val graph: Graph, private val peerResolver: Pee
             .forEach { e: Edge ->
                 runBlocking {
                     edgesBuilt.getAndIncrement()
-                    getClient(e.id().from.owner()).addEdge(e.id(), e.permissions())
+                    clientCache.getClient(e.id().to.owner()).addEdge(e.id(), e.permissions())
                 }
             }
     }

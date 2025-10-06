@@ -4,6 +4,7 @@ import com.github.davenury.common.PeerAddress
 import com.github.davenury.common.PeerId
 import com.github.davenury.common.PeersetId
 import com.github.davenury.ucac.common.PeerResolver
+import com.github.davenury.ucac.gmmf.routing.DeleteEdgeMessage
 import com.github.davenury.ucac.gmmf.routing.EdgeMessage
 import com.github.davenury.ucac.gmmf.routing.EffectivePermissionsMessage
 import com.github.davenury.ucac.gmmf.routing.MembersMessage
@@ -81,6 +82,14 @@ class GmmfClient(val peerResolver: PeerResolver, peer: PeerAddress) {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
             setBody(EdgeMessage(id.from, id.to, permissions))
+        }.body<HttpResponse>()
+    }
+
+    suspend fun deleteEdge(id: EdgeId) {
+        httpClient.post("$urlBase/gmmf/graph/edge/delete?peerset=${id.to.owner()}") {
+            contentType(ContentType.Application.Json)
+            accept(ContentType.Application.Json)
+            setBody(DeleteEdgeMessage(id.from, id.to))
         }.body<HttpResponse>()
     }
 
