@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory
     *arrayOf(
         JsonSubTypes.Type(value = AddVertexTx::class, name = "add_vertex"),
         JsonSubTypes.Type(value = AddEdgeTx::class, name = "add_edge"),
+        JsonSubTypes.Type(value = DeleteEdgeTx::class, name = "delete_edge"),
     ),
 )
 sealed class GraphTransaction {
@@ -66,16 +67,25 @@ data class AddVertexTx(val id: VertexId, val type: Vertex.Type) : GraphTransacti
     }
 }
 
-data class AddEdgeTx(
-    val from: VertexId,
-    val to: VertexId,
-    val permissions: Permissions,
-    val eventId: String,
-    val reverseEventId: String,
-) : GraphTransaction() {
+sealed class ModifyEdgeTx() : GraphTransaction() {
+    protected abstract fun from(): VertexId
+
+    protected abstract fun to(): VertexId
+
+    protected abstract fun permissions(): Permissions?
+
+    protected abstract fun eventId(): String
+
+    protected abstract fun reverseEventId(): String
+
     override fun apply(graph: Graph) {
-        graph.addEdge(Edge(from, to, permissions))
-        logger.info("Edge {}->{} added to the graph", from, to)
+        if (permissions() != null) {
+            graph.addEdge(Edge(from(), to(), permissions()))
+            logger.info("Edge {}->{} added to the graph", from(), to())
+        } else {
+            graph.removeEdge(Edge(from(), to(), permissions()))
+            logger.info("Edge {}->{} removed from the graph", from(), to())
+        }
     }
 
     override fun applyEvents(
@@ -84,11 +94,13 @@ data class AddEdgeTx(
         eventDatabase: EventDatabase,
         postedEntryId: String,
     ) {
-        if (from.owner() == graph.currentZoneId) {
-            postChangeEvent(indices, eventDatabase, false, eventId, EdgeId(from, to), false, postedEntryId)
+        val delete = permissions() == null
+        val edgeId = EdgeId(from(), to())
+        if (from().owner() == graph.currentZoneId) {
+            postChangeEvent(indices, eventDatabase, false, eventId(), edgeId, delete, postedEntryId)
         }
-        if (to.owner() == graph.currentZoneId) {
-            postChangeEvent(indices, eventDatabase, true, reverseEventId, EdgeId(from, to), false, postedEntryId)
+        if (to().owner() == graph.currentZoneId) {
+            postChangeEvent(indices, eventDatabase, true, reverseEventId(), edgeId, delete, postedEntryId)
         }
     }
 
@@ -139,4 +151,39 @@ data class AddEdgeTx(
             )
         }
     }
+}
+
+data class AddEdgeTx(
+    val from: VertexId,
+    val to: VertexId,
+    val permissions: Permissions,
+    val eventId: String,
+    val reverseEventId: String,
+) : ModifyEdgeTx() {
+    protected override fun from(): VertexId = from
+
+    protected override fun to(): VertexId = to
+
+    protected override fun permissions(): Permissions? = permissions
+
+    protected override fun eventId(): String = eventId
+
+    protected override fun reverseEventId(): String = reverseEventId
+}
+
+data class DeleteEdgeTx(
+    val from: VertexId,
+    val to: VertexId,
+    val eventId: String,
+    val reverseEventId: String,
+) : ModifyEdgeTx() {
+    protected override fun from(): VertexId = from
+
+    protected override fun to(): VertexId = to
+
+    protected override fun permissions(): Permissions? = null
+
+    protected override fun eventId(): String = eventId
+
+    protected override fun reverseEventId(): String = reverseEventId
 }
