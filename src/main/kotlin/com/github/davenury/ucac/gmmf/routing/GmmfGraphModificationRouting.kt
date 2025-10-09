@@ -10,6 +10,7 @@ import com.github.davenury.ucac.common.MultiplePeersetProtocols
 import com.github.davenury.ucac.consensus.ConsensusProtocol
 import com.github.davenury.ucac.gmmf.model.AddEdgeTx
 import com.github.davenury.ucac.gmmf.model.AddVertexTx
+import com.github.davenury.ucac.gmmf.model.DeleteEdgeTx
 import com.github.kjarosh.agh.pp.graph.model.EdgeId
 import com.github.kjarosh.agh.pp.graph.model.Graph
 import com.github.kjarosh.agh.pp.graph.model.Permissions
@@ -71,16 +72,22 @@ fun Application.gmmfGraphModificationRouting(multiplePeersetProtocols: MultipleP
         }
     }
 
-    suspend fun tryAddEdge(
+    suspend fun tryModifyEdge(
         call: ApplicationCall,
         from: VertexId,
         to: VertexId,
-        permissions: Permissions,
+        permissions: Permissions?,
     ): Boolean {
+        val delete = permissions == null
         val fromLocal = from.owner().id == call.peersetId().peersetId
         val toLocal = to.owner().id == call.peersetId().peersetId
 
-        val tx = AddEdgeTx(from, to, permissions, UUID.randomUUID().toString(), UUID.randomUUID().toString())
+        val tx =
+            if (delete) {
+                DeleteEdgeTx(from, to, UUID.randomUUID().toString(), UUID.randomUUID().toString())
+            } else {
+                AddEdgeTx(from, to, permissions!!, UUID.randomUUID().toString(), UUID.randomUUID().toString())
+            }
         val result =
             if (fromLocal && toLocal) {
                 val change =
@@ -101,7 +108,13 @@ fun Application.gmmfGraphModificationRouting(multiplePeersetProtocols: MultipleP
                     )
                 call.twoPC().proposeChangeAsync(change).await()
             } else {
-                throw IllegalArgumentException("Trying to add an edge with no vertex in this peerset")
+                val op =
+                    if (delete) {
+                        "delete"
+                    } else {
+                        "add"
+                    }
+                throw IllegalArgumentException("Trying to $op an edge with no vertex in this peerset")
             }
 
         when (result.status) {
@@ -125,7 +138,7 @@ fun Application.gmmfGraphModificationRouting(multiplePeersetProtocols: MultipleP
         val deadline = Instant.now().plus(60, ChronoUnit.SECONDS)
         var delayMillis = 200.0
         while (Instant.now().isBefore(deadline)) {
-            if (tryAddEdge(call, from, to, permissions)) {
+            if (tryModifyEdge(call, from, to, permissions)) {
                 return
             }
 
@@ -134,6 +147,25 @@ fun Application.gmmfGraphModificationRouting(multiplePeersetProtocols: MultipleP
         }
 
         throw AssertionError("Timed out trying to add edge $from->$to, $permissions")
+    }
+
+    suspend fun deleteEdge(
+        call: ApplicationCall,
+        from: VertexId,
+        to: VertexId,
+    ) {
+        val deadline = Instant.now().plus(60, ChronoUnit.SECONDS)
+        var delayMillis = 200.0
+        while (Instant.now().isBefore(deadline)) {
+            if (tryModifyEdge(call, from, to, null)) {
+                return
+            }
+
+            delay(delayMillis.toLong())
+            delayMillis *= 1.5
+        }
+
+        throw AssertionError("Timed out trying to delete edge $from->$to")
     }
 
     fun getEdge(
@@ -177,6 +209,13 @@ fun Application.gmmfGraphModificationRouting(multiplePeersetProtocols: MultipleP
         post("/gmmf/graph/edge") {
             val request = call.receive<EdgeMessage>()
             addEdge(call, request.from, request.to, request.permissions)
+            call.respond("")
+        }
+
+        post("/gmmf/graph/edge/delete") {
+            // ktor is really limited, and supports only get and post
+            val request = call.receive<DeleteEdgeMessage>()
+            deleteEdge(call, request.from, request.to)
             call.respond("")
         }
 
