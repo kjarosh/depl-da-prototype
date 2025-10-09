@@ -132,3 +132,19 @@ tasks.register<JavaExec>("pushGraphsToPvc") {
         "constant-client-graph",
     )
 }
+
+tasks.register<Exec>("buildImage") {
+    group = "K8s Tests"
+
+    dependsOn("assemble")
+
+    commandLine("docker", "build", ".", "-t", "ghcr.io/kjarosh/depl-da-prototype:dev")
+}
+
+tasks.register<Exec>("pushImage") {
+    group = "K8s Tests"
+
+    dependsOn("buildImage")
+
+    commandLine("docker", "push", "ghcr.io/kjarosh/depl-da-prototype:dev")
+}
