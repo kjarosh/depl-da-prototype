@@ -31,7 +31,7 @@ dependencies {
 
     implementation("org.slf4j:slf4j-api:2.0.17")
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
-    implementation("com.github.loki4j:loki-logback-appender:1.4.0")
+    implementation("com.github.loki4j:loki-logback-appender:1.6.0")
 
     implementation("io.micrometer:micrometer-registry-prometheus:1.9.2")
     implementation("io.ktor:ktor-server-metrics-micrometer:$ktorVersion")
