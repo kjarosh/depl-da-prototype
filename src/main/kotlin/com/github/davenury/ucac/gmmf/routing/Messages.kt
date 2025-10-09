@@ -8,6 +8,8 @@ data class VertexMessage(val name: String, val type: Vertex.Type)
 
 data class EdgeMessage(val from: VertexId, val to: VertexId, val permissions: Permissions)
 
+data class DeleteEdgeMessage(val from: VertexId, val to: VertexId)
+
 data class ReachesMessage(val reaches: Boolean)
 
 data class MembersMessage(val members: Set<VertexId>)
