@@ -17,7 +17,9 @@ import org.junitpioneer.jupiter.RetryingTest
 import org.slf4j.LoggerFactory
 import strikt.api.expectCatching
 import strikt.api.expectThat
+import strikt.assertions.isA
 import strikt.assertions.isEqualTo
+import strikt.assertions.isFailure
 import strikt.assertions.isSuccess
 
 @ExtendWith(TestLogExtension::class)
@@ -124,6 +126,58 @@ class GmmfModificationSpec : IntegrationTestBase() {
 
             expectThat(edgePeer0.permissions).isEqualTo(Permissions("01010"))
             expectThat(edgePeer1.permissions).isEqualTo(Permissions("01010"))
+        }
+
+    @Test
+    fun `delete edge`(): Unit =
+        runBlocking {
+            apps = TestApplicationSet(mapOf("peerset0" to listOf("peer0", "peer1")))
+
+            expectCatching {
+                addVertex("peer0", "peerset0", "user1", Vertex.Type.USER)
+            }.isSuccess()
+
+            expectCatching {
+                addVertex("peer1", "peerset0", "user2", Vertex.Type.USER)
+            }.isSuccess()
+
+            sync("peer0", "peerset0")
+
+            val vertexUser1 = VertexId(ZoneId("peerset0"), "user1")
+            val vertexUser2 = VertexId(ZoneId("peerset0"), "user2")
+            expectCatching {
+                addEdge(
+                    "peer0",
+                    "peerset0",
+                    vertexUser1,
+                    vertexUser2,
+                    Permissions("01010"),
+                )
+            }.isSuccess()
+
+            val edgePeer0 = getEdge("peer0", "peerset0", vertexUser1, vertexUser2)
+            val edgePeer1 = getEdge("peer1", "peerset0", vertexUser1, vertexUser2)
+
+            expectThat(edgePeer0.permissions).isEqualTo(Permissions("01010"))
+            expectThat(edgePeer1.permissions).isEqualTo(Permissions("01010"))
+
+            expectCatching {
+                deleteEdge(
+                    "peer0",
+                    "peerset0",
+                    vertexUser1,
+                    vertexUser2,
+                )
+            }.isSuccess()
+
+            sync("peer0", "peerset0")
+
+            expectCatching {
+                getEdge("peer0", "peerset0", vertexUser1, vertexUser2)
+            }.isFailure().isA<io.ktor.client.plugins.ClientRequestException>()
+            expectCatching {
+                getEdge("peer1", "peerset0", vertexUser1, vertexUser2)
+            }.isFailure().isA<io.ktor.client.plugins.ClientRequestException>()
         }
 
     @RetryingTest(3)

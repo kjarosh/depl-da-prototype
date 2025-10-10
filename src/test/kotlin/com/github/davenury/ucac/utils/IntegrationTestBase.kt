@@ -2,6 +2,7 @@ package com.github.davenury.ucac.utils
 
 import com.github.davenury.common.Change
 import com.github.davenury.common.ChangeCreationResponse
+import com.github.davenury.ucac.gmmf.routing.DeleteEdgeMessage
 import com.github.davenury.ucac.gmmf.routing.EdgeMessage
 import com.github.davenury.ucac.gmmf.routing.VertexMessage
 import com.github.davenury.ucac.testHttpClient
@@ -138,6 +139,20 @@ abstract class IntegrationTestBase {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
             setBody(EdgeMessage(from, to, permissions))
+        }.body<HttpResponse>()
+    }
+
+    suspend fun deleteEdge(
+        peerName: String,
+        peerset: String,
+        from: VertexId,
+        to: VertexId,
+    ) {
+        logger.info("Deleting edge $from->$to to $peerset through $peerName")
+        testHttpClient.post("http://${apps.getPeer(peerName).address}/gmmf/graph/edge/delete?peerset=$peerset") {
+            contentType(ContentType.Application.Json)
+            accept(ContentType.Application.Json)
+            setBody(DeleteEdgeMessage(from, to))
         }.body<HttpResponse>()
     }
 
