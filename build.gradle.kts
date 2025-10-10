@@ -63,7 +63,7 @@ dependencies {
     implementation("commons-cli:commons-cli:1.5.0")
     implementation("com.google.guava:guava:33.3.1-jre")
 
-    implementation("com.github.loki4j:loki-logback-appender:1.5.1")
+    implementation("com.github.loki4j:loki-logback-appender:1.6.0")
     testImplementation(platform("org.junit:junit-bom:5.10.3"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation("io.strikt:strikt-core:0.34.1")
