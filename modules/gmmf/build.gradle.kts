@@ -19,7 +19,7 @@ dependencies {
     implementation(platform("org.springframework.boot:spring-boot-dependencies:2.7.4"))
     implementation("org.springframework.boot:spring-boot-starter:2.7.4")
     implementation("org.springframework.boot:spring-boot-starter-web:2.7.4")
-    implementation("org.springframework:spring-core:5.3.23")
+    implementation("org.springframework:spring-core:5.3.39")
     implementation("org.yaml:snakeyaml:1.33")
     implementation("io.dropwizard.metrics:metrics-core:4.2.12")
     implementation("org.apache.commons:commons-text:1.10.0")
