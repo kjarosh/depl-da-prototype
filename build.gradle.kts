@@ -74,7 +74,7 @@ dependencies {
     testImplementation("org.junit-pioneer:junit-pioneer:2.2.0")
 
     // for disabling AnsiConsole in tests
-    testImplementation("org.fusesource.jansi:jansi:2.4.1")
+    testImplementation("org.fusesource.jansi:jansi:2.4.2")
 }
 
 tasks.test {
