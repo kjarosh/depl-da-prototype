@@ -8,7 +8,7 @@ RUN gradle installDist --no-daemon
 
 ###
 
-FROM alpine:3.22.1 as application
+FROM alpine:3.22.2 as application
 RUN apk add openjdk11 && apk add --no-cache jattach --repository http://dl-cdn.alpinelinux.org/alpine/edge/community/ && apk add redis
 
 WORKDIR /application
@@ -19,7 +19,7 @@ ENTRYPOINT ["sh", "-c", "/application/bin/depl-da-prototype"]
 
 ###
 
-FROM alpine:3.22.1 as tests
+FROM alpine:3.22.2 as tests
 RUN apk add openjdk11 && apk add --no-cache jattach --repository http://dl-cdn.alpinelinux.org/alpine/edge/community/
 
 WORKDIR /tests
